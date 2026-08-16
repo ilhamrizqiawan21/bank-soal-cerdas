@@ -23,17 +23,19 @@
             </div>
             <nav class="mt-3">
                 <a href="{{ route('dashboard') }}" 
-                   class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-chart-pie me-3"></i> Dashboard
                 </a>
                 <a href="{{ route('questions.index') }}" 
-                   class="nav-link d-flex align-items-center {{ request()->routeIs('questions.*') ? 'active' : '' }}">
+                class="nav-link d-flex align-items-center {{ request()->routeIs('questions.*') ? 'active' : '' }}">
                     <i class="fas fa-database me-3"></i> Bank Soal
                 </a>
-                <a href="#" class="nav-link d-flex align-items-center text-white-50 disabled">
+                <a href="{{ route('paket-soal.index') }}" 
+                class="nav-link d-flex align-items-center {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
                     <i class="fas fa-box me-3"></i> Paket Soal
                 </a>
-                <a href="#" class="nav-link d-flex align-items-center text-white-50 disabled">
+                <a href="{{ route('settings.index') }}" 
+                class="nav-link d-flex align-items-center {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                     <i class="fas fa-cog me-3"></i> Pengaturan
                 </a>
             </nav>

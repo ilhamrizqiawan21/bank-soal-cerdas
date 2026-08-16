@@ -10,8 +10,8 @@
         
         <form action="{{ route('questions.store') }}" method="POST">
             @csrf
-            
-            <!-- Bagian 1: Tipe Soal -->
+            <input type="hidden" name="type" x-model="type">
+            <!-- ===== BAGIAN 1: TIPE SOAL ===== -->
             <div class="mb-4">
                 <label class="form-label fw-bold">Tipe Soal <span class="text-danger">*</span></label>
                 <div class="row g-2">
@@ -49,7 +49,7 @@
                 @enderror
             </div>
             
-            <!-- Bagian 2: Informasi Dasar -->
+            <!-- ===== BAGIAN 2: INFORMASI DASAR ===== -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Mata Pelajaran <span class="text-danger">*</span></label>
@@ -91,25 +91,25 @@
                 </div>
             </div>
             
-            <!-- Bagian 3: Taksonomi -->
+            <!-- ===== BAGIAN 3: TAKSONOMI ===== -->
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Level Kognitif <span class="text-danger">*</span></label>
-                    <select name="level_c" class="form-select @error('level_c') is-invalid @enderror" 
-                            x-model="level" @change="loadKKO(level)" required>
-                        <option value="">Pilih Level</option>
-                        <option value="C1" {{ old('level_c') == 'C1' ? 'selected' : '' }}>C1 - Mengingat</option>
-                        <option value="C2" {{ old('level_c') == 'C2' ? 'selected' : '' }}>C2 - Memahami</option>
-                        <option value="C3" {{ old('level_c') == 'C3' ? 'selected' : '' }}>C3 - Menerapkan</option>
-                        <option value="C4" {{ old('level_c') == 'C4' ? 'selected' : '' }}>C4 - Menganalisis</option>
-                        <option value="C5" {{ old('level_c') == 'C5' ? 'selected' : '' }}>C5 - Mengevaluasi</option>
-                        <option value="C6" {{ old('level_c') == 'C6' ? 'selected' : '' }}>C6 - Mencipta</option>
-                    </select>
-                    <small class="text-muted">KKO akan otomatis terfilter berdasarkan Level yang dipilih</small>
-                    @error('level_c')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Level Kognitif <span class="text-danger">*</span></label>
+                <select name="level_c" class="form-select @error('level_c') is-invalid @enderror" 
+                        x-model="level" @change="loadKKO(level)" required>
+                    <option value="">Pilih Level</option>
+                    <option value="C1">C1 - Mengingat</option>
+                    <option value="C2">C2 - Memahami</option>
+                    <option value="C3">C3 - Menerapkan</option>
+                    <option value="C4">C4 - Menganalisis</option>
+                    <option value="C5">C5 - Mengevaluasi</option>
+                    <option value="C6">C6 - Mencipta</option>
+                </select>
+                <small class="text-muted">KKO akan otomatis terfilter berdasarkan Level yang dipilih</small>
+                @error('level_c')
+                    <small class="text-danger">{{ $message }}</small>
+                @enderror
+            </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold">KKO (Kata Kerja Operasional) <span class="text-danger">*</span></label>
                     <select name="kko_id" class="form-select @error('kko_id') is-invalid @enderror" required>
@@ -127,7 +127,7 @@
                 </div>
             </div>
             
-            <!-- Bagian 4: Teks Soal -->
+            <!-- ===== BAGIAN 4: TEKS SOAL ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Teks Soal <span class="text-danger">*</span></label>
                 <textarea name="question_text" class="form-control @error('question_text') is-invalid @enderror" 
@@ -137,7 +137,7 @@
                 @enderror
             </div>
             
-            <!-- Bagian 5: Area Jawaban (Dinamis) -->
+            <!-- ===== BAGIAN 5: AREA JAWABAN (DINAMIS) ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Area Jawaban</label>
                 
@@ -149,11 +149,11 @@
                             <div class="col-md-6">
                                 <div class="input-group">
                                     <span class="input-group-text">
-                                        <input type="radio" name="correct_option" :value="index" x-model="correctOption">
+                                        <input type="radio" x-bind:name="isPG ? 'correct_option' : null" :value="index" x-model="correctOption" :disabled="!isPG">
                                     </span>
-                                    <input type="text" :name="'options['+index+']'" class="form-control" 
+                                    <input type="text" x-bind:name="isPG ? 'options['+index+']' : null" class="form-control" 
                                            :placeholder="'Pilihan ' + String.fromCharCode(65 + index)" 
-                                           x-model="options[index]">
+                                           x-model="options[index]" :disabled="!isPG">
                                 </div>
                             </div>
                         </template>
@@ -170,8 +170,8 @@
                 
                 <!-- Uraian -->
                 <div x-show="isUraian" x-transition>
-                    <textarea name="rubric_text" class="form-control" rows="3" 
-                              placeholder="Kunci Jawaban / Rubrik Penilaian">{{ old('rubric_text') }}</textarea>
+                    <textarea x-bind:name="isUraian ? 'rubric_text' : null" class="form-control" rows="3" 
+                              placeholder="Kunci Jawaban / Rubrik Penilaian" :disabled="!isUraian">{{ old('rubric_text') }}</textarea>
                 </div>
                 
                 <!-- Menjodohkan -->
@@ -192,12 +192,12 @@
                                     <tr>
                                         <td class="text-center" x-text="index + 1"></td>
                                         <td>
-                                            <input type="text" :name="'left_texts['+index+']'" class="form-control form-control-sm" 
-                                                   placeholder="Pernyataan..." x-model="matchingPairs[index].left">
+                                            <input type="text" x-bind:name="isMenjodohkan ? 'left_texts['+index+']' : null" class="form-control form-control-sm" 
+                                                   placeholder="Pernyataan..." x-model="matchingPairs[index].left" :disabled="!isMenjodohkan">
                                         </td>
                                         <td>
-                                            <input type="text" :name="'right_texts['+index+']'" class="form-control form-control-sm" 
-                                                   placeholder="Pasangan..." x-model="matchingPairs[index].right">
+                                            <input type="text" x-bind:name="isMenjodohkan ? 'right_texts['+index+']' : null" class="form-control form-control-sm" 
+                                                   placeholder="Pasangan..." x-model="matchingPairs[index].right" :disabled="!isMenjodohkan">
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
@@ -228,19 +228,19 @@
                                 @click="correctBoolean = false">
                             <i class="fas fa-times me-2"></i> Salah
                         </button>
-                        <input type="hidden" name="correct_boolean" :value="correctBoolean">
+                        <input type="hidden" x-bind:name="isBenarSalah ? 'correct_boolean' : null" :value="correctBoolean">
                     </div>
                 </div>
             </div>
             
-            <!-- Bagian 6: Indikator Soal -->
+            <!-- ===== BAGIAN 6: INDIKATOR SOAL ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Indikator Soal</label>
                 <textarea name="indicator_text" class="form-control" rows="2" 
                           placeholder="Kompetensi yang diukur... Contoh: Siswa dapat mengidentifikasi faktor-faktor yang mempengaruhi...">{{ old('indicator_text') }}</textarea>
             </div>
             
-            <!-- Bagian 7: Tombol Aksi -->
+            <!-- ===== BAGIAN 7: TOMBOL AKSI ===== -->
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-1"></i> Simpan Soal
@@ -253,12 +253,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Inisialisasi form dari Alpine
-    const formData = document.querySelector('[x-data="questionForm()"]')?.__x?.init();
-});
-</script>
-@endpush

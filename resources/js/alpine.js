@@ -32,30 +32,33 @@ Alpine.data('questionFilter', () => ({
 
 // ============ FORM TAMBAH SOAL ============
 Alpine.data('questionForm', () => ({
-    // Tipe soal
-    type: 'pg',
-    
-    // PG Options
+    // ===== STATE =====
+    type: '',
+    level: '',
     options: ['', '', '', ''],
     correctOption: 0,
-    
-    // Matching Pairs
     matchingPairs: [
         { left: '', right: '' },
         { left: '', right: '' },
         { left: '', right: '' }
     ],
-    
-    // Essay
     essayRubric: '',
-    
-    // Benar/Salah
-    correctBoolean: true,
-    
-    // KKO Options (akan diisi via API)
+    correctBoolean: initialCorrectBoolean,
     kkoOptions: [],
     
     // ===== METHODS =====
+    addOption() {
+        if (this.options.length < 5) {
+            this.options.push('');
+        }
+    },
+
+    removeOption(index) {
+        if (this.options.length > 4) {
+            this.options.splice(index, 1);
+        }
+    },
+
     addPair() {
         this.matchingPairs.push({ left: '', right: '' });
     },
@@ -67,12 +70,15 @@ Alpine.data('questionForm', () => ({
     },
     
     loadKKO(level) {
-        if (!level) return;
+        if (!level) {
+            this.kkoOptions = [];
+            return;
+        }
         
         fetch(`/api/kko/${level}`)
             .then(response => response.json())
             .then(data => {
-                this.kkoOptions = data;
+                this.kkoOptions = data.data || data;
             })
             .catch(error => console.error('Error loading KKO:', error));
     },

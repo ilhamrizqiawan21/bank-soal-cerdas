@@ -4,16 +4,34 @@
 @section('breadcrumb', 'Edit Soal')
 
 @section('content')
+@php
+    $pgLabels = ['A', 'B', 'C', 'D', 'E'];
+    $pgOptionValues = array_values(array_filter(
+        array_map(function ($label) use ($question) {
+            return $question->pgOptions->firstWhere('label', $label)?->option_text ?? '';
+        }, $pgLabels),
+        fn ($value) => $value !== ''
+    ));
+
+    if (count($pgOptionValues) < 4) {
+        $pgOptionValues = array_pad($pgOptionValues, 4, '');
+    }
+
+    $correctOptionIndex = collect($pgLabels)->search(function ($label) use ($question) {
+        return (bool) ($question->pgOptions->firstWhere('label', $label)?->is_correct ?? false);
+    }, false);
+    $correctOptionIndex = $correctOptionIndex === false ? 0 : $correctOptionIndex;
+@endphp
 <div class="container-fluid">
-    <div class="stat-card" x-data="questionForm()">
+    <div class="stat-card" x-data="questionForm()" x-init="type='{{ $question->type }}'; options = @json($pgOptionValues); correctOption = {{ $correctOptionIndex }}; correctBoolean = {{ $question->correct_boolean === null ? 'true' : ($question->correct_boolean ? 'true' : 'false') }};">
         <h5 class="fw-bold mb-4">Edit Soal</h5>
         
         <form action="{{ route('questions.update', $question) }}" method="POST">
             @csrf
             @method('PUT')
+            <input type="hidden" name="type" x-model="type">
             
-            <!-- Sama seperti create, tapi dengan nilai old/current -->
-            <!-- Bagian 1: Tipe Soal -->
+            <!-- ===== BAGIAN 1: TIPE SOAL ===== -->
             <div class="mb-4">
                 <label class="form-label fw-bold">Tipe Soal <span class="text-danger">*</span></label>
                 <div class="row g-2">
@@ -46,9 +64,12 @@
                         </div>
                     </div>
                 </div>
+                @error('type')
+                    <small class="text-danger">{{ $message }}</small>
+                @enderror
             </div>
             
-            <!-- Bagian 2: Informasi Dasar -->
+            <!-- ===== BAGIAN 2: INFORMASI DASAR ===== -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Mata Pelajaran <span class="text-danger">*</span></label>
@@ -60,6 +81,9 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('subject_id')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Jenjang <span class="text-danger">*</span></label>
@@ -69,6 +93,9 @@
                         <option value="SMP" {{ old('jenjang', $question->jenjang) == 'SMP' ? 'selected' : '' }}>SMP</option>
                         <option value="SMA" {{ old('jenjang', $question->jenjang) == 'SMA' ? 'selected' : '' }}>SMA</option>
                     </select>
+                    @error('jenjang')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Kurikulum <span class="text-danger">*</span></label>
@@ -78,10 +105,13 @@
                         <option value="kbc" {{ old('curriculum', $question->curriculum) == 'kbc' ? 'selected' : '' }}>KBC</option>
                         <option value="both" {{ old('curriculum', $question->curriculum) == 'both' ? 'selected' : '' }}>Merdeka & KBC</option>
                     </select>
+                    @error('curriculum')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
             </div>
             
-            <!-- Bagian 3: Taksonomi -->
+            <!-- ===== BAGIAN 3: TAKSONOMI ===== -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Level Kognitif <span class="text-danger">*</span></label>
@@ -95,9 +125,13 @@
                         <option value="C5" {{ old('level_c', $question->level_c) == 'C5' ? 'selected' : '' }}>C5 - Mengevaluasi</option>
                         <option value="C6" {{ old('level_c', $question->level_c) == 'C6' ? 'selected' : '' }}>C6 - Mencipta</option>
                     </select>
+                    <small class="text-muted">KKO akan otomatis terfilter berdasarkan Level yang dipilih</small>
+                    @error('level_c')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">KKO <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">KKO (Kata Kerja Operasional) <span class="text-danger">*</span></label>
                     <select name="kko_id" class="form-select @error('kko_id') is-invalid @enderror" required>
                         <option value="">Pilih KKO</option>
                         @foreach($kkoList as $kko)
@@ -106,72 +140,81 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('kko_id')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
                 </div>
             </div>
             
-            <!-- Bagian 4: Teks Soal -->
+            <!-- ===== BAGIAN 4: TEKS SOAL ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Teks Soal <span class="text-danger">*</span></label>
                 <textarea name="question_text" class="form-control @error('question_text') is-invalid @enderror" 
                           rows="4" required>{{ old('question_text', $question->question_text) }}</textarea>
+                @error('question_text')
+                    <small class="text-danger">{{ $message }}</small>
+                @enderror
             </div>
             
-            <!-- Bagian 5: Area Jawaban -->
+            <!-- ===== BAGIAN 5: AREA JAWABAN ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Area Jawaban</label>
                 
                 <!-- PG -->
-                <div x-show="isPG">
-                    <div class="alert alert-info">Klik radio untuk menandai jawaban benar.</div>
-                    @php
-                        $pgOptions = $question->pgOptions ?? collect();
-                    @endphp
-                    @foreach(['A', 'B', 'C', 'D', 'E'] as $label)
-                        @php $option = $pgOptions->where('label', $label)->first(); @endphp
+                <div x-show="isPG" x-transition>
+                    <div class="alert alert-info">Klik radio di kiri untuk menandai jawaban yang benar.</div>
+                    <template x-for="(option, index) in options" :key="index">
                         <div class="input-group mb-2">
                             <span class="input-group-text">
-                                <input type="radio" name="correct_option" value="{{ $loop->index }}" 
-                                       {{ $option && $option->is_correct ? 'checked' : '' }}>
+                                <input type="radio" name="correct_option" :value="index" x-model="correctOption">
                             </span>
-                            <input type="text" name="options[{{ $loop->index }}]" class="form-control" 
-                                   placeholder="Pilihan {{ $label }}" 
-                                   value="{{ old('options.' . $loop->index, $option->option_text ?? '') }}">
+                            <input type="text" :name="'options[' + index + ']'" class="form-control" x-model="options[index]"
+                                   :placeholder="'Pilihan ' + String.fromCharCode(65 + index)" :disabled="!isPG">
+                            <button type="button" class="btn btn-outline-danger" @click="removeOption(index)" x-show="options.length > 4">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                    @endforeach
+                    </template>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="addOption()" x-show="options.length < 5">
+                            <i class="fas fa-plus"></i> Tambah Opsi
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Uraian -->
-                <div x-show="isUraian">
-                    <textarea name="rubric_text" class="form-control" rows="3" 
-                              placeholder="Kunci Jawaban / Rubrik Penilaian">{{ old('rubric_text', $question->essayRubric->rubric_text ?? '') }}</textarea>
+                <div x-show="isUraian" x-transition>
+                    <textarea x-bind:name="isUraian ? 'rubric_text' : null" class="form-control" rows="3" 
+                              placeholder="Kunci Jawaban / Rubrik Penilaian" :disabled="!isUraian">{{ old('rubric_text', $question->essayRubric->rubric_text ?? '') }}</textarea>
                 </div>
                 
                 <!-- Menjodohkan -->
-                <div x-show="isMenjodohkan">
+                <div x-show="isMenjodohkan" x-transition>
+                    <div class="alert alert-info">Buat pasangan pernyataan dan jawaban.</div>
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Pernyataan</th>
-                                    <th>Pasangan Jawaban</th>
-                                    <th>Hapus</th>
+                                    <th width="5%">#</th>
+                                    <th width="45%">Pernyataan</th>
+                                    <th width="45%">Pasangan Jawaban</th>
+                                    <th width="5%">Hapus</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @php $pairs = $question->matchingPairs ?? collect(); @endphp
                                 @foreach($pairs as $index => $pair)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td class="text-center">{{ $loop->iteration }}</td>
                                         <td>
-                                            <input type="text" name="left_texts[{{ $index }}]" class="form-control form-control-sm" 
-                                                   value="{{ old('left_texts.' . $index, $pair->left_text) }}">
+                                            <input type="text" x-bind:name="isMenjodohkan ? 'left_texts[{{ $index }}]' : null" class="form-control form-control-sm" 
+                                                   value="{{ old('left_texts.' . $index, $pair->left_text) }}" :disabled="!isMenjodohkan">
                                         </td>
                                         <td>
-                                            <input type="text" name="right_texts[{{ $index }}]" class="form-control form-control-sm" 
-                                                   value="{{ old('right_texts.' . $index, $pair->right_text) }}">
+                                            <input type="text" x-bind:name="isMenjodohkan ? 'right_texts[{{ $index }}]' : null" class="form-control form-control-sm" 
+                                                   value="{{ old('right_texts.' . $index, $pair->right_text) }}" :disabled="!isMenjodohkan">
                                         </td>
-                                        <td>
+                                        <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
                                                     @click="matchingPairs.splice({{ $index }}, 1)">
                                                 <i class="fas fa-trash"></i>
@@ -188,7 +231,7 @@
                 </div>
                 
                 <!-- Benar/Salah -->
-                <div x-show="isBenarSalah">
+                <div x-show="isBenarSalah" x-transition>
                     <div class="d-flex gap-3">
                         <button type="button" class="btn btn-lg btn-success px-4" 
                                 :class="{ 'active': correctBoolean === true }" 
@@ -200,19 +243,19 @@
                                 @click="correctBoolean = false">
                             <i class="fas fa-times me-2"></i> Salah
                         </button>
-                        <input type="hidden" name="correct_boolean" :value="correctBoolean">
+                        <input type="hidden" x-bind:name="isBenarSalah ? 'correct_boolean' : null" :value="correctBoolean">
                     </div>
                 </div>
             </div>
             
-            <!-- Bagian 6: Indikator Soal -->
+            <!-- ===== BAGIAN 6: INDIKATOR SOAL ===== -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Indikator Soal</label>
                 <textarea name="indicator_text" class="form-control" rows="2" 
                           placeholder="Kompetensi yang diukur...">{{ old('indicator_text', $question->indicator_text) }}</textarea>
             </div>
             
-            <!-- Bagian 7: Tombol Aksi -->
+            <!-- ===== BAGIAN 7: TOMBOL AKSI ===== -->
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-1"></i> Update Soal
@@ -225,3 +268,4 @@
     </div>
 </div>
 @endsection
+

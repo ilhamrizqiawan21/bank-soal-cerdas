@@ -19,31 +19,41 @@
         </div>
         
         <div class="row">
+            <!-- KOLOM KIRI: Konten Soal -->
             <div class="col-md-8">
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small">Teks Soal</label>
-                    <p class="p-3 bg-light rounded">{{ $question->question_text }}</p>
+                <!-- Teks Soal -->
+                <div class="mb-4">
+                    <label class="fw-bold text-muted small text-uppercase">Teks Soal</label>
+                    <div class="p-3 bg-light rounded mt-1">
+                        {{ $question->question_text }}
+                    </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label class="fw-bold text-muted small">Jawaban</label>
-                    <div class="p-3 bg-light rounded">
+                <!-- Jawaban -->
+                <div class="mb-4">
+                    <label class="fw-bold text-muted small text-uppercase">Jawaban</label>
+                    <div class="p-3 bg-light rounded mt-1">
                         @switch($question->type)
                             @case('pg')
                                 @foreach($question->pgOptions as $option)
                                     <div class="mb-1">
                                         <strong>{{ $option->label }}.</strong> {{ $option->option_text }}
                                         @if($option->is_correct)
-                                            <span class="badge bg-success">✓ Benar</span>
+                                            <span class="badge bg-success ms-2">✓ Benar</span>
                                         @endif
                                     </div>
                                 @endforeach
                                 @break
+                                
                             @case('uraian')
-                                {{ $question->essayRubric->rubric_text ?? 'Tidak ada rubrik' }}
+                                <div class="mb-1">
+                                    <strong>Kunci Jawaban / Rubrik:</strong>
+                                    <div class="mt-1">{{ $question->essayRubric->rubric_text ?? 'Tidak ada rubrik' }}</div>
+                                </div>
                                 @break
+                                
                             @case('menjodohkan')
-                                <table class="table table-sm table-bordered">
+                                <table class="table table-sm table-bordered mb-0">
                                     <thead>
                                         <tr>
                                             <th>Pernyataan</th>
@@ -60,8 +70,10 @@
                                     </tbody>
                                 </table>
                                 @break
+                                
                             @case('benar_salah')
-                                <span class="badge {{ $question->correct_boolean ? 'bg-success' : 'bg-danger' }} p-2">
+                                <span class="badge {{ $question->correct_boolean ? 'bg-success' : 'bg-danger' }} p-2 fs-6">
+                                    <i class="fas {{ $question->correct_boolean ? 'fa-check' : 'fa-times' }} me-2"></i>
                                     {{ $question->correct_boolean ? 'Benar' : 'Salah' }}
                                 </span>
                                 @break
@@ -69,41 +81,48 @@
                     </div>
                 </div>
                 
+                <!-- Indikator Soal -->
                 @if($question->indicator_text)
-                    <div class="mb-3">
-                        <label class="fw-bold text-muted small">Indikator Soal</label>
-                        <p class="p-3 bg-light rounded">{{ $question->indicator_text }}</p>
+                    <div class="mb-4">
+                        <label class="fw-bold text-muted small text-uppercase">Indikator Soal</label>
+                        <div class="p-3 bg-light rounded mt-1">
+                            {{ $question->indicator_text }}
+                        </div>
                     </div>
                 @endif
             </div>
             
+            <!-- KOLOM KANAN: Informasi Soal -->
             <div class="col-md-4">
                 <div class="card bg-light">
                     <div class="card-body">
-                        <h6 class="fw-bold">Informasi Soal</h6>
+                        <h6 class="fw-bold mb-3">Informasi Soal</h6>
                         <hr>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Mata Pelajaran</small>
-                            <div class="fw-bold">{{ $question->subject->name ?? '-' }}</div>
+                            <small class="text-muted d-block">Mata Pelajaran</small>
+                            <span class="fw-bold">{{ $question->subject->name ?? '-' }}</span>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Jenjang</small>
-                            <div class="fw-bold">{{ $question->jenjang }}</div>
+                            <small class="text-muted d-block">Jenjang</small>
+                            <span class="fw-bold">{{ $question->jenjang }}</span>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Kurikulum</small>
-                            <div>
-                                <span class="badge {{ $question->curriculum === 'merdeka' ? 'badge-merdeka' : 'badge-kbc' }}">
-                                    {{ $question->curriculum_label }}
-                                </span>
-                            </div>
+                            <small class="text-muted d-block">Kurikulum</small>
+                            <span class="badge {{ $question->curriculum === 'merdeka' ? 'badge-merdeka' : 'badge-kbc' }}">
+                                {{ $question->curriculum_label }}
+                            </span>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Tipe Soal</small>
-                            <div class="fw-bold">{{ ucfirst($question->type) }}</div>
+                            <small class="text-muted d-block">Tipe Soal</small>
+                            <span class="fw-bold">{{ ucfirst($question->type_label) }}</span>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Level Kognitif</small>
+                            <small class="text-muted d-block">Level Kognitif</small>
                             <div>
                                 <span class="badge badge-{{ strtolower($question->level_c) }}">
                                     {{ $question->level_c }}
@@ -113,18 +132,29 @@
                                 </span>
                             </div>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">KKO</small>
-                            <div class="fw-bold">{{ $question->kko->verb ?? '-' }}</div>
+                            <small class="text-muted d-block">KKO</small>
+                            <span class="fw-bold">{{ $question->kko->verb ?? '-' }}</span>
+                            <small class="text-muted">({{ $question->kko->level ?? '-' }})</small>
                         </div>
+                        
                         <div class="mb-2">
-                            <small class="text-muted">Dibuat oleh</small>
-                            <div class="fw-bold">{{ $question->creator->name ?? '-' }}</div>
+                            <small class="text-muted d-block">Dibuat oleh</small>
+                            <span class="fw-bold">{{ $question->creator->name ?? '-' }}</span>
                         </div>
-                        <div>
-                            <small class="text-muted">Dibuat pada</small>
-                            <div class="fw-bold">{{ $question->created_at->format('d M Y H:i') }}</div>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Dibuat pada</small>
+                            <span class="fw-bold">{{ $question->created_at->format('d M Y H:i') }}</span>
                         </div>
+                        
+                        @if($question->updated_at && $question->updated_at != $question->created_at)
+                            <div>
+                                <small class="text-muted d-block">Terakhir diubah</small>
+                                <span class="fw-bold">{{ $question->updated_at->format('d M Y H:i') }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
