@@ -105,6 +105,9 @@ return [
         ),
     ],
 
+    //Excel
+    Maatwebsite\Excel\ExcelServiceProvider::class,
+
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver

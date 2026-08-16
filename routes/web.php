@@ -4,6 +4,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\PaketSoalController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\UjianController;
+use App\Http\Controllers\AnalisisController;
+use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\ShareController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,10 +27,10 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Bank Soal (CRUD + Duplicate + Export/Import)
-    Route::resource('questions', QuestionController::class);
-    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate');
+    // Bank Soal
     Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export');
+    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate');
+    Route::resource('questions', QuestionController::class);
     Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
     
     // Paket Soal
@@ -32,8 +38,55 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/paket-soal/{paketSoal}/duplicate', [PaketSoalController::class, 'duplicate'])->name('paket-soal.duplicate');
     Route::get('/api/paket-soal/questions', [PaketSoalController::class, 'getQuestions'])->name('api.paket-soal.questions');
     
-    // Pengaturan
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
-    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
-});
+    // User Management
+    Route::resource('users', UserController::class)->middleware('role:admin');
+    Route::get('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status')->middleware('role:admin');
+    
+    // Profile
+    Route::get('/profile', [UserController::class, 'profile'])->name('users.profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('users.profile.update');
+    Route::put('/profile/avatar', [UserController::class, 'updateAvatar'])->name('users.avatar');
+    
+    // Settings
+    Route::get('/settings', function () {
+        return redirect()->route('users.profile');
+    })->name('settings.index');
+    Route::put('/settings/password', [UserController::class, 'updatePassword'])->name('settings.password');
+
+    // ===== UJIAN ONLINE =====
+    Route::resource('ujian', UjianController::class)->middleware('role:admin,guru');
+    Route::get('/ujian/{ujian}/publish', [UjianController::class, 'publish'])->name('ujian.publish')->middleware('role:admin,guru');
+
+    // Siswa
+    Route::get('/ujian-saya', [UjianController::class, 'daftarUjian'])->name('ujian.daftar')->middleware('role:siswa');
+    Route::get('/ujian/{id}/kerjakan', [UjianController::class, 'kerjakan'])->name('ujian.kerjakan')->middleware('role:siswa');
+    Route::post('/ujian/{id}/jawaban', [UjianController::class, 'submitJawaban'])->name('ujian.jawaban')->middleware('role:siswa');
+    Route::post('/ujian/{id}/submit', [UjianController::class, 'submitUjian'])->name('ujian.submit')->middleware('role:siswa');
+    Route::get('/ujian/{id}/hasil', [UjianController::class, 'hasil'])->name('ujian.hasil')->middleware('role:siswa');
+
+    // ===== ANALISIS =====
+    Route::get('/analisis', [AnalisisController::class, 'index'])->name('analisis.index')->middleware('role:admin,guru');
+    Route::get('/analisis/ujian/{id}', [AnalisisController::class, 'ujianDetail'])->name('analisis.ujian')->middleware('role:admin,guru');
+    Route::get('/analisis/siswa/{id}', [AnalisisController::class, 'siswaDetail'])->name('analisis.siswa')->middleware('role:admin,guru');
+    Route::get('/analisis/export', [AnalisisController::class, 'export'])->name('analisis.export')->middleware('role:admin,guru');
+
+    // ===== KATEGORI & TAG =====
+    Route::resource('kategori', KategoriController::class)->middleware('role:admin,guru');
+    Route::resource('tag', TagController::class)->middleware('role:admin,guru');
+    
+    /// ===== SHARE / KOLABORASI =====
+    Route::get('/share', [ShareController::class, 'index'])->name('share.index');
+    Route::get('/share/riwayat', [ShareController::class, 'riwayat'])->name('share.riwayat');
+    Route::get('/share/detail/{type}/{id}', [ShareController::class, 'detail'])->name('share.detail');
+    
+    // Share Soal - route dengan parameter di URL
+    Route::post('/share/soal/{id}', [ShareController::class, 'shareSoal'])->name('share.soal');
+    Route::get('/share/soal/{id}/accept', [ShareController::class, 'acceptSoal'])->name('share.soal.accept');
+    Route::get('/share/soal/{id}/reject', [ShareController::class, 'rejectSoal'])->name('share.soal.reject');
+    
+    // Share Paket
+    Route::post('/share/paket/{id}', [ShareController::class, 'sharePaket'])->name('share.paket');
+    Route::get('/share/paket/{id}/accept', [ShareController::class, 'acceptPaket'])->name('share.paket.accept');
+    Route::get('/share/paket/{id}/reject', [ShareController::class, 'rejectPaket'])->name('share.paket.reject');
+    
+    });

@@ -64,4 +64,18 @@ class PaketSoal extends Model
             default => 'secondary'
         };
     }
+
+    // ============ RELASI SHARE ============
+
+    public function shares()
+    {
+        return $this->hasMany(SharePaket::class);
+    }
+
+    public function sharedToMe()
+    {
+        return $this->hasMany(SharePaket::class, 'paket_soal_id')
+            ->where('shared_to', auth()->id())
+            ->where('is_accepted', true);
+    }
 }
