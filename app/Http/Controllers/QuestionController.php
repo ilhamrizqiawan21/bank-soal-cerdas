@@ -10,6 +10,9 @@ use App\Http\Requests\UpdateQuestionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\QuestionsImport;
+use App\Exports\QuestionsExport;
 
 class QuestionController extends Controller
 {
@@ -263,4 +266,28 @@ class QuestionController extends Controller
                 break;
         }
     }
+
+    // ============ EXPORT ============
+
+    public function export()
+    {
+        return Excel::download(new QuestionsExport, 'bank-soal.xlsx');
+    }
+
+    // ============ IMPORT ============
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new QuestionsImport, $request->file('file'));
+            return back()->with('success', 'Soal berhasil diimport!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
+    }
+
 }

@@ -147,4 +147,30 @@ class Question extends Model
     {
         return !is_null($this->getCorrectAnswer());
     }
+
+    // ============ RELASI KATEGORI & TAG ============
+
+    public function kategori()
+    {
+        return $this->belongsToMany(Kategori::class, 'question_kategori');
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'question_tag');
+    }
+
+    // ============ RELASI SHARE ============
+
+    public function shares()
+    {
+        return $this->hasMany(ShareSoal::class);
+    }
+
+    public function sharedToMe()
+    {
+        return $this->hasMany(ShareSoal::class, 'question_id')
+            ->where('shared_to', auth()->id())
+            ->where('is_accepted', true);
+    }
 }

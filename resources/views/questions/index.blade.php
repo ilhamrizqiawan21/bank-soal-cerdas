@@ -5,11 +5,24 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Header dengan Tombol Import/Export -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold mb-0">Daftar Soal</h5>
-        <a href="{{ route('questions.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Tambah Soal
-        </a>
+        <div class="d-flex gap-2">
+            <!-- Tombol Import -->
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import me-1"></i> Import
+            </button>
+            
+            <!-- Tombol Export -->
+            <a href="{{ route('questions.export') }}" class="btn btn-info btn-sm">
+                <i class="fas fa-file-export me-1"></i> Export
+            </a>
+            
+            <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Tambah Soal
+            </a>
+        </div>
     </div>
 
     <!-- Filter Panel -->
@@ -50,7 +63,7 @@
                     <label class="form-label small fw-bold">KKO</label>
                     <select name="kko_id" x-model="kko" class="form-select form-select-sm">
                         <option value="semua">Semua</option>
-                        @foreach($kkoList as $kko)
+                        @foreach($kkoList ?? [] as $kko)
                             <option value="{{ $kko->id }}">{{ $kko->verb }} ({{ $kko->level }})</option>
                         @endforeach
                     </select>
@@ -90,7 +103,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($questions as $index => $question)
+                    @forelse($questions ?? [] as $index => $question)
                         <tr>
                             <td>{{ $questions->firstItem() + $index }}</td>
                             <td>
@@ -167,14 +180,122 @@
             </table>
         </div>
         
+        <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mt-3">
             <small class="text-muted">
-                Menampilkan {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} dari {{ $questions->total() }} data
+                Menampilkan {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} dari {{ $questions->total() ?? 0 }} data
             </small>
             {{ $questions->appends(request()->query())->links() }}
         </div>
     </div>
 </div>
+
+<!-- ===== MODAL IMPORT ===== -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">
+                    <i class="fas fa-file-import me-2"></i> Import Soal dari Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('questions.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    @if(session('import_error'))
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            {{ session('import_error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Pilih File Excel</label>
+                        <input type="file" name="file" class="form-control @error('file') is-invalid @enderror" 
+                               accept=".xlsx,.xls,.csv" required>
+                        <small class="text-muted">Format: .xlsx, .xls, .csv (Max 2MB)</small>
+                        @error('file')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle me-1"></i> Format yang diperlukan:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><strong>mata_pelajaran</strong> - Nama mata pelajaran</li>
+                            <li><strong>jenjang</strong> - SD / SMP / SMA</li>
+                            <li><strong>kurikulum</strong> - merdeka / kbc / both</li>
+                            <li><strong>tipe_soal</strong> - pg / uraian / menjodohkan / benar_salah</li>
+                            <li><strong>level_kognitif</strong> - C1 / C2 / C3 / C4 / C5 / C6</li>
+                            <li><strong>kko</strong> - Kata Kerja Operasional (contoh: Menyebutkan)</li>
+                            <li><strong>teks_soal</strong> - Teks pertanyaan</li>
+                            <li><strong>indikator</strong> - Indikator soal (opsional)</li>
+                            <li><strong>jawaban_benar</strong> - Untuk tipe benar_salah (opsional)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('questions.export') }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showExample()">
+                            <i class="fas fa-eye me-1"></i> Lihat Contoh
+                        </button>
+                    </div>
+                    
+                    <div id="exampleData" style="display: none;" class="mt-3">
+                        <div class="card card-body bg-light">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>mata_pelajaran</th>
+                                        <th>jenjang</th>
+                                        <th>kurikulum</th>
+                                        <th>tipe_soal</th>
+                                        <th>level_kognitif</th>
+                                        <th>kko</th>
+                                        <th>teks_soal</th>
+                                        <th>indikator</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Matematika</td>
+                                        <td>SMA</td>
+                                        <td>merdeka</td>
+                                        <td>pg</td>
+                                        <td>C3</td>
+                                        <td>Menerapkan</td>
+                                        <td>Hitunglah nilai dari 2x + 3y jika x=4 dan y=2</td>
+                                        <td>Siswa dapat menghitung persamaan linear</td>
+                                    </tr>
+                                    <tr>
+                                        <td>IPA</td>
+                                        <td>SMP</td>
+                                        <td>kbc</td>
+                                        <td>benar_salah</td>
+                                        <td>C2</td>
+                                        <td>Menjelaskan</td>
+                                        <td>Air adalah zat cair yang tidak berwarna</td>
+                                        <td>Siswa dapat menjelaskan sifat fisik air</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i> Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -186,5 +307,15 @@
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
     });
+    
+    // Show example data
+    function showExample() {
+        var example = document.getElementById('exampleData');
+        if (example.style.display === 'none') {
+            example.style.display = 'block';
+        } else {
+            example.style.display = 'none';
+        }
+    }
 </script>
 @endpush

@@ -21,24 +21,79 @@
                 <hr class="border-secondary">
                 <p class="text-white-50 small">v1.0</p>
             </div>
-            <nav class="mt-3">
-                <a href="{{ route('dashboard') }}" 
-                class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-chart-pie me-3"></i> Dashboard
-                </a>
-                <a href="{{ route('questions.index') }}" 
-                class="nav-link d-flex align-items-center {{ request()->routeIs('questions.*') ? 'active' : '' }}">
-                    <i class="fas fa-database me-3"></i> Bank Soal
-                </a>
-                <a href="{{ route('paket-soal.index') }}" 
-                class="nav-link d-flex align-items-center {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
-                    <i class="fas fa-box me-3"></i> Paket Soal
-                </a>
-                <a href="{{ route('settings.index') }}" 
-                class="nav-link d-flex align-items-center {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <i class="fas fa-cog me-3"></i> Pengaturan
-                </a>
-            </nav>
+           <nav class="mt-3">
+    <a href="{{ route('dashboard') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+        <i class="fas fa-chart-pie me-3"></i> Dashboard
+    </a>
+    <a href="{{ route('questions.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('questions.*') ? 'active' : '' }}">
+        <i class="fas fa-database me-3"></i> Bank Soal
+    </a>
+    <a href="{{ route('paket-soal.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
+        <i class="fas fa-box me-3"></i> Paket Soal
+    </a>
+
+    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+<a href="{{ route('analisis.index') }}" 
+   class="nav-link d-flex align-items-center {{ request()->routeIs('analisis.*') ? 'active' : '' }}">
+    <i class="fas fa-chart-bar me-3"></i> Analisis
+</a>
+@endif
+    
+    <!-- ===== MENU UJIAN ===== -->
+    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+    <a href="{{ route('ujian.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('ujian.*') ? 'active' : '' }}">
+        <i class="fas fa-file-alt me-3"></i> Manajemen Ujian
+    </a>
+    @endif
+    
+    @if(auth()->user()->role === 'siswa')
+    <a href="{{ route('ujian.daftar') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('ujian.daftar') ? 'active' : '' }}">
+        <i class="fas fa-file-alt me-3"></i> Ujian Saya
+    </a>
+    @endif
+
+    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+    <a href="{{ route('kategori.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('kategori.*') ? 'active' : '' }}">
+        <i class="fas fa-folder me-3"></i> Kategori
+    </a>
+    <a href="{{ route('tag.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('tag.*') ? 'active' : '' }}">
+        <i class="fas fa-tags me-3"></i> Tag
+    </a>
+    @endif
+
+    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+    <a href="{{ route('share.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('share.index') ? 'active' : '' }}">
+        <i class="fas fa-share-alt me-3"></i> Kolaborasi
+    </a>
+    <a href="{{ route('share.riwayat') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('share.riwayat') ? 'active' : '' }}">
+        <i class="fas fa-history me-3"></i> Riwayat Share
+    </a>
+    @endif
+
+    
+    @if(auth()->user()->role === 'admin')
+    <a href="{{ route('users.index') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('users.*') ? 'active' : '' }}">
+        <i class="fas fa-users me-3"></i> Manajemen User
+    </a>
+    @endif
+    
+    <a href="{{ route('users.profile') }}" 
+       class="nav-link d-flex align-items-center {{ request()->routeIs('users.profile') ? 'active' : '' }}">
+        <i class="fas fa-user me-3"></i> Profil
+    </a>
+    
+
+</nav>
         </aside>
         
         <!-- ============ MAIN CONTENT ============ -->
