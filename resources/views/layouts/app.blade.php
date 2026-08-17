@@ -8,141 +8,179 @@
     <title>Bank Soal Cerdas - @yield('title', 'Dashboard')</title>
     
     <!-- Vite -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/sass/app.scss', 'resources/js/app.js']) 
     
     @stack('styles')
 </head>
-<body x-data="sidebar()" :class="{'sidebar-collapsed': !open}">
-    <div id="app">
-        <!-- ============ SIDEBAR ============ -->
-        <aside class="sidebar" x-show="open" x-transition>
-            <div class="p-4">
-                <h5 class="text-white fw-bold">Bank Soal Cerdas</h5>
-                <hr class="border-secondary">
-                <p class="text-white-50 small">v1.0</p>
+<body x-data="app()" :class="{'dark': dark}" x-init="init()">
+    <!-- Toast Notification -->
+<div x-data>
+    <template x-for="toast in $store.toast.messages" :key="toast.id">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header" :class="{
+                    'bg-success text-white': toast.type === 'success',
+                    'bg-danger text-white': toast.type === 'danger',
+                    'bg-warning text-dark': toast.type === 'warning',
+                    'bg-info text-white': toast.type === 'info'
+                }">
+                    <i class="fas me-2" :class="{
+                        'fa-check-circle': toast.type === 'success',
+                        'fa-exclamation-circle': toast.type === 'danger',
+                        'fa-exclamation-triangle': toast.type === 'warning',
+                        'fa-info-circle': toast.type === 'info'
+                    }"></i>
+                    <strong class="me-auto" x-text="toast.type.charAt(0).toUpperCase() + toast.type.slice(1)"></strong>
+                    <button type="button" class="btn-close" :class="toast.type === 'warning' ? 'btn-close-dark' : 'btn-close-white'" @click="$store.toast.remove(toast.id)"></button>
+                </div>
+                <div class="toast-body" x-text="toast.message"></div>
             </div>
-           <nav class="mt-3">
-    <a href="{{ route('dashboard') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-        <i class="fas fa-chart-pie me-3"></i> Dashboard
-    </a>
-    <a href="{{ route('questions.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('questions.*') ? 'active' : '' }}">
-        <i class="fas fa-database me-3"></i> Bank Soal
-    </a>
-    <a href="{{ route('paket-soal.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
-        <i class="fas fa-box me-3"></i> Paket Soal
-    </a>
+        </div>
+    </template>
+</div>
+    <div id="app" class="app-shell">
+        <aside class="sidebar" :class="{ 'is-open': Sidebaropen, 'is-collapsed': sidebar-collapsed }">
+            <div class="sidebar-header">
+                <div class="brand-mark">BC</div>
+                <div class="brand-text">
+                    <span class="brand-name">Bank Soal</span>
+                    <small class="brand-subtitle">Cerdas</small>
+                </div>
+            </div>
 
-    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
-<a href="{{ route('analisis.index') }}" 
-   class="nav-link d-flex align-items-center {{ request()->routeIs('analisis.*') ? 'active' : '' }}">
-    <i class="fas fa-chart-bar me-3"></i> Analisis
-</a>
-@endif
-    
-    <!-- ===== MENU UJIAN ===== -->
-    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
-    <a href="{{ route('ujian.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('ujian.*') ? 'active' : '' }}">
-        <i class="fas fa-file-alt me-3"></i> Manajemen Ujian
-    </a>
-    @endif
-    
-    @if(auth()->user()->role === 'siswa')
-    <a href="{{ route('ujian.daftar') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('ujian.daftar') ? 'active' : '' }}">
-        <i class="fas fa-file-alt me-3"></i> Ujian Saya
-    </a>
-    @endif
+            <nav class="sidebar-nav">
+                <a href="{{ route('dashboard') }}"
+                   class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="{{ route('questions.index') }}"
+                   class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
+                    <i class="fas fa-database"></i>
+                    <span class="nav-label">Bank Soal</span>
+                </a>
+                <a href="{{ route('paket-soal.index') }}"
+                   class="nav-item {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
+                    <i class="fas fa-box"></i>
+                    <span class="nav-label">Paket Soal</span>
+                </a>
 
-    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
-    <a href="{{ route('kategori.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('kategori.*') ? 'active' : '' }}">
-        <i class="fas fa-folder me-3"></i> Kategori
-    </a>
-    <a href="{{ route('tag.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('tag.*') ? 'active' : '' }}">
-        <i class="fas fa-tags me-3"></i> Tag
-    </a>
-    @endif
+                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <a href="{{ route('analisis.index') }}"
+                       class="nav-item {{ request()->routeIs('analisis.*') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="nav-label">Analisis</span>
+                    </a>
+                @endif
 
-    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
-    <a href="{{ route('share.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('share.index') ? 'active' : '' }}">
-        <i class="fas fa-share-alt me-3"></i> Kolaborasi
-    </a>
-    <a href="{{ route('share.riwayat') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('share.riwayat') ? 'active' : '' }}">
-        <i class="fas fa-history me-3"></i> Riwayat Share
-    </a>
-    @endif
+                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <a href="{{ route('ujian.index') }}"
+                       class="nav-item {{ request()->routeIs('ujian.*') ? 'active' : '' }}">
+                        <i class="fas fa-file-alt"></i>
+                        <span class="nav-label">Manajemen Ujian</span>
+                    </a>
+                @endif
 
-    
-    @if(auth()->user()->role === 'admin')
-    <a href="{{ route('users.index') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('users.*') ? 'active' : '' }}">
-        <i class="fas fa-users me-3"></i> Manajemen User
-    </a>
-    @endif
-    
-    <a href="{{ route('users.profile') }}" 
-       class="nav-link d-flex align-items-center {{ request()->routeIs('users.profile') ? 'active' : '' }}">
-        <i class="fas fa-user me-3"></i> Profil
-    </a>
-    
+                @if(auth()->user()->role === 'siswa')
+                    <a href="{{ route('ujian.daftar') }}"
+                       class="nav-item {{ request()->routeIs('ujian.daftar') ? 'active' : '' }}">
+                        <i class="fas fa-file-alt"></i>
+                        <span class="nav-label">Ujian Saya</span>
+                    </a>
+                @endif
 
-</nav>
+                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <a href="{{ route('kategori.index') }}"
+                       class="nav-item {{ request()->routeIs('kategori.*') ? 'active' : '' }}">
+                        <i class="fas fa-folder"></i>
+                        <span class="nav-label">Kategori</span>
+                    </a>
+                    <a href="{{ route('tag.index') }}"
+                       class="nav-item {{ request()->routeIs('tag.*') ? 'active' : '' }}">
+                        <i class="fas fa-tags"></i>
+                        <span class="nav-label">Tag</span>
+                    </a>
+                @endif
+
+                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <a href="{{ route('share.index') }}"
+                       class="nav-item {{ request()->routeIs('share.index') ? 'active' : '' }}">
+                        <i class="fas fa-share-alt"></i>
+                        <span class="nav-label">Kolaborasi</span>
+                    </a>
+                    <a href="{{ route('share.riwayat') }}"
+                       class="nav-item {{ request()->routeIs('share.riwayat') ? 'active' : '' }}">
+                        <i class="fas fa-history"></i>
+                        <span class="nav-label">Riwayat Share</span>
+                    </a>
+                @endif
+
+                @if(auth()->user()->role === 'admin')
+                    <a href="{{ route('users.index') }}"
+                       class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-label">Manajemen User</span>
+                    </a>
+                @endif
+
+                <a href="{{ route('users.profile') }}"
+                   class="nav-item {{ request()->routeIs('users.profile') ? 'active' : '' }}">
+                    <i class="fas fa-user"></i>
+                    <span class="nav-label">Profil</span>
+                </a>
+            </nav>
         </aside>
-        
-        <!-- ============ MAIN CONTENT ============ -->
-        <main class="main-content">
-            <!-- ===== HEADER ===== -->
-            <header class="header d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <!-- Toggle Sidebar (Mobile) -->
-                    <button class="btn btn-light btn-sm d-md-none me-2" @click="toggle()">
+
+        <main class="main-shell"
+            :class="{ 'is-collapsed': sidebarCollapsed }">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button type="button" class="topbar-toggle" @click="toggleMobileSidebar()" aria-label="Toggle navigation">
                         <i class="fas fa-bars"></i>
                     </button>
-                    
-                    <!-- Breadcrumb -->
-                    <nav aria-label="breadcrumb">
+
+                    <nav aria-label="breadcrumb" class="breadcrumb-wrap">
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item">
-                                <a href="{{ route('dashboard') }}" class="text-decoration-none">Dashboard</a>
+                                <a href="{{ route('dashboard') }}">Dashboard</a>
                             </li>
-                            <li class="breadcrumb-item active">@yield('breadcrumb', 'Halaman')</li>
+                            <li class="breadcrumb-item active" aria-current="page">@yield('breadcrumb', 'Halaman')</li>
                         </ol>
                     </nav>
                 </div>
-                
-                <div class="d-flex align-items-center gap-3">
+
+                <div class="topbar-actions">
+                    <button type="button" class="icon-button" @click="toggleDark()" aria-table="Toggle Dark Mode">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Cari sesuatu..." aria-label="Cari">
+                    </div>
+
+                    <button type="button" class="icon-button" aria-label="Notifikasi">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </button>
+
                     @auth
-                        <!-- Tombol Tambah Soal -->
-                        <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i> Tambah Soal
+                        <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm btn-add">
+                            <i class="fas fa-plus"></i>
+                            <span>Tambah Soal</span>
                         </a>
-                        
-                        <!-- Dropdown User -->
-                        <div class="dropdown">
-                            <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" 
-                                    data-bs-toggle="dropdown" 
-                                    aria-expanded="false">
-                                <i class="fas fa-user-circle fa-lg"></i>
-                                <span class="ms-1 d-none d-sm-inline">{{ Auth::user()->name }}</span>
+
+                        <div class="dropdown user-menu">
+                            <button class="btn user-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="user-avatar">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                </span>
+                                <span class="user-name">{{ Auth::user()->name }}</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="#">
-                                        <i class="fas fa-user me-2"></i> Profile
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{{ route('users.profile') }}"><i class="fas fa-user me-2"></i>Profil</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="{{ route('logout') }}"
                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </a>
                                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                         @csrf
@@ -156,39 +194,108 @@
                     @endauth
                 </div>
             </header>
-            
-            <!-- ===== CONTENT AREA ===== -->
-            <div class="p-4">
-                <!-- Flash Messages -->
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-                
+
+            <div class="page-content">
+@if(session('success'))
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: '{{ session('success') }}', type: 'success' }
+                }));
+            }, 100);
+        });
+    </script>
+@endif
+
+@if(session('error'))
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: '{{ session('error') }}', type: 'danger' }
+                }));
+            }, 100);
+        });
+    </script>
+@endif
+
                 @if(session('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
-                
+
                 @if($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i> 
+                        <i class="fas fa-exclamation-circle me-2"></i>
                         @foreach($errors->all() as $error)
                             <div>{{ $error }}</div>
                         @endforeach
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
-                
+
                 @yield('content')
             </div>
         </main>
     </div>
-    
+
     @stack('scripts')
+    <script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('app', () => ({
+        dark: false,
+        sidebarOpen: window.innerWidth > 768,
+        sidebarCollapsed: false,
+        
+        init() {
+            // Dark mode dari localStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                this.dark = savedTheme === 'dark';
+            } else {
+                this.dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+            this.applyTheme();
+            
+            // Sidebar dari localStorage
+            const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+            if (savedCollapsed !== null) {
+                this.sidebarCollapsed = savedCollapsed === 'true';
+            }
+            
+            // Responsive
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    this.sidebarOpen = true;
+                } else {
+                    this.sidebarOpen = false;
+                }
+            });
+        },
+        
+        applyTheme() {
+            document.documentElement.setAttribute('data-bs-theme', this.dark ? 'dark' : 'light');
+            localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+        },
+        
+        toggleDark() {
+            this.dark = !this.dark;
+            this.applyTheme();
+        },
+        
+        toggleSidebar() {
+            this.sidebarCollapsed = !this.sidebarCollapsed;
+            localStorage.setItem('sidebar-collapsed', this.sidebarCollapsed);
+        },
+        
+        toggleMobileSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        }
+    }));
+});
+</script>
 </body>
 </html>

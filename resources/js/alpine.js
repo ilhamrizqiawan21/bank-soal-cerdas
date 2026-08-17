@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import './alpine/toast';
 
 window.Alpine = Alpine;
 
@@ -92,20 +93,30 @@ Alpine.data('questionForm', () => ({
 
 // ============ SIDEBAR TOGGLE ============
 Alpine.data('sidebar', () => ({
-    open: window.innerWidth > 768,
-    
+    open: true,
+    collapsed: false,
+
     toggle() {
-        this.open = !this.open;
+        if (window.innerWidth < 992) {
+            this.open = !this.open;
+            return;
+        }
+
+        this.collapsed = !this.collapsed;
     },
-    
+
     init() {
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                this.open = true;
-            } else {
+        const syncLayout = () => {
+            if (window.innerWidth < 992) {
                 this.open = false;
+                this.collapsed = false;
+            } else {
+                this.open = true;
             }
-        });
+        };
+
+        syncLayout();
+        window.addEventListener('resize', syncLayout);
     }
 }));
 
