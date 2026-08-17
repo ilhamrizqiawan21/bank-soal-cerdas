@@ -1,0 +1,141 @@
+From 1a8450f61afdb7eb2af63318cb694149d71c93b2 Mon Sep 17 00:00:00 2001
+From: Ilham Rizqiawan <ilhamrizqiawan21@users.noreply.github.com>
+Date: Mon, 17 Aug 2026 08:25:17 +0000
+Subject: [PATCH] fix: hapus file debug berisi hash password admin & batasi
+ akses bank soal/paket soal hanya admin+guru
+
+- Hapus 3 file artifact tinker yang ter-commit tidak sengaja di root (berisi email & hash password admin)
+- Tambah middleware role:admin,guru pada route questions & paket-soal (sebelumnya bisa diakses siswa)
+- Sembunyikan menu Bank Soal, Paket Soal, dan tombol Tambah Soal di sidebar untuk role siswa
+---
+ $user->update(['is_active' => true]); | 11 ---------
+ er->is_active;                        | 11 ---------
+ is_active                             |  1 -
+ resources/views/layouts/app.blade.php | 32 +++++++++++++++------------
+ routes/web.php                        | 14 ++++++------
+ 5 files changed, 25 insertions(+), 44 deletions(-)
+ delete mode 100644 $user->update(['is_active' => true]);
+ delete mode 100644 er->is_active;
+ delete mode 100644 is_active
+
+diff --git a/$user->update(['is_active' => true]); b/$user->update(['is_active' => true]);
+deleted file mode 100644
+index 3b14eb5..0000000
+--- a/$user->update(['is_active' => true]);	
++++ /dev/null
+@@ -1,11 +0,0 @@
+-[90m= [39m[34;4mApp\Models\User[39;24m {#8213
+-    [34mid[39m: [35m1[39m,
+-    [34mname[39m: [32m"[39m[32mAdmin Bank Soal[39m[32m"[39m,
+-    [34memail[39m: [32m"[39m[32madmin@banksoal.com[39m[32m"[39m,
+-    [34memail_verified_at[39m: [36mnull[39m,
+-    #[33mpassword[39m: [32m"[39m\$[32m2y[39m\$[32m12[39m\$[32mG80nfdT7yEmA13SXrVo.qOu1xociQUreBakf9Loxcw81JkIVdUb5G[39m[32m"[39m,
+-    [34mrole[39m: [32m"[39m[32madmin[39m[32m"[39m,
+-    #[33mremember_token[39m: [36mnull[39m,
+-    [34mcreated_at[39m: [32m"[39m[32m2026-08-15 15:55:16[39m[32m"[39m,
+-    [34mupdated_at[39m: [32m"[39m[32m2026-08-15 15:55:16[39m[32m"[39m,
+-  }
+diff --git a/er->is_active; b/er->is_active;
+deleted file mode 100644
+index 18fb042..0000000
+--- a/er->is_active;
++++ /dev/null
+@@ -1,11 +0,0 @@
+-[90m= [39m[34;4mApp\Models\User[39;24m {#8706
+-    [34mid[39m: [35m1[39m,
+-    [34mname[39m: [32m"[39m[32mAdmin Bank Soal[39m[32m"[39m,
+-    [34memail[39m: [32m"[39m[32madmin@banksoal.com[39m[32m"[39m,
+-    [34memail_verified_at[39m: [36mnull[39m,
+-    #[33mpassword[39m: [32m"[39m\$[32m2y[39m\$[32m12[39m\$[32mG80nfdT7yEmA13SXrVo.qOu1xociQUreBakf9Loxcw81JkIVdUb5G[39m[32m"[39m,
+-    [34mrole[39m: [32m"[39m[32madmin[39m[32m"[39m,
+-    #[33mremember_token[39m: [36mnull[39m,
+-    [34mcreated_at[39m: [32m"[39m[32m2026-08-15 15:55:16[39m[32m"[39m,
+-    [34mupdated_at[39m: [32m"[39m[32m2026-08-15 15:55:16[39m[32m"[39m,
+-  }
+diff --git a/is_active b/is_active
+deleted file mode 100644
+index 98101ec..0000000
+--- a/is_active
++++ /dev/null
+@@ -1 +0,0 @@
+-er-
+diff --git a/resources/views/layouts/app.blade.php b/resources/views/layouts/app.blade.php
+index 25c6e43..00a81ea 100644
+--- a/resources/views/layouts/app.blade.php
++++ b/resources/views/layouts/app.blade.php
+@@ -54,16 +54,18 @@ class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                     <i class="fas fa-chart-pie"></i>
+                     <span class="nav-label">Dashboard</span>
+                 </a>
+-                <a href="{{ route('questions.index') }}"
+-                   class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
+-                    <i class="fas fa-database"></i>
+-                    <span class="nav-label">Bank Soal</span>
+-                </a>
+-                <a href="{{ route('paket-soal.index') }}"
+-                   class="nav-item {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
+-                    <i class="fas fa-box"></i>
+-                    <span class="nav-label">Paket Soal</span>
+-                </a>
++                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
++                    <a href="{{ route('questions.index') }}"
++                       class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
++                        <i class="fas fa-database"></i>
++                        <span class="nav-label">Bank Soal</span>
++                    </a>
++                    <a href="{{ route('paket-soal.index') }}"
++                       class="nav-item {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
++                        <i class="fas fa-box"></i>
++                        <span class="nav-label">Paket Soal</span>
++                    </a>
++                @endif
+ 
+                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                     <a href="{{ route('analisis.index') }}"
+@@ -162,10 +164,12 @@ class="nav-item {{ request()->routeIs('users.profile') ? 'active' : '' }}">
+                     </button>
+ 
+                     @auth
+-                        <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm btn-add">
+-                            <i class="fas fa-plus"></i>
+-                            <span>Tambah Soal</span>
+-                        </a>
++                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
++                            <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm btn-add">
++                                <i class="fas fa-plus"></i>
++                                <span>Tambah Soal</span>
++                            </a>
++                        @endif
+ 
+                         <div class="dropdown user-menu">
+                             <button class="btn user-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+diff --git a/routes/web.php b/routes/web.php
+index 616d007..ec2877f 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -28,15 +28,15 @@
+     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+     
+     // Bank Soal
+-    Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export');
+-    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate');
+-    Route::resource('questions', QuestionController::class);
+-    Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
++    Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export')->middleware('role:admin,guru');
++    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate')->middleware('role:admin,guru');
++    Route::resource('questions', QuestionController::class)->middleware('role:admin,guru');
++    Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import')->middleware('role:admin,guru');
+     
+     // Paket Soal
+-    Route::resource('paket-soal', PaketSoalController::class);
+-    Route::get('/paket-soal/{paketSoal}/duplicate', [PaketSoalController::class, 'duplicate'])->name('paket-soal.duplicate');
+-    Route::get('/api/paket-soal/questions', [PaketSoalController::class, 'getQuestions'])->name('api.paket-soal.questions');
++    Route::resource('paket-soal', PaketSoalController::class)->middleware('role:admin,guru');
++    Route::get('/paket-soal/{paketSoal}/duplicate', [PaketSoalController::class, 'duplicate'])->name('paket-soal.duplicate')->middleware('role:admin,guru');
++    Route::get('/api/paket-soal/questions', [PaketSoalController::class, 'getQuestions'])->name('api.paket-soal.questions')->middleware('role:admin,guru');
+     
+     // User Management
+     Route::resource('users', UserController::class)->middleware('role:admin');
+-- 
+2.43.0
+
