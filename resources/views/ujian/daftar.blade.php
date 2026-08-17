@@ -9,10 +9,11 @@
         <h5 class="fw-bold mb-4">Ujian Saya</h5>
         
         @if($ujian->isEmpty())
-            <div class="text-center py-5">
-                <i class="fas fa-file-alt fa-3x text-muted mb-3 d-block"></i>
-                <p class="text-muted">Belum ada ujian yang diberikan kepada Anda.</p>
-            </div>
+            <x-empty-state
+                icon="fas fa-file-alt"
+                title="Belum ada ujian"
+                description="Belum ada ujian yang diberikan kepada Anda."
+            />
         @else
             <div class="row">
                 @foreach($ujian as $item)

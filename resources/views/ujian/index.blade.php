@@ -41,7 +41,7 @@
     <!-- Tabel -->
     <div class="stat-card">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover table-responsive-card mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
@@ -57,23 +57,23 @@
                 <tbody>
                     @forelse($ujian as $index => $item)
                         <tr>
-                            <td>{{ $ujian->firstItem() + $index }}</td>
-                            <td>
+                            <td data-label="No">{{ $ujian->firstItem() + $index }}</td>
+                            <td data-label="Judul Ujian">
                                 <div class="fw-bold">{{ $item->title }}</div>
                                 @if($item->description)
                                     <small class="text-muted">{{ Str::limit($item->description, 50) }}</small>
                                 @endif
                             </td>
-                            <td>{{ $item->paketSoal->name ?? '-' }}</td>
-                            <td>{{ $item->siswa->name ?? '-' }}</td>
-                            <td>{{ $item->total_soal }}</td>
-                            <td>{{ $item->duration_text }}</td>
-                            <td>
+                            <td data-label="Paket Soal">{{ $item->paketSoal->name ?? '-' }}</td>
+                            <td data-label="Siswa">{{ $item->siswa->name ?? '-' }}</td>
+                            <td data-label="Soal">{{ $item->total_soal }}</td>
+                            <td data-label="Durasi">{{ $item->duration_text }}</td>
+                            <td data-label="Status">
                                 <span class="badge bg-{{ $item->status_badge }}">
                                     {{ $item->status_label }}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Aksi">
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('ujian.show', $item) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye"></i>
@@ -83,15 +83,21 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         @if($item->status === 'draft')
-                                            <a href="{{ route('ujian.publish', $item) }}" 
+                                            <a href="{{ route('ujian.publish', $item) }}"
                                                class="btn btn-outline-success"
-                                               onclick="return confirm('Publikasikan ujian ini?')">
+                                               data-confirm="Publikasikan ujian ini?"
+                                               data-confirm-title="Publikasikan Ujian"
+                                               data-confirm-text="Ya, publikasikan"
+                                               data-confirm-href="{{ route('ujian.publish', $item) }}">
                                                 <i class="fas fa-check"></i>
                                             </a>
                                         @endif
                                     @endif
-                                    <button class="btn btn-outline-danger"
-                                            onclick="if(confirm('Yakin hapus ujian ini?')) document.getElementById('delete-form-{{ $item->id }}').submit()">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-confirm="Yakin hapus ujian ini?"
+                                            data-confirm-title="Hapus Ujian"
+                                            data-confirm-text="Ya, hapus"
+                                            data-confirm-form="delete-form-{{ $item->id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <form id="delete-form-{{ $item->id }}"
@@ -106,8 +112,14 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="fas fa-file-alt fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada ujian. Klik "Buat Ujian" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-file-alt"
+                                    title="Belum ada ujian"
+                                    description="Klik tombol di atas untuk membuat ujian baru."
+                                    button-text="Buat Ujian"
+                                    button-href="{{ route('ujian.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

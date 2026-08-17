@@ -87,7 +87,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             Log::error('User store error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menambahkan user: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menambahkan user.');
         }
     }
 
@@ -142,7 +142,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             Log::error('User update error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memperbarui user: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui user.');
         }
     }
 
@@ -161,7 +161,8 @@ class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', 'User berhasil dihapus!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus user: ' . $e->getMessage());
+            Log::error('User delete error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus user.');
         }
     }
 
@@ -181,7 +182,8 @@ class UserController extends Controller
             return redirect()->route('users.index')
                 ->with('success', "User {$user->name} berhasil {$status}!");
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah status user: ' . $e->getMessage());
+            Log::error('User toggle status error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengubah status user.');
         }
     }
 
@@ -207,10 +209,11 @@ class UserController extends Controller
         ]);
 
         try {
-            $user->update($request->except(['_token', '_method']));
+            $user->update($request->only(['name', 'email', 'phone', 'address', 'gender', 'birth_date']));
             return back()->with('success', 'Profil berhasil diperbarui!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui profil: ' . $e->getMessage());
+            Log::error('Profile update error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memperbarui profil.');
         }
     }
 
@@ -226,7 +229,8 @@ class UserController extends Controller
             $user->update(['avatar' => $path]);
             return back()->with('success', 'Foto profil berhasil diupdate!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal upload foto: ' . $e->getMessage());
+            Log::error('Avatar upload error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal upload foto.');
         }
     }
 
@@ -245,7 +249,8 @@ class UserController extends Controller
             ]);
             return back()->with('success', 'Password berhasil diubah!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
+            Log::error('Password update error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengubah password.');
         }
     }
 }

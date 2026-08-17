@@ -10,12 +10,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role', 'nip', 'phone', 'address', 'gender', 'birth_date', 'is_active', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function questions()
+    {
+        return $this->hasMany(Question::class, 'created_by');
+    }
+
+    public function paketSoal()
+    {
+        return $this->hasMany(PaketSoal::class, 'created_by');
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Bank Soal Cerdas</title>
-    @vite(['resources/css/app.css'])
+    @vite(['resources/sass/app.scss'])
     <style>
         body { 
             background: #f1f5f9; 
@@ -43,10 +43,15 @@
         </div>
         
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+            <script>
+                document.addEventListener('alpine:init', () => {
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: @json(session('error')), type: 'danger' }
+                        }));
+                    }, 100);
+                });
+            </script>
         @endif
         
         @if($errors->any())

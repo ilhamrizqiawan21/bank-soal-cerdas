@@ -40,7 +40,7 @@
     <!-- Tabel -->
     <div class="stat-card">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover table-responsive-card mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
@@ -55,22 +55,22 @@
                 <tbody>
                     @forelse($kategori as $index => $item)
                         <tr>
-                            <td>{{ $kategori->firstItem() + $index }}</td>
-                            <td>
+                            <td data-label="No">{{ $kategori->firstItem() + $index }}</td>
+                            <td data-label="Nama">
                                 <div class="fw-bold">{{ $item->name }}</div>
                                 @if($item->description)
                                     <small class="text-muted">{{ Str::limit($item->description, 50) }}</small>
                                 @endif
                             </td>
-                            <td>{{ $item->code ?? '-' }}</td>
-                            <td>
+                            <td data-label="Kode">{{ $item->code ?? '-' }}</td>
+                            <td data-label="Tipe">
                                 <span class="badge bg-{{ $item->type === 'kd' ? 'primary' : ($item->type === 'topik' ? 'success' : 'warning') }}">
                                     {{ $item->type_label }}
                                 </span>
                             </td>
-                            <td>{{ $item->parent->name ?? '-' }}</td>
-                            <td>{{ $item->questions->count() }}</td>
-                            <td>
+                            <td data-label="Induk">{{ $item->parent->name ?? '-' }}</td>
+                            <td data-label="Total Soal">{{ $item->questions->count() }}</td>
+                            <td data-label="Aksi">
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('kategori.show', $item) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye"></i>
@@ -78,8 +78,11 @@
                                     <a href="{{ route('kategori.edit', $item) }}" class="btn btn-outline-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger"
-                                            onclick="if(confirm('Yakin hapus kategori ini?')) document.getElementById('delete-form-{{ $item->id }}').submit()">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-confirm="Yakin hapus kategori ini?"
+                                            data-confirm-title="Hapus Kategori"
+                                            data-confirm-text="Ya, hapus"
+                                            data-confirm-form="delete-form-{{ $item->id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <form id="delete-form-{{ $item->id }}"
@@ -94,8 +97,14 @@
                     @empty
                         <tr>
                             <td colspan="7" class="text-center py-5">
-                                <i class="fas fa-folder fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada kategori. Klik "Tambah Kategori" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-folder"
+                                    title="Belum ada kategori"
+                                    description="Klik tombol di atas untuk menambahkan kategori pertama."
+                                    button-text="Tambah Kategori"
+                                    button-href="{{ route('kategori.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

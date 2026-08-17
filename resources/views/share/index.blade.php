@@ -124,12 +124,14 @@
                                 <td>
                                     @if(!$item->is_accepted && $item->shared_to == auth()->id())
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('share.soal.accept', $item->id) }}" class="btn btn-success">
-                                                <i class="fas fa-check"></i>
-                                            </a>
-                                            <a href="{{ route('share.soal.reject', $item->id) }}" class="btn btn-danger">
-                                                <i class="fas fa-times"></i>
-                                            </a>
+                                            <form action="{{ route('share.soal.accept', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button>
+                                            </form>
+                                            <form action="{{ route('share.soal.reject', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button>
+                                            </form>
                                         </div>
                                     @else
                                         <span class="text-muted">-</span>
@@ -154,12 +156,14 @@
                                 <td>
                                     @if(!$item->is_accepted && $item->shared_to == auth()->id())
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('share.paket.accept', $item->id) }}" class="btn btn-success">
-                                                <i class="fas fa-check"></i>
-                                            </a>
-                                            <a href="{{ route('share.paket.reject', $item->id) }}" class="btn btn-danger">
-                                                <i class="fas fa-times"></i>
-                                            </a>
+                                            <form action="{{ route('share.paket.accept', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button>
+                                            </form>
+                                            <form action="{{ route('share.paket.reject', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button>
+                                            </form>
                                         </div>
                                     @else
                                         <span class="text-muted">-</span>
@@ -182,7 +186,7 @@ document.getElementById('shareSoalForm')?.addEventListener('submit', function(e)
     const questionId = this.querySelector('select[name="question_id"]').value;
     if (!questionId) {
         e.preventDefault();
-        alert('Pilih soal terlebih dahulu!');
+        window.toast?.('Pilih soal terlebih dahulu!', 'warning');
         return false;
     }
     this.action = this.action.replace('/0', '/' + questionId);
@@ -193,7 +197,7 @@ document.getElementById('sharePaketForm')?.addEventListener('submit', function(e
     const paketId = this.querySelector('select[name="paket_soal_id"]').value;
     if (!paketId) {
         e.preventDefault();
-        alert('Pilih paket soal terlebih dahulu!');
+        window.toast?.('Pilih paket soal terlebih dahulu!', 'warning');
         return false;
     }
     this.action = this.action.replace('/0', '/' + paketId);

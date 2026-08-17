@@ -21,6 +21,13 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+            if (!Auth::user()->is_active) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Akun Anda dinonaktifkan. Hubungi administrator.',
+                ])->onlyInput('email');
+            }
+
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }

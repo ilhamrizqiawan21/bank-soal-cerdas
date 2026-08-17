@@ -38,7 +38,7 @@ class KategoriController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Kategori::create($request->all());
+        Kategori::create($request->validated());
 
         return redirect()->route('kategori.index')
             ->with('success', 'Kategori berhasil ditambahkan!');
@@ -66,7 +66,7 @@ class KategoriController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $kategori->update($request->all());
+        $kategori->update($request->validated());
 
         return redirect()->route('kategori.index')
             ->with('success', 'Kategori berhasil diperbarui!');

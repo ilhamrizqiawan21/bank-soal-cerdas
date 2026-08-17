@@ -31,7 +31,7 @@
     <!-- Tabel -->
     <div class="stat-card">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover table-responsive-card mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
@@ -45,20 +45,20 @@
                 <tbody>
                     @forelse($tag as $index => $item)
                         <tr>
-                            <td>{{ $tag->firstItem() + $index }}</td>
-                            <td>
+                            <td data-label="No">{{ $tag->firstItem() + $index }}</td>
+                            <td data-label="Nama">
                                 <div class="fw-bold">
                                     <span class="badge" style="background-color: {{ $item->color }}; color: #fff;">
                                         {{ $item->name }}
                                     </span>
                                 </div>
                             </td>
-                            <td>{{ $item->slug }}</td>
-                            <td>
+                            <td data-label="Slug">{{ $item->slug }}</td>
+                            <td data-label="Warna">
                                 <div style="width: 30px; height: 30px; background-color: {{ $item->color }}; border-radius: 50%;"></div>
                             </td>
-                            <td>{{ $item->questions->count() }}</td>
-                            <td>
+                            <td data-label="Total Soal">{{ $item->questions->count() }}</td>
+                            <td data-label="Aksi">
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('tag.show', $item) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye"></i>
@@ -66,8 +66,11 @@
                                     <a href="{{ route('tag.edit', $item) }}" class="btn btn-outline-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger"
-                                            onclick="if(confirm('Yakin hapus tag ini?')) document.getElementById('delete-form-{{ $item->id }}').submit()">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-confirm="Yakin hapus tag ini?"
+                                            data-confirm-title="Hapus Tag"
+                                            data-confirm-text="Ya, hapus"
+                                            data-confirm-form="delete-form-{{ $item->id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <form id="delete-form-{{ $item->id }}"
@@ -82,8 +85,14 @@
                     @empty
                         <tr>
                             <td colspan="6" class="text-center py-5">
-                                <i class="fas fa-tags fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada tag. Klik "Tambah Tag" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-tags"
+                                    title="Belum ada tag"
+                                    description="Klik tombol di atas untuk menambahkan tag pertama."
+                                    button-text="Tambah Tag"
+                                    button-href="{{ route('tag.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

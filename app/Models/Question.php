@@ -50,53 +50,6 @@ class Question extends Model
         return $this->hasOne(QuestionEssayRubric::class);
     }
     
-    // ============ SCOPES ============
-    
-    public function scopeFilter($query, $filters)
-    {
-        if (isset($filters['curriculum']) && $filters['curriculum'] != 'semua') {
-            $query->where('curriculum', $filters['curriculum']);
-        }
-        if (isset($filters['level_c']) && $filters['level_c'] != 'semua') {
-            $query->where('level_c', $filters['level_c']);
-        }
-        if (isset($filters['type']) && $filters['type'] != 'semua') {
-            $query->where('type', $filters['type']);
-        }
-        if (isset($filters['kko_id']) && $filters['kko_id'] != 'semua') {
-            $query->where('kko_id', $filters['kko_id']);
-        }
-        if (isset($filters['search'])) {
-            $query->where('question_text', 'like', "%{$filters['search']}%");
-        }
-        return $query;
-    }
-    
-    public function scopeByCurriculum($query, $curriculum)
-    {
-        return $query->where('curriculum', $curriculum);
-    }
-    
-    public function scopeByLevel($query, $level)
-    {
-        return $query->where('level_c', $level);
-    }
-    
-    public function scopeByType($query, $type)
-    {
-        return $query->where('type', $type);
-    }
-    
-    public function scopeHOTS($query)
-    {
-        return $query->whereIn('level_c', ['C4', 'C5', 'C6']);
-    }
-    
-    public function scopeLOTS($query)
-    {
-        return $query->whereIn('level_c', ['C1', 'C2', 'C3']);
-    }
-    
     // ============ ACCESSORS ============
     
     public function getHotsLevelAttribute(): string
@@ -165,12 +118,5 @@ class Question extends Model
     public function shares()
     {
         return $this->hasMany(ShareSoal::class);
-    }
-
-    public function sharedToMe()
-    {
-        return $this->hasMany(ShareSoal::class, 'question_id')
-            ->where('shared_to', auth()->id())
-            ->where('is_accepted', true);
     }
 }

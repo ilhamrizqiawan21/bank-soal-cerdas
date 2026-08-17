@@ -151,12 +151,18 @@
                                     <a href="{{ route('questions.edit', $question) }}" class="btn btn-outline-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ route('questions.duplicate', $question) }}" class="btn btn-outline-secondary" 
-                                       onclick="return confirm('Duplikasi soal ini?')">
+                                    <a href="{{ route('questions.duplicate', $question) }}" class="btn btn-outline-secondary"
+                                       data-confirm="Duplikasi soal ini?"
+                                       data-confirm-title="Konfirmasi Duplikasi"
+                                       data-confirm-text="Ya, duplikasi"
+                                       data-confirm-href="{{ route('questions.duplicate', $question) }}">
                                         <i class="fas fa-copy"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger" 
-                                            onclick="if(confirm('Yakin hapus soal ini?')) document.getElementById('delete-form-{{ $question->id }}').submit()">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-confirm="Yakin hapus soal ini?"
+                                            data-confirm-title="Hapus Soal"
+                                            data-confirm-text="Ya, hapus"
+                                            data-confirm-form="delete-form-{{ $question->id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <form id="delete-form-{{ $question->id }}" 
@@ -171,8 +177,14 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada soal. Klik "Tambah Soal" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-inbox"
+                                    title="Belum ada soal"
+                                    description="Klik tombol di atas untuk menambahkan soal pertama Anda."
+                                    button-text="Tambah Soal"
+                                    button-href="{{ route('questions.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

@@ -71,11 +71,4 @@ class PaketSoal extends Model
     {
         return $this->hasMany(SharePaket::class);
     }
-
-    public function sharedToMe()
-    {
-        return $this->hasMany(SharePaket::class, 'paket_soal_id')
-            ->where('shared_to', auth()->id())
-            ->where('is_accepted', true);
-    }
 }

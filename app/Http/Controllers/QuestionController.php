@@ -16,9 +16,6 @@ use App\Exports\QuestionsExport;
 
 class QuestionController extends Controller
 {
-    // MIDDLEWARE SUDAH DIHANDLE DI ROUTES/WEB.PHP
-    // JANGAN TAMBAHKAN __construct() DENGAN MIDDLEWARE
-    
     public function index(Request $request)
     {
         try {
@@ -89,7 +86,7 @@ class QuestionController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Store question error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan soal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menyimpan soal.');
         }
     }
 
@@ -129,7 +126,7 @@ class QuestionController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Update question error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memperbarui soal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui soal.');
         }
     }
 
@@ -141,7 +138,7 @@ class QuestionController extends Controller
                 ->with('success', 'Soal berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Delete question error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menghapus soal: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus soal.');
         }
     }
 
@@ -176,7 +173,7 @@ class QuestionController extends Controller
                 
         } catch (\Exception $e) {
             Log::error('Duplicate question error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menduplikasi soal: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menduplikasi soal.');
         }
     }
 
@@ -286,7 +283,8 @@ class QuestionController extends Controller
             Excel::import(new QuestionsImport, $request->file('file'));
             return back()->with('success', 'Soal berhasil diimport!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+            Log::error('Question import error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal import file. Periksa format file Anda.');
         }
     }
 
