@@ -39,13 +39,16 @@
     </template>
 </div>
     <div id="app" class="app-shell">
-        <aside class="sidebar" :class="{ 'is-open': Sidebaropen, 'is-collapsed': sidebar-collapsed }">
+        <aside class="sidebar" :class="{ 'is-open': sidebarOpen, 'is-collapsed': sidebarCollapsed }">
             <div class="sidebar-header">
                 <div class="brand-mark">BC</div>
                 <div class="brand-text">
                     <span class="brand-name">Bank Soal</span>
                     <small class="brand-subtitle">Cerdas</small>
                 </div>
+                <button type="button" class="sidebar-toggle-btn" @click="toggleSidebar()" aria-label="Collapse sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
@@ -152,16 +155,47 @@
                 </div>
 
                 <div class="topbar-actions">
-                    <button type="button" class="icon-button" @click="toggleDark()" aria-table="Toggle Dark Mode">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Cari sesuatu..." aria-label="Cari">
-                    </div>
-
-                    <button type="button" class="icon-button" aria-label="Notifikasi">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-dot"></span>
+                    <button type="button" class="icon-button" @click="toggleDark()" aria-label="Toggle Dark Mode">
+                        <i class="fas fa-moon"></i>
                     </button>
+
+                    @if(in_array(auth()->user()->role, ['admin', 'guru']))
+                        <form action="{{ route('questions.index') }}" method="GET" class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari soal..." aria-label="Cari soal">
+                        </form>
+
+                        <div class="dropdown">
+                            <button type="button" class="icon-button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifikasi">
+                                <i class="fas fa-bell"></i>
+                                @if($pendingShares->isNotEmpty())
+                                    <span class="notification-dot"></span>
+                                @endif
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-2" style="width: 340px;">
+                                <h6 class="dropdown-header">Undangan Kolaborasi</h6>
+                                @forelse($pendingShares as $notif)
+                                    <div class="d-flex justify-content-between align-items-center gap-2 px-2 py-1">
+                                        <span class="small flex-grow-1">{{ $notif->message }}</span>
+                                        <form action="{{ $notif->accept }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success" title="Terima">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        <form action="{{ $notif->reject }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Tolak">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @empty
+                                    <div class="dropdown-item text-muted small">Tidak ada notifikasi.</div>
+                                @endforelse
+                            </div>
+                        </div>
+                    @endif
 
                     @auth
                         @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
@@ -205,7 +239,7 @@
         document.addEventListener('alpine:init', () => {
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('toast', {
-                    detail: { message: '{{ session('success') }}', type: 'success' }
+                    detail: { message: @json(session('success')), type: 'success' }
                 }));
             }, 100);
         });
@@ -217,19 +251,12 @@
         document.addEventListener('alpine:init', () => {
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('toast', {
-                    detail: { message: '{{ session('error') }}', type: 'danger' }
+                    detail: { message: @json(session('error')), type: 'danger' }
                 }));
             }, 100);
         });
     </script>
 @endif
-
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
 
                 @if($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -244,6 +271,24 @@
                 @yield('content')
             </div>
         </main>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalTitle">Konfirmasi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="confirmModalText">Apakah Anda yakin?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="confirmModalAction">Ya, lanjutkan</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     @stack('scripts')
@@ -263,40 +308,52 @@ document.addEventListener('alpine:init', () => {
                 this.dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             }
             this.applyTheme();
-            
-            // Sidebar dari localStorage
+
+            // Sidebar state dari localStorage
             const savedCollapsed = localStorage.getItem('sidebar-collapsed');
             if (savedCollapsed !== null) {
                 this.sidebarCollapsed = savedCollapsed === 'true';
             }
-            
-            // Responsive
-            window.addEventListener('resize', () => {
+
+            const syncSidebarState = () => {
                 if (window.innerWidth > 768) {
                     this.sidebarOpen = true;
                 } else {
                     this.sidebarOpen = false;
+                    this.sidebarCollapsed = false;
                 }
-            });
+            };
+
+            syncSidebarState();
+            window.addEventListener('resize', syncSidebarState);
         },
-        
+
         applyTheme() {
             document.documentElement.setAttribute('data-bs-theme', this.dark ? 'dark' : 'light');
             localStorage.setItem('theme', this.dark ? 'dark' : 'light');
         },
-        
+
         toggleDark() {
             this.dark = !this.dark;
             this.applyTheme();
         },
-        
+
         toggleSidebar() {
+            if (window.innerWidth <= 768) {
+                this.toggleMobileSidebar();
+                return;
+            }
+
             this.sidebarCollapsed = !this.sidebarCollapsed;
-            localStorage.setItem('sidebar-collapsed', this.sidebarCollapsed);
+            this.sidebarOpen = true;
+            localStorage.setItem('sidebar-collapsed', String(this.sidebarCollapsed));
         },
-        
+
         toggleMobileSidebar() {
             this.sidebarOpen = !this.sidebarOpen;
+            if (this.sidebarOpen) {
+                this.sidebarCollapsed = false;
+            }
         }
     }));
 });

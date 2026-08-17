@@ -27,24 +27,34 @@ class AnalisisController extends Controller
         $totalPaket = PaketSoal::count();
 
         // ===== DISTRIBUSI STATUS UJIAN =====
+        $statusCounts = Ujian::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
         $statusDistribution = [
-            'draft' => Ujian::where('status', 'draft')->count(),
-            'active' => Ujian::where('status', 'active')->count(),
-            'finished' => Ujian::where('status', 'finished')->count(),
-            'expired' => Ujian::where('status', 'expired')->count(),
+            'draft' => $statusCounts['draft'] ?? 0,
+            'active' => $statusCounts['active'] ?? 0,
+            'finished' => $statusCounts['finished'] ?? 0,
+            'expired' => $statusCounts['expired'] ?? 0,
         ];
 
         // ===== RATA-RATA NILAI =====
         $avgScore = Ujian::where('status', 'finished')->avg('total_score') ?? 0;
 
         // ===== DISTRIBUSI LEVEL KOGNITIF SOAL =====
+        $levelCounts = Question::selectRaw('level_c, count(*) as total')
+            ->groupBy('level_c')
+            ->pluck('total', 'level_c')
+            ->toArray();
+
         $levelDistribution = [
-            'C1' => Question::where('level_c', 'C1')->count(),
-            'C2' => Question::where('level_c', 'C2')->count(),
-            'C3' => Question::where('level_c', 'C3')->count(),
-            'C4' => Question::where('level_c', 'C4')->count(),
-            'C5' => Question::where('level_c', 'C5')->count(),
-            'C6' => Question::where('level_c', 'C6')->count(),
+            'C1' => $levelCounts['C1'] ?? 0,
+            'C2' => $levelCounts['C2'] ?? 0,
+            'C3' => $levelCounts['C3'] ?? 0,
+            'C4' => $levelCounts['C4'] ?? 0,
+            'C5' => $levelCounts['C5'] ?? 0,
+            'C6' => $levelCounts['C6'] ?? 0,
         ];
 
         // ===== TOP 5 SISWA TERBAIK =====

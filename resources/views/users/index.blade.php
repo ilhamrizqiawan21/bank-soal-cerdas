@@ -48,7 +48,7 @@
     <!-- Tabel -->
     <div class="stat-card">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover table-responsive-card mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
@@ -64,8 +64,8 @@
                 <tbody>
                     @forelse($users as $index => $user)
                         <tr>
-                            <td>{{ $users->firstItem() + $index }}</td>
-                            <td>
+                            <td data-label="No">{{ $users->firstItem() + $index }}</td>
+                            <td data-label="Nama">
                                 <div class="d-flex align-items-center">
                                     @if($user->avatar)
                                         <img src="{{ asset('storage/' . $user->avatar) }}" 
@@ -84,24 +84,24 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ $user->email }}</td>
-                            <td>{{ $user->nip ?? '-' }}</td>
-                            <td>
+                            <td data-label="Email">{{ $user->email }}</td>
+                            <td data-label="NIP">{{ $user->nip ?? '-' }}</td>
+                            <td data-label="Role">
                                 <span class="badge bg-{{ $user->role_badge }}">
                                     {{ $user->role_label }}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 <span class="badge bg-{{ $user->status_badge }}">
                                     {{ $user->status_label }}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Terakhir Login">
                                 <small class="text-muted">
                                     {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Belum pernah' }}
                                 </small>
                             </td>
-                            <td>
+                            <td data-label="Aksi">
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('users.show', $user) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye"></i>
@@ -110,13 +110,21 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if($user->id !== auth()->id())
-                                        <a href="{{ route('users.toggle-status', $user) }}" 
-                                           class="btn btn-outline-{{ $user->is_active ? 'danger' : 'success' }}"
-                                           onclick="return confirm('{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} user ini?')">
+                                        <form id="toggle-form-{{ $user->id }}" action="{{ route('users.toggle-status', $user) }}" method="POST" class="d-none">
+                                            @csrf
+                                        </form>
+                                        <button type="button"
+                                                class="btn btn-outline-{{ $user->is_active ? 'danger' : 'success' }}"
+                                                data-confirm="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} user ini?"
+                                                data-confirm-title="Ubah Status User"
+                                                data-confirm-form="toggle-form-{{ $user->id }}">
                                             <i class="fas fa-{{ $user->is_active ? 'ban' : 'check-circle' }}"></i>
-                                        </a>
-                                        <button class="btn btn-outline-danger"
-                                                onclick="if(confirm('Yakin hapus user ini?')) document.getElementById('delete-form-{{ $user->id }}').submit()">
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger"
+                                                data-confirm="Yakin hapus user ini?"
+                                                data-confirm-title="Hapus User"
+                                                data-confirm-text="Ya, hapus"
+                                                data-confirm-form="delete-form-{{ $user->id }}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         <form id="delete-form-{{ $user->id }}"
@@ -132,8 +140,14 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="fas fa-users fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada pengguna. Klik "Tambah Pengguna" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-users"
+                                    title="Belum ada pengguna"
+                                    description="Klik tombol di atas untuk menambahkan pengguna baru."
+                                    button-text="Tambah Pengguna"
+                                    button-href="{{ route('users.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

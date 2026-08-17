@@ -23,6 +23,11 @@ class ShareController extends Controller
 
         // Gunakan $id dari parameter, bukan dari request
         $question = Question::findOrFail($id);
+
+        // Hanya pemilik soal (atau admin) yang boleh membagikan
+        if (Auth::user()->role !== 'admin' && $question->created_by !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke soal ini.');
+        }
         
         $request->validate([
             'shared_to' => 'required|exists:users,id',
@@ -83,6 +88,11 @@ class ShareController extends Controller
         }
 
         $paket = PaketSoal::findOrFail($id);
+
+        // Hanya pemilik paket (atau admin) yang boleh membagikan
+        if (Auth::user()->role !== 'admin' && $paket->created_by !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke paket soal ini.');
+        }
         
         $request->validate([
             'shared_to' => 'required|exists:users,id',
@@ -116,9 +126,11 @@ class ShareController extends Controller
 
     if ($type === 'soal') {
         $item = ShareSoal::with(['question', 'sharedBy', 'sharedTo'])
+            ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()))
             ->findOrFail($id);
     } else {
         $item = SharePaket::with(['paketSoal', 'sharedBy', 'sharedTo'])
+            ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()))
             ->findOrFail($id);
     }
 
@@ -135,13 +147,11 @@ public function riwayat(Request $request)
 
     // Ambil share soal
     $shareSoal = ShareSoal::with(['question', 'sharedBy', 'sharedTo'])
-        ->where('shared_to', Auth::id())
-        ->orWhere('shared_by', Auth::id());
+        ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()));
 
     // Ambil share paket
     $sharePaket = SharePaket::with(['paketSoal', 'sharedBy', 'sharedTo'])
-        ->where('shared_to', Auth::id())
-        ->orWhere('shared_by', Auth::id());
+        ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()));
 
     // Filter type
     if ($request->filled('type')) {

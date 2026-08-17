@@ -56,7 +56,7 @@
     <!-- Tabel -->
     <div class="stat-card">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover table-responsive-card mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
@@ -72,27 +72,27 @@
                 <tbody>
                     @forelse($paketSoal as $index => $paket)
                         <tr>
-                            <td>{{ $paketSoal->firstItem() + $index }}</td>
-                            <td>
+                            <td data-label="No">{{ $paketSoal->firstItem() + $index }}</td>
+                            <td data-label="Nama Paket">
                                 <div class="fw-bold">{{ $paket->name }}</div>
                                 @if($paket->description)
                                     <small class="text-muted">{{ Str::limit($paket->description, 50) }}</small>
                                 @endif
                             </td>
-                            <td>{{ $paket->jenjang }}</td>
-                            <td>
+                            <td data-label="Jenjang">{{ $paket->jenjang }}</td>
+                            <td data-label="Kurikulum">
                                 <span class="badge {{ $paket->curriculum === 'merdeka' ? 'badge-merdeka' : 'badge-kbc' }}">
                                     {{ $paket->curriculum_label }}
                                 </span>
                             </td>
-                            <td>{{ $paket->total_soal }}</td>
-                            <td>{{ $paket->duration_minutes ? $paket->duration_minutes . ' menit' : '-' }}</td>
-                            <td>
+                            <td data-label="Total Soal">{{ $paket->total_soal }}</td>
+                            <td data-label="Durasi">{{ $paket->duration_minutes ? $paket->duration_minutes . ' menit' : '-' }}</td>
+                            <td data-label="Status">
                                 <span class="badge bg-{{ $paket->status_badge }}">
                                     {{ $paket->status_label }}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Aksi">
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('paket-soal.show', $paket) }}" class="btn btn-outline-primary">
                                         <i class="fas fa-eye"></i>
@@ -101,11 +101,17 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{{ route('paket-soal.duplicate', $paket) }}" class="btn btn-outline-secondary"
-                                       onclick="return confirm('Duplikasi paket ini?')">
+                                       data-confirm="Duplikasi paket ini?"
+                                       data-confirm-title="Konfirmasi Duplikasi"
+                                       data-confirm-text="Ya, duplikasi"
+                                       data-confirm-href="{{ route('paket-soal.duplicate', $paket) }}">
                                         <i class="fas fa-copy"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger"
-                                            onclick="if(confirm('Yakin hapus paket ini?')) document.getElementById('delete-form-{{ $paket->id }}').submit()">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-confirm="Yakin hapus paket ini?"
+                                            data-confirm-title="Hapus Paket Soal"
+                                            data-confirm-text="Ya, hapus"
+                                            data-confirm-form="delete-form-{{ $paket->id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <form id="delete-form-{{ $paket->id }}"
@@ -120,8 +126,14 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="fas fa-box fa-3x text-muted mb-3 d-block"></i>
-                                <p class="text-muted">Belum ada paket soal. Klik "Buat Paket Soal" untuk memulai.</p>
+                                <x-empty-state
+                                    icon="fas fa-box"
+                                    title="Belum ada paket soal"
+                                    description="Klik tombol di atas untuk membuat paket soal pertama Anda."
+                                    button-text="Buat Paket Soal"
+                                    button-href="{{ route('paket-soal.create') }}"
+                                    button-class="btn btn-primary"
+                                />
                             </td>
                         </tr>
                     @endforelse

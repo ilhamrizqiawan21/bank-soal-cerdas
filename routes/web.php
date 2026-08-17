@@ -3,7 +3,6 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\PaketSoalController;
-use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UjianController;
 use App\Http\Controllers\AnalisisController;
@@ -19,7 +18,7 @@ Route::get('/', function () {
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 // Protected Routes
@@ -40,7 +39,7 @@ Route::middleware(['auth'])->group(function () {
     
     // User Management
     Route::resource('users', UserController::class)->middleware('role:admin');
-    Route::get('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status')->middleware('role:admin');
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status')->middleware('role:admin');
     
     // Profile
     Route::get('/profile', [UserController::class, 'profile'])->name('users.profile');
@@ -55,7 +54,7 @@ Route::middleware(['auth'])->group(function () {
 
     // ===== UJIAN ONLINE =====
     Route::resource('ujian', UjianController::class)->middleware('role:admin,guru');
-    Route::get('/ujian/{ujian}/publish', [UjianController::class, 'publish'])->name('ujian.publish')->middleware('role:admin,guru');
+    Route::post('/ujian/{ujian}/publish', [UjianController::class, 'publish'])->name('ujian.publish')->middleware('role:admin,guru');
 
     // Siswa
     Route::get('/ujian-saya', [UjianController::class, 'daftarUjian'])->name('ujian.daftar')->middleware('role:siswa');
@@ -73,6 +72,16 @@ Route::middleware(['auth'])->group(function () {
     // ===== KATEGORI & TAG =====
     Route::resource('kategori', KategoriController::class)->middleware('role:admin,guru');
     Route::resource('tag', TagController::class)->middleware('role:admin,guru');
+
+    // API internal untuk form soal (ambil KKO berdasarkan level)
+    Route::get('/api/kko/{level}', function (string $level) {
+        return response()->json([
+            'success' => true,
+            'data' => \App\Models\KkoMaster::where('level', $level)
+                ->orderBy('verb')
+                ->get(['id', 'verb', 'level']),
+        ]);
+    })->name('api.kko.by-level');
     
     /// ===== SHARE / KOLABORASI =====
     Route::get('/share', [ShareController::class, 'index'])->name('share.index');
@@ -81,12 +90,12 @@ Route::middleware(['auth'])->group(function () {
     
     // Share Soal - route dengan parameter di URL
     Route::post('/share/soal/{id}', [ShareController::class, 'shareSoal'])->name('share.soal');
-    Route::get('/share/soal/{id}/accept', [ShareController::class, 'acceptSoal'])->name('share.soal.accept');
-    Route::get('/share/soal/{id}/reject', [ShareController::class, 'rejectSoal'])->name('share.soal.reject');
+    Route::post('/share/soal/{id}/accept', [ShareController::class, 'acceptSoal'])->name('share.soal.accept');
+    Route::post('/share/soal/{id}/reject', [ShareController::class, 'rejectSoal'])->name('share.soal.reject');
     
     // Share Paket
     Route::post('/share/paket/{id}', [ShareController::class, 'sharePaket'])->name('share.paket');
-    Route::get('/share/paket/{id}/accept', [ShareController::class, 'acceptPaket'])->name('share.paket.accept');
-    Route::get('/share/paket/{id}/reject', [ShareController::class, 'rejectPaket'])->name('share.paket.reject');
+    Route::post('/share/paket/{id}/accept', [ShareController::class, 'acceptPaket'])->name('share.paket.accept');
+    Route::post('/share/paket/{id}/reject', [ShareController::class, 'rejectPaket'])->name('share.paket.reject');
     
     });

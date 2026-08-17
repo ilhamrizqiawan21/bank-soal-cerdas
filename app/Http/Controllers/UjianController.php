@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ujian;
 use App\Models\PaketSoal;
+use App\Models\Question;
 use App\Models\User;
 use App\Models\UjianJawaban;
 use Illuminate\Http\Request;
@@ -79,7 +80,7 @@ class UjianController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Ujian store error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal membuat ujian: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal membuat ujian.');
         }
     }
 
@@ -125,7 +126,8 @@ class UjianController extends Controller
                 ->with('success', 'Ujian berhasil diperbarui!');
 
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Gagal memperbarui ujian: ' . $e->getMessage());
+            Log::error('Ujian update error: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui ujian.');
         }
     }
 
@@ -140,7 +142,8 @@ class UjianController extends Controller
             return redirect()->route('ujian.index')
                 ->with('success', 'Ujian berhasil dihapus!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus ujian: ' . $e->getMessage());
+            Log::error('Ujian delete error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus ujian.');
         }
     }
 
@@ -157,6 +160,7 @@ class UjianController extends Controller
             ]);
             return back()->with('success', 'Ujian berhasil dipublikasikan!');
         } catch (\Exception $e) {
+            Log::error('Ujian publish error: ' . $e->getMessage());
             return back()->with('error', 'Gagal mempublikasikan ujian.');
         }
     }
@@ -240,9 +244,41 @@ class UjianController extends Controller
             }
         }
         
-        $ujian->paketSoal->setRelation('items', $items);
-        
-        return view('ujian.kerjakan', compact('ujian'));
+        // ===== DATA UNTUK APLIKASI KERJAKAN (Alpine) =====
+        // Kunci jawaban TIDAK dikirim ke browser (anti-kecurangan)
+        $questionsPayload = $items->map(fn ($item) => $this->questionToPayload($item->question))->values();
+
+        $deadline = null;
+        if ($ujian->duration_minutes && $ujian->started_at) {
+            $deadline = $ujian->started_at->addMinutes($ujian->duration_minutes)->getTimestamp();
+        }
+
+        return view('ujian.kerjakan', compact('ujian', 'questionsPayload', 'deadline'));
+    }
+
+    /**
+     * Ubah soal menjadi payload aman untuk ditampilkan di browser.
+     * is_correct (PG) dan right_text (menjodohkan) sengaja tidak disertakan.
+     */
+    private function questionToPayload(Question $question): array
+    {
+        $payload = [
+            'id' => $question->id,
+            'type' => $question->type,
+            'question_text' => $question->question_text,
+        ];
+
+        if ($question->type === 'pg') {
+            $payload['options'] = $question->pgOptions
+                ->map(fn ($o) => ['label' => $o->label, 'option_text' => $o->option_text])
+                ->values();
+        } elseif ($question->type === 'menjodohkan') {
+            $payload['pairs'] = $question->matchingPairs
+                ->map(fn ($p) => ['id' => $p->id, 'left_text' => $p->left_text])
+                ->values();
+        }
+
+        return $payload;
     }
 
     public function submitJawaban(Request $request, $id)
@@ -250,7 +286,13 @@ class UjianController extends Controller
         if (Auth::user()->role !== 'siswa') {
             return response()->json(['error' => 'Unauthorized.'], 403);
         }
-        
+
+        $validated = $request->validate([
+            'jawaban' => 'required|array',
+            'jawaban.*.jawaban' => 'nullable|string|max:10000',
+            'jawaban.*.selected_option' => 'nullable|integer',
+        ]);
+
         $ujian = Ujian::where('id', $id)
             ->where('siswa_id', Auth::id())
             ->where('status', 'active')
@@ -260,8 +302,17 @@ class UjianController extends Controller
             return response()->json(['error' => 'Ujian sudah disubmit.'], 400);
         }
 
+        // Batas waktu ujian
+        if ($ujian->duration_minutes) {
+            $deadline = $ujian->started_at?->addMinutes($ujian->duration_minutes);
+            if ($deadline && now()->gt($deadline)) {
+                $ujian->update(['status' => 'expired']);
+                return response()->json(['error' => 'Waktu ujian telah habis.'], 403);
+            }
+        }
+
         try {
-            foreach ($request->jawaban as $questionId => $jawaban) {
+            foreach ($validated['jawaban'] as $questionId => $jawaban) {
                 $ujianJawaban = UjianJawaban::where('ujian_id', $ujian->id)
                     ->where('question_id', $questionId)
                     ->first();
@@ -277,7 +328,7 @@ class UjianController extends Controller
             return response()->json(['success' => true, 'message' => 'Jawaban berhasil disimpan!']);
             
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal menyimpan jawaban: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Gagal menyimpan jawaban.'], 500);
         }
     }
 
@@ -342,7 +393,8 @@ class UjianController extends Controller
                 ->with('success', 'Ujian berhasil disubmit!');
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal submit ujian: ' . $e->getMessage());
+            Log::error('Ujian submit error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal submit ujian.');
         }
     }
 

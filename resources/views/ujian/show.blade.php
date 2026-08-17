@@ -14,11 +14,16 @@
                         <i class="fas fa-edit me-1"></i> Edit
                     </a>
                     @if($ujian->status === 'draft')
-                        <a href="{{ route('ujian.publish', $ujian) }}" 
-                           class="btn btn-success btn-sm"
-                           onclick="return confirm('Publikasikan ujian ini?')">
-                            <i class="fas fa-check me-1"></i> Publikasikan
-                        </a>
+                        <form id="publish-form" action="{{ route('ujian.publish', $ujian) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="button"
+                                    class="btn btn-success btn-sm"
+                                    data-confirm="Publikasikan ujian ini?"
+                                    data-confirm-title="Publikasikan Ujian"
+                                    data-confirm-form="publish-form">
+                                <i class="fas fa-check me-1"></i> Publikasikan
+                            </button>
+                        </form>
                     @endif
                 @endif
                 <a href="{{ route('ujian.index') }}" class="btn btn-secondary btn-sm">

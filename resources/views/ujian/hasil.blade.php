@@ -36,6 +36,13 @@
         <!-- Detail Jawaban -->
         <div class="text-start mt-4">
             <h6 class="fw-bold mb-3">Review Jawaban</h6>
+            @if($ujian->jawaban->isEmpty())
+                <x-empty-state
+                    icon="fas fa-clipboard-check"
+                    title="Belum ada jawaban"
+                    description="Siswa menyelesaikan ujian tanpa menjawab soal apapun."
+                />
+            @else
             @foreach($ujian->jawaban as $index => $jawaban)
                 <div class="card mb-2">
                     <div class="card-body">
@@ -81,6 +88,7 @@
                     </div>
                 </div>
             @endforeach
+            @endif
         </div>
         
         <div class="mt-4">

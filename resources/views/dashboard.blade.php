@@ -4,64 +4,6 @@
 @section('breadcrumb', 'Dashboard')
 
 @section('content')
-<!-- Skeleton Loader -->
-<div id="dashboard-skeleton" x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 500)">
-    <div x-show="loading" x-transition>
-        <div class="row g-3 mb-4">
-            @for($i = 0; $i < 4; $i++)
-                <div class="col-md-3">
-                    <div class="stat-card skeleton-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div style="flex: 1;">
-                                <div class="skeleton skeleton-text" style="width: 60%;"></div>
-                                <div class="skeleton skeleton-text skeleton-text-lg" style="width: 40%;"></div>
-                                <div class="skeleton skeleton-text skeleton-text-sm"></div>
-                            </div>
-                            <div class="skeleton skeleton-circle"></div>
-                        </div>
-                    </div>
-                </div>
-            @endfor
-        </div>
-        
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="stat-card skeleton-card">
-                    <div class="skeleton skeleton-text" style="width: 40%;"></div>
-                    <div class="skeleton skeleton-text" style="width: 70%;"></div>
-                    <div class="d-flex gap-3 mt-3">
-                        @for($i = 0; $i < 6; $i++)
-                            <div class="text-center" style="flex:1;">
-                                <div class="skeleton skeleton-text" style="height: 30px; width: 100%;"></div>
-                                <div class="skeleton skeleton-text skeleton-text-sm" style="width: 60%; margin: 0 auto;"></div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="stat-card skeleton-card">
-                    <div class="skeleton skeleton-text" style="width: 40%;"></div>
-                    <div class="skeleton skeleton-text" style="width: 70%;"></div>
-                    <div class="d-flex gap-3 mt-3">
-                        @for($i = 0; $i < 2; $i++)
-                            <div class="p-3 bg-light rounded text-center" style="flex:1;">
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text skeleton-text-lg" style="width: 50%; margin: 0 auto;"></div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Konten Asli -->
-    <div x-show="!loading" x-transition>
-        <!-- ===== Konten Dashboard yang sudah ada ===== -->
-        <!-- ... semua konten dashboard ... -->
-    </div>
-</div>
 <div class="container-fluid">
     <!-- Statistik -->
     <div class="row g-3 mb-4">
@@ -184,10 +126,14 @@
                 <p class="text-muted small">5 soal terakhir yang ditambahkan</p>
                 
                 @if(empty($recentQuestions) || $recentQuestions->isEmpty())
-                    <div class="text-center py-5">
-                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Belum ada soal. Klik "Tambah Soal" untuk memulai.</p>
-                    </div>
+                    <x-empty-state
+                        icon="fas fa-inbox"
+                        title="Belum ada soal"
+                        description="Belum ada soal yang ditambahkan baru-baru ini."
+                        button-text="Tambah Soal"
+                        button-href="{{ route('questions.create') }}"
+                        button-class="btn btn-primary"
+                    />
                 @else
                     <div class="list-group list-group-flush">
                         @foreach($recentQuestions as $question)

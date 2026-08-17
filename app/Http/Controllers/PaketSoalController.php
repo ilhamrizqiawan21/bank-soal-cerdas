@@ -81,7 +81,7 @@ class PaketSoalController extends Controller
 
         } catch (\Exception $e) {
             Log::error('PaketSoal store error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal membuat paket soal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal membuat paket soal.');
         }
     }
 
@@ -140,7 +140,7 @@ class PaketSoalController extends Controller
 
         } catch (\Exception $e) {
             Log::error('PaketSoal update error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memperbarui paket soal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui paket soal.');
         }
     }
 
@@ -151,7 +151,8 @@ class PaketSoalController extends Controller
             return redirect()->route('paket-soal.index')
                 ->with('success', 'Paket soal berhasil dihapus!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus paket soal: ' . $e->getMessage());
+            Log::error('PaketSoal delete error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus paket soal.');
         }
     }
 
@@ -176,7 +177,8 @@ class PaketSoalController extends Controller
                 ->with('success', 'Paket soal berhasil diduplikasi!');
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menduplikasi paket soal: ' . $e->getMessage());
+            Log::error('PaketSoal duplicate error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menduplikasi paket soal.');
         }
     }
 
