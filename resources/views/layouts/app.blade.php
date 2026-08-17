@@ -54,16 +54,18 @@
                     <i class="fas fa-chart-pie"></i>
                     <span class="nav-label">Dashboard</span>
                 </a>
-                <a href="{{ route('questions.index') }}"
-                   class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
-                    <i class="fas fa-database"></i>
-                    <span class="nav-label">Bank Soal</span>
-                </a>
-                <a href="{{ route('paket-soal.index') }}"
-                   class="nav-item {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
-                    <i class="fas fa-box"></i>
-                    <span class="nav-label">Paket Soal</span>
-                </a>
+                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <a href="{{ route('questions.index') }}"
+                       class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
+                        <i class="fas fa-database"></i>
+                        <span class="nav-label">Bank Soal</span>
+                    </a>
+                    <a href="{{ route('paket-soal.index') }}"
+                       class="nav-item {{ request()->routeIs('paket-soal.*') ? 'active' : '' }}">
+                        <i class="fas fa-box"></i>
+                        <span class="nav-label">Paket Soal</span>
+                    </a>
+                @endif
 
                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
                     <a href="{{ route('analisis.index') }}"
@@ -162,10 +164,12 @@
                     </button>
 
                     @auth
-                        <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm btn-add">
-                            <i class="fas fa-plus"></i>
-                            <span>Tambah Soal</span>
-                        </a>
+                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                            <a href="{{ route('questions.create') }}" class="btn btn-primary btn-sm btn-add">
+                                <i class="fas fa-plus"></i>
+                                <span>Tambah Soal</span>
+                            </a>
+                        @endif
 
                         <div class="dropdown user-menu">
                             <button class="btn user-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

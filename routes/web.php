@@ -28,15 +28,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Bank Soal
-    Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export');
-    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate');
-    Route::resource('questions', QuestionController::class);
-    Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
+    Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export')->middleware('role:admin,guru');
+    Route::get('/questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate')->middleware('role:admin,guru');
+    Route::resource('questions', QuestionController::class)->middleware('role:admin,guru');
+    Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import')->middleware('role:admin,guru');
     
     // Paket Soal
-    Route::resource('paket-soal', PaketSoalController::class);
-    Route::get('/paket-soal/{paketSoal}/duplicate', [PaketSoalController::class, 'duplicate'])->name('paket-soal.duplicate');
-    Route::get('/api/paket-soal/questions', [PaketSoalController::class, 'getQuestions'])->name('api.paket-soal.questions');
+    Route::resource('paket-soal', PaketSoalController::class)->middleware('role:admin,guru');
+    Route::get('/paket-soal/{paketSoal}/duplicate', [PaketSoalController::class, 'duplicate'])->name('paket-soal.duplicate')->middleware('role:admin,guru');
+    Route::get('/api/paket-soal/questions', [PaketSoalController::class, 'getQuestions'])->name('api.paket-soal.questions')->middleware('role:admin,guru');
     
     // User Management
     Route::resource('users', UserController::class)->middleware('role:admin');
