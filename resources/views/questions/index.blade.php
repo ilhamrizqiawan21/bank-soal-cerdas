@@ -87,8 +87,8 @@
     </div>
 
     <!-- Tabel Soal -->
-    <div class="stat-card">
-        <div class="table-responsive">
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-soal table-responsive-card mb-0">
             <table class="table table-striped table-hover table-soal mb-0">
                 <thead>
                     <tr>
