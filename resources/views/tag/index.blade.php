@@ -4,107 +4,12 @@
 @section('breadcrumb', 'Tag')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Daftar Tag</h5>
-        <a href="{{ route('tag.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Tambah Tag
-        </a>
-    </div>
-
-    <!-- Filter -->
-    <div class="stat-card mb-4">
-        <form method="GET" class="row g-3 align-items-end">
-            <div class="col-md-9">
-                <label class="form-label small fw-bold">Cari</label>
-                <input type="text" name="search" class="form-control form-control-sm" 
-                       placeholder="Cari tag..." value="{{ request('search') }}">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-search me-1"></i> Filter
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Tabel -->
-    <div class="stat-card">
-        <div class="table-responsive">
-            <table class="table table-striped table-hover table-responsive-card mb-0">
-                <thead>
-                    <tr>
-                        <th width="50">No</th>
-                        <th>Nama</th>
-                        <th>Slug</th>
-                        <th>Warna</th>
-                        <th>Total Soal</th>
-                        <th width="150">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($tag as $index => $item)
-                        <tr>
-                            <td data-label="No">{{ $tag->firstItem() + $index }}</td>
-                            <td data-label="Nama">
-                                <div class="fw-bold">
-                                    <span class="badge" style="background-color: {{ $item->color }}; color: #fff;">
-                                        {{ $item->name }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td data-label="Slug">{{ $item->slug }}</td>
-                            <td data-label="Warna">
-                                <div style="width: 30px; height: 30px; background-color: {{ $item->color }}; border-radius: 50%;"></div>
-                            </td>
-                            <td data-label="Total Soal">{{ $item->questions->count() }}</td>
-                            <td data-label="Aksi">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('tag.show', $item) }}" class="btn btn-outline-primary">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('tag.edit', $item) }}" class="btn btn-outline-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-outline-danger"
-                                            data-confirm="Yakin hapus tag ini?"
-                                            data-confirm-title="Hapus Tag"
-                                            data-confirm-text="Ya, hapus"
-                                            data-confirm-form="delete-form-{{ $item->id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <form id="delete-form-{{ $item->id }}"
-                                          action="{{ route('tag.destroy', $item) }}"
-                                          method="POST" class="d-none">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <x-empty-state
-                                    icon="fas fa-tags"
-                                    title="Belum ada tag"
-                                    description="Klik tombol di atas untuk menambahkan tag pertama."
-                                    button-text="Tambah Tag"
-                                    button-href="{{ route('tag.create') }}"
-                                    button-class="btn btn-primary"
-                                />
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <small class="text-muted">
-                Menampilkan {{ $tag->firstItem() ?? 0 }}–{{ $tag->lastItem() ?? 0 }} dari {{ $tag->total() ?? 0 }} data
-            </small>
-            {{ $tag->links() }}
-        </div>
-    </div>
+<style>
+    .tag-page .resource-hero{padding:4px 0 20px}.tag-page .kicker{font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#2563eb}.tag-page h1{font-size:1.35rem;font-weight:750;letter-spacing:-.025em;margin:3px 0}.tag-page .subtitle{font-size:.84rem;color:#64748b;margin:0}.tag-page .hero-btn,.tag-page .filter-card,.tag-page .data-card{border-radius:14px}.tag-page .filter-card,.tag-page .data-card{background:#fff;border:1px solid #e2e8f0;box-shadow:0 5px 18px rgba(15,23,42,.04)}.tag-page .filter-card{padding:15px;margin-bottom:18px}.tag-page .form-label{font-size:.72rem;color:#475569}.tag-page .form-control{border-radius:9px;border-color:#dbe3ee;min-height:40px}.tag-page .data-card{overflow:hidden}.tag-page .card-head{padding:15px 18px;border-bottom:1px solid #eef2f7}.tag-page .table{margin:0;vertical-align:middle}.tag-page .table thead th{background:#f8fafc;color:#64748b;border-bottom:1px solid #e2e8f0;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;padding:12px 14px}.tag-page .table tbody td{padding:13px 14px;border-color:#eef2f7;font-size:.82rem}.tag-page .table tbody tr:hover{background:#f8fbff}.tag-page .color-dot{width:30px;height:30px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}.tag-page .action-group{display:flex;gap:5px}.tag-page .action-group .btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}.tag-page .card-foot{padding:12px 18px;border-top:1px solid #eef2f7}@media(max-width:768px){.tag-page .resource-hero .d-flex{align-items:flex-start!important}}
+</style>
+<div class="container-fluid tag-page">
+    <div class="resource-hero"><div class="d-flex justify-content-between align-items-center gap-3"><div><div class="kicker"><i class="fas fa-tags me-1"></i> Metadata</div><h1>Manajemen Tag</h1><p class="subtitle">Gunakan tag untuk memberi penanda dan memudahkan pencarian soal.</p></div><a href="{{ route('tag.create') }}" class="btn btn-primary hero-btn"><i class="fas fa-plus me-1"></i> Tambah Tag</a></div></div>
+    <div class="filter-card"><form method="GET" class="row g-3 align-items-end"><div class="col-md-9"><label class="form-label fw-bold">Cari tag</label><input type="text" name="search" class="form-control form-control-sm" placeholder="Cari berdasarkan nama tag..." value="{{ request('search') }}"></div><div class="col-md-3"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-search me-1"></i> Terapkan Filter</button></div></form></div>
+    <div class="data-card"><div class="card-head d-flex justify-content-between align-items-center"><div><div class="fw-bold">Daftar Tag</div><small class="text-muted">{{ $tag->total() ?? 0 }} tag terdaftar</small></div></div><div class="table-responsive"><table class="table table-hover table-responsive-card mb-0"><thead><tr><th width="50">No</th><th>Nama</th><th>Slug</th><th>Warna</th><th>Total Soal</th><th width="130">Aksi</th></tr></thead><tbody>@forelse($tag as $index => $item)<tr><td data-label="No">{{ $tag->firstItem() + $index }}</td><td data-label="Nama"><span class="badge" style="background-color:{{ $item->color }};color:#fff;border-radius:999px;padding:.45rem .65rem">{{ $item->name }}</span></td><td data-label="Slug"><code>{{ $item->slug }}</code></td><td data-label="Warna"><div class="color-dot" style="background-color:{{ $item->color }}"></div></td><td data-label="Total Soal">{{ $item->questions->count() }}</td><td data-label="Aksi"><div class="action-group"><a href="{{ route('tag.show', $item) }}" class="btn btn-outline-primary" title="Lihat"><i class="fas fa-eye"></i></a><a href="{{ route('tag.edit', $item) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a><button type="button" class="btn btn-outline-danger" title="Hapus" data-confirm="Yakin hapus tag ini?" data-confirm-title="Hapus Tag" data-confirm-text="Ya, hapus" data-confirm-form="delete-form-{{ $item->id }}"><i class="fas fa-trash"></i></button><form id="delete-form-{{ $item->id }}" action="{{ route('tag.destroy', $item) }}" method="POST" class="d-none">@csrf @method('DELETE')</form></div></td></tr>@empty<tr><td colspan="6" class="text-center py-5"><x-empty-state icon="fas fa-tags" title="Belum ada tag" description="Klik tombol di atas untuk menambahkan tag pertama." button-text="Tambah Tag" button-href="{{ route('tag.create') }}" button-class="btn btn-primary" /></td></tr>@endforelse</tbody></table></div><div class="card-foot d-flex justify-content-between align-items-center gap-3"><small class="text-muted">Menampilkan {{ $tag->firstItem() ?? 0 }}–{{ $tag->lastItem() ?? 0 }} dari {{ $tag->total() ?? 0 }} data</small>{{ $tag->links() }}</div></div>
 </div>
 @endsection
