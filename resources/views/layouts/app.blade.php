@@ -39,6 +39,7 @@
     </template>
 </div>
     <div id="app" class="app-shell">
+        <div class="sidebar-backdrop" x-show="sidebarOpen" x-cloak @click="toggleMobileSidebar()" aria-hidden="true"></div>
         <aside class="sidebar" :class="{ 'is-open': sidebarOpen, 'is-collapsed': sidebarCollapsed }">
             <div class="sidebar-header">
                 <div class="brand-mark">BC</div>
@@ -52,12 +53,14 @@
             </div>
 
             <nav class="sidebar-nav">
+                <p class="sidebar-section-label">Utama</p>
                 <a href="{{ route('dashboard') }}"
                    class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fas fa-chart-pie"></i>
                     <span class="nav-label">Dashboard</span>
                 </a>
                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <p class="sidebar-section-label">Konten</p>
                     <a href="{{ route('questions.index') }}"
                        class="nav-item {{ request()->routeIs('questions.*') ? 'active' : '' }}">
                         <i class="fas fa-database"></i>
@@ -71,6 +74,7 @@
                 @endif
 
                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <p class="sidebar-section-label">Aktivitas</p>
                     <a href="{{ route('analisis.index') }}"
                        class="nav-item {{ request()->routeIs('analisis.*') ? 'active' : '' }}">
                         <i class="fas fa-chart-bar"></i>
@@ -87,6 +91,7 @@
                 @endif
 
                 @if(auth()->user()->role === 'siswa')
+                    <p class="sidebar-section-label">Aktivitas</p>
                     <a href="{{ route('ujian.daftar') }}"
                        class="nav-item {{ request()->routeIs('ujian.daftar') ? 'active' : '' }}">
                         <i class="fas fa-file-alt"></i>
@@ -95,6 +100,7 @@
                 @endif
 
                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <p class="sidebar-section-label">Pengelolaan</p>
                     <a href="{{ route('kategori.index') }}"
                        class="nav-item {{ request()->routeIs('kategori.*') ? 'active' : '' }}">
                         <i class="fas fa-folder"></i>
@@ -108,6 +114,7 @@
                 @endif
 
                 @if(auth()->user()->role === 'admin' || auth()->user()->role === 'guru')
+                    <p class="sidebar-section-label">Kolaborasi</p>
                     <a href="{{ route('share.index') }}"
                        class="nav-item {{ request()->routeIs('share.index') ? 'active' : '' }}">
                         <i class="fas fa-share-alt"></i>
@@ -121,6 +128,7 @@
                 @endif
 
                 @if(auth()->user()->role === 'admin')
+                    <p class="sidebar-section-label">Administrasi</p>
                     <a href="{{ route('users.index') }}"
                        class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                         <i class="fas fa-users"></i>
@@ -128,6 +136,7 @@
                     </a>
                 @endif
 
+                <p class="sidebar-section-label sidebar-section-account">Akun</p>
                 <a href="{{ route('users.profile') }}"
                    class="nav-item {{ request()->routeIs('users.profile') ? 'active' : '' }}">
                     <i class="fas fa-user"></i>
