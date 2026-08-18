@@ -4,162 +4,17 @@
 @section('breadcrumb', 'Manajemen Pengguna')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Daftar Pengguna</h5>
-        <a href="{{ route('users.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Tambah Pengguna
-        </a>
-    </div>
+<style>
+.users-page{color:#e2e8f0}.users-page .resource-hero{padding:4px 0 20px}.users-page .kicker{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3b82f6}.users-page h1{font-size:1.5rem;font-weight:750;letter-spacing:-.03em;margin:3px 0;color:#f8fafc}.users-page .subtitle{font-size:.84rem;color:#94a3b8;margin:0}.users-page .filter-card,.users-page .data-card{background:#0f172a;border:1px solid rgba(148,163,184,.14);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.16)}.users-page .filter-card{padding:15px;margin-bottom:18px}.users-page .form-label{font-size:.72rem;color:#94a3b8}.users-page .form-control,.users-page .form-select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:9px;min-height:40px}.users-page .form-control:focus,.users-page .form-select:focus{background:#1e293b;color:#fff;border-color:#3b82f6;box-shadow:0 0 0 .2rem rgba(59,130,246,.15)}.users-page .data-card{overflow:hidden}.users-page .card-head{padding:15px 18px;border-bottom:1px solid rgba(148,163,184,.12)}.users-page .table{margin:0;vertical-align:middle;color:#cbd5e1}.users-page .table thead th{background:#111c35;color:#64748b;border-bottom:1px solid #24324a;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;padding:12px 14px}.users-page .table tbody td{padding:12px 14px;border-color:rgba(148,163,184,.1);font-size:.82rem;background:#0f172a;color:#cbd5e1}.users-page .table tbody tr:hover td{background:#111c35}.users-page .avatar{width:36px;height:36px;border-radius:10px;object-fit:cover}.users-page .avatar-fallback{display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,.12);color:#60a5fa;font-weight:750}.users-page .action-group{display:flex;gap:5px}.users-page .action-group .btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}.users-page .card-foot{padding:12px 18px;border-top:1px solid rgba(148,163,184,.12)}.users-page .text-muted{color:#64748b!important}.users-page .btn-outline-primary{color:#60a5fa;border-color:#2563eb}.users-page .btn-outline-warning{color:#fbbf24;border-color:#d97706}.users-page .btn-outline-danger{color:#fb7185;border-color:#dc2626}.users-page .btn-outline-success{color:#34d399;border-color:#059669}.users-page .page-link{background:#1e293b;border-color:#334155;color:#94a3b8}.users-page .page-item.active .page-link{background:#2563eb;border-color:#2563eb;color:#fff}
 
-    <!-- Filter -->
-    <div class="stat-card mb-4">
-        <form method="GET" action="{{ route('users.index') }}" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Role</label>
-                <select name="role" class="form-select form-select-sm">
-                    <option value="">Semua</option>
-                    <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="guru" {{ request('role') == 'guru' ? 'selected' : '' }}>Guru</option>
-                    <option value="siswa" {{ request('role') == 'siswa' ? 'selected' : '' }}>Siswa</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Status</label>
-                <select name="status" class="form-select form-select-sm">
-                    <option value="">Semua</option>
-                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Aktif</option>
-                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Tidak Aktif</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold">Cari</label>
-                <input type="text" name="search" class="form-control form-control-sm" 
-                       placeholder="Cari nama, email, NIP..." value="{{ request('search') }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-search me-1"></i> Filter
-                </button>
-            </div>
-        </form>
-    </div>
+/* Light mode: follow the shared light shell instead of leaving dark-only page styles. */
+body:not(.dark) .users-page{color:#334155}body:not(.dark) .users-page h1{color:#0f172a}body:not(.dark) .users-page .subtitle{color:#64748b}body:not(.dark) .users-page .filter-card,body:not(.dark) .users-page .data-card{background:#fff;border-color:rgba(15,23,42,.09);box-shadow:0 6px 24px rgba(15,23,42,.06)}body:not(.dark) .users-page .form-label{color:#64748b}body:not(.dark) .users-page .form-control,body:not(.dark) .users-page .form-select{background:#fff;color:#1e293b;border-color:#dbe3ee}body:not(.dark) .users-page .form-control:focus,body:not(.dark) .users-page .form-select:focus{background:#fff;color:#0f172a;border-color:#3b82f6}body:not(.dark) .users-page .card-head,body:not(.dark) .users-page .card-foot{border-color:#e2e8f0}body:not(.dark) .users-page .table thead th{background:#f8fafc;color:#64748b;border-bottom-color:#e2e8f0}body:not(.dark) .users-page .table tbody td{background:#fff;color:#334155;border-color:#e2e8f0}body:not(.dark) .users-page .table tbody tr:hover td{background:#f8fafc}body:not(.dark) .users-page .fw-bold.text-light{color:#0f172a!important}body:not(.dark) .users-page .text-muted{color:#64748b!important}body:not(.dark) .users-page .page-link{background:#fff;border-color:#dbe3ee;color:#64748b}
 
-    <!-- Tabel -->
-    <div class="stat-card">
-        <div class="table-responsive">
-            <table class="table table-striped table-hover table-responsive-card mb-0">
-                <thead>
-                    <tr>
-                        <th width="50">No</th>
-                        <th>Nama</th>
-                        <th>Email</th>
-                        <th>NIP</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Terakhir Login</th>
-                        <th width="180">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($users as $index => $user)
-                        <tr>
-                            <td data-label="No">{{ $users->firstItem() + $index }}</td>
-                            <td data-label="Nama">
-                                <div class="d-flex align-items-center">
-                                    @if($user->avatar)
-                                        <img src="{{ asset('storage/' . $user->avatar) }}" 
-                                             alt="{{ $user->name }}" 
-                                             class="rounded-circle me-2" 
-                                             width="35" height="35">
-                                    @else
-                                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
-                                             style="width:35px;height:35px;font-size:14px;">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </div>
-                                    @endif
-                                    <div>
-                                        <div class="fw-bold">{{ $user->name }}</div>
-                                        <small class="text-muted">{{ $user->gender_label }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Email">{{ $user->email }}</td>
-                            <td data-label="NIP">{{ $user->nip ?? '-' }}</td>
-                            <td data-label="Role">
-                                <span class="badge bg-{{ $user->role_badge }}">
-                                    {{ $user->role_label }}
-                                </span>
-                            </td>
-                            <td data-label="Status">
-                                <span class="badge bg-{{ $user->status_badge }}">
-                                    {{ $user->status_label }}
-                                </span>
-                            </td>
-                            <td data-label="Terakhir Login">
-                                <small class="text-muted">
-                                    {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Belum pernah' }}
-                                </small>
-                            </td>
-                            <td data-label="Aksi">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('users.show', $user) }}" class="btn btn-outline-primary">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('users.edit', $user) }}" class="btn btn-outline-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    @if($user->id !== auth()->id())
-                                        <form id="toggle-form-{{ $user->id }}" action="{{ route('users.toggle-status', $user) }}" method="POST" class="d-none">
-                                            @csrf
-                                        </form>
-                                        <button type="button"
-                                                class="btn btn-outline-{{ $user->is_active ? 'danger' : 'success' }}"
-                                                data-confirm="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} user ini?"
-                                                data-confirm-title="Ubah Status User"
-                                                data-confirm-form="toggle-form-{{ $user->id }}">
-                                            <i class="fas fa-{{ $user->is_active ? 'ban' : 'check-circle' }}"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger"
-                                                data-confirm="Yakin hapus user ini?"
-                                                data-confirm-title="Hapus User"
-                                                data-confirm-text="Ya, hapus"
-                                                data-confirm-form="delete-form-{{ $user->id }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        <form id="delete-form-{{ $user->id }}"
-                                              action="{{ route('users.destroy', $user) }}"
-                                              method="POST" class="d-none">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="text-center py-5">
-                                <x-empty-state
-                                    icon="fas fa-users"
-                                    title="Belum ada pengguna"
-                                    description="Klik tombol di atas untuk menambahkan pengguna baru."
-                                    button-text="Tambah Pengguna"
-                                    button-href="{{ route('users.create') }}"
-                                    button-class="btn btn-primary"
-                                />
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <small class="text-muted">
-                Menampilkan {{ $users->firstItem() ?? 0 }}–{{ $users->lastItem() ?? 0 }} dari {{ $users->total() ?? 0 }} data
-            </small>
-            {{ $users->links() }}
-        </div>
-    </div>
+@media(max-width:768px){.users-page .resource-hero .d-flex{align-items:flex-start!important;flex-direction:column}.users-page .resource-hero .btn{width:100%}.users-page .filter-card{padding:12px}.users-page .data-card{border-radius:12px}.users-page .table-responsive{overflow:visible}.users-page .table-responsive-card thead{display:none}.users-page .table-responsive-card tbody,.users-page .table-responsive-card tr,.users-page .table-responsive-card td{display:block;width:100%}.users-page .table-responsive-card tr{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12)}.users-page .table-responsive-card tr:last-child{border-bottom:0}.users-page .table-responsive-card td{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:6px 0!important;border:0!important;text-align:right}.users-page .table-responsive-card td::before{content:attr(data-label);flex:0 0 34%;text-align:left;color:#94a3b8;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.users-page .table-responsive-card td[data-label="Aksi"]{display:block;text-align:left;padding-top:10px!important}.users-page .table-responsive-card td[data-label="Aksi"]::before{display:block;margin-bottom:7px}.users-page .action-group{flex-wrap:wrap}}
+</style>
+<div class="container-fluid users-page">
+<div class="resource-hero"><div class="d-flex justify-content-between align-items-center gap-3"><div><div class="kicker"><i class="fas fa-users me-1"></i> Administrasi</div><h1>Manajemen Pengguna</h1><p class="subtitle">Kelola akun admin, guru, dan siswa beserta status aksesnya.</p></div><a href="{{ route('users.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Tambah Pengguna</a></div></div>
+<div class="filter-card"><form method="GET" action="{{ route('users.index') }}" class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label fw-bold">Role</label><select name="role" class="form-select form-select-sm"><option value="">Semua role</option><option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option><option value="guru" {{ request('role') == 'guru' ? 'selected' : '' }}>Guru</option><option value="siswa" {{ request('role') == 'siswa' ? 'selected' : '' }}>Siswa</option></select></div><div class="col-md-3"><label class="form-label fw-bold">Status</label><select name="status" class="form-select form-select-sm"><option value="">Semua status</option><option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Aktif</option><option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Tidak Aktif</option></select></div><div class="col-md-4"><label class="form-label fw-bold">Cari pengguna</label><input type="text" name="search" class="form-control form-control-sm" placeholder="Nama, email, NIP..." value="{{ request('search') }}"></div><div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-search me-1"></i> Filter</button></div></form></div>
+<div class="data-card"><div class="card-head d-flex justify-content-between align-items-center"><div><div class="fw-bold text-light">Daftar Pengguna</div><small class="text-muted">{{ $users->total() ?? 0 }} akun terdaftar</small></div></div><div class="table-responsive"><table class="table table-hover table-responsive-card mb-0"><thead><tr><th width="50">No</th><th>Nama</th><th>Email</th><th>NIP</th><th>Role</th><th>Status</th><th>Terakhir Login</th><th width="165">Aksi</th></tr></thead><tbody>@forelse($users as $index => $user)<tr><td data-label="No">{{ $users->firstItem() + $index }}</td><td data-label="Nama"><div class="d-flex align-items-center gap-2">@if($user->avatar)<img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name }}" class="avatar">@else<div class="avatar avatar-fallback">{{ strtoupper(substr($user->name,0,1)) }}</div>@endif<div><div class="fw-bold text-light">{{ $user->name }}</div><small class="text-muted">{{ $user->gender_label }}</small></div></div></td><td data-label="Email">{{ $user->email }}</td><td data-label="NIP">{{ $user->nip ?? '-' }}</td><td data-label="Role"><span class="badge bg-{{ $user->role_badge }}">{{ $user->role_label }}</span></td><td data-label="Status"><span class="badge bg-{{ $user->status_badge }}">{{ $user->status_label }}</span></td><td data-label="Terakhir Login"><small class="text-muted">{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Belum pernah' }}</small></td><td data-label="Aksi"><div class="action-group"><a href="{{ route('users.show', $user) }}" class="btn btn-outline-primary" title="Lihat"><i class="fas fa-eye"></i></a><a href="{{ route('users.edit', $user) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>@if($user->id !== auth()->id())<form id="toggle-form-{{ $user->id }}" action="{{ route('users.toggle-status', $user) }}" method="POST" class="d-none">@csrf</form><button type="button" class="btn btn-outline-{{ $user->is_active ? 'danger' : 'success' }}" title="Ubah status" data-confirm="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} user ini?" data-confirm-title="Ubah Status User" data-confirm-form="toggle-form-{{ $user->id }}"><i class="fas fa-{{ $user->is_active ? 'ban' : 'check-circle' }}"></i></button><button type="button" class="btn btn-outline-danger" title="Hapus" data-confirm="Yakin hapus user ini?" data-confirm-title="Hapus User" data-confirm-text="Ya, hapus" data-confirm-form="delete-form-{{ $user->id }}"><i class="fas fa-trash"></i></button><form id="delete-form-{{ $user->id }}" action="{{ route('users.destroy', $user) }}" method="POST" class="d-none">@csrf @method('DELETE')</form>@endif</div></td></tr>@empty<tr><td colspan="8" class="text-center py-5"><x-empty-state icon="fas fa-users" title="Belum ada pengguna" description="Klik tombol di atas untuk menambahkan pengguna baru." button-text="Tambah Pengguna" button-href="{{ route('users.create') }}" button-class="btn btn-primary" /></td></tr>@endforelse</tbody></table></div><div class="card-foot d-flex justify-content-between align-items-center gap-3"><small class="text-muted">Menampilkan {{ $users->firstItem() ?? 0 }}–{{ $users->lastItem() ?? 0 }} dari {{ $users->total() ?? 0 }} data</small>{{ $users->links() }}</div></div>
 </div>
 @endsection
