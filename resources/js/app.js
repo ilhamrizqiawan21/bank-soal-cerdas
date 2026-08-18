@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // API programatik untuk dialog konfirmasi (pengganti confirm() native)
         window.confirmDialog = (options = {}) => {
             showConfirm({
                 title: options.title || 'Konfirmasi',
@@ -122,10 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Hanya tandai bahwa tombol ini yang memicu submit.
+            // JANGAN disable tombol di sini: button.disabled = true pada handler
+            // click membatalkan default action submit form di browser,
+            // sehingga form tidak pernah terkirim dan tombol spinner muter terus.
             button.form.dataset.loadingTriggered = 'true';
         });
 
         button.form?.addEventListener('submit', () => {
+            // Submit sudah benar-benar berjalan, jadi aman untuk men-disable tombol.
             if (button.form.dataset.loadingTriggered === 'true') {
                 setLoadingState(true);
             }
