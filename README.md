@@ -1,58 +1,509 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Bank Soal Cerdas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Platform manajemen bank soal dan evaluasi pembelajaran berbasis web.
 
-## About Laravel
+**Bank Soal Cerdas** adalah aplikasi untuk membantu admin, guru, dan siswa mengelola proses penyusunan soal, paket soal, ujian online, kolaborasi soal, serta analisis hasil evaluasi pembelajaran dalam satu platform.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 📚 Bank Soal
 
-## Learning Laravel
+Mengelola koleksi soal secara terstruktur dengan dukungan:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- CRUD soal
+- Pencarian dan filter
+- Klasifikasi kurikulum
+- Tipe soal
+- Level kognitif C1–C6
+- KKO (Kata Kerja Operasional)
+- Kategori dan tag
+- Import soal
+- Export soal
+- Duplikasi soal
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📦 Paket Soal
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Menyusun kumpulan soal untuk digunakan dalam evaluasi atau ujian.
 
-## Agentic Development
+- Membuat dan mengelola paket soal
+- Menambahkan soal dari bank soal
+- Mengelola komposisi soal
+- Duplikasi paket soal
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 📝 Ujian Online
 
-```bash
-composer require laravel/boost --dev
+Mendukung alur ujian dari pembuatan sampai penyelesaian oleh siswa.
 
-php artisan boost:install
+**Admin/Guru:**
+
+- Membuat ujian
+- Menentukan paket soal
+- Mengatur peserta
+- Mengatur durasi
+- Mempublikasikan ujian
+- Mengelola status ujian
+
+**Siswa:**
+
+- Melihat ujian yang tersedia
+- Mengerjakan ujian
+- Menyimpan/mengirim jawaban
+- Mengakhiri ujian
+- Melihat hasil ujian
+
+### 📊 Analisis
+
+Menyediakan halaman analisis untuk membantu mengevaluasi hasil ujian, termasuk detail berdasarkan ujian dan siswa serta export hasil analisis.
+
+### 🗂️ Kategori & Tag
+
+Mengorganisasi soal agar bank soal lebih mudah dikelola, difilter, dan digunakan kembali.
+
+### 🤝 Kolaborasi
+
+Mendukung berbagi soal dan paket soal antar pengguna.
+
+- Berbagi soal
+- Berbagi paket soal
+- Menerima soal/paket
+- Menolak soal/paket
+- Melihat detail
+- Melihat riwayat berbagi
+
+### 👥 Manajemen Pengguna
+
+Admin dapat mengelola pengguna dan status akses akun.
+
+Role utama aplikasi:
+
+| Role | Fokus Akses |
+|---|---|
+| **Admin** | Administrasi sistem dan seluruh fitur pengelolaan |
+| **Guru** | Bank soal, paket soal, ujian, analisis, dan kolaborasi |
+| **Siswa** | Mengikuti ujian dan melihat hasil |
+
+### 👤 Profil & Pengaturan
+
+Pengguna dapat memperbarui informasi profil, avatar, dan password melalui halaman akun.
+
+---
+
+## 🧠 Taksonomi Bloom
+
+Soal dapat diklasifikasikan berdasarkan enam level kognitif:
+
+| Level | Keterangan | Kategori |
+|---|---|---|
+| C1 | Mengingat | LOTS |
+| C2 | Memahami | LOTS |
+| C3 | Menerapkan | LOTS |
+| C4 | Menganalisis | HOTS |
+| C5 | Mengevaluasi | HOTS |
+| C6 | Mencipta | HOTS |
+
+Klasifikasi ini digunakan untuk membantu melihat komposisi tingkat kemampuan kognitif pada bank soal dan hasil evaluasi.
+
+---
+
+## 🏗️ Alur Utama Aplikasi
+
+```text
+                         ┌───────────────┐
+                         │    Pengguna   │
+                         └───────┬───────┘
+                                 │
+                         ┌───────▼───────┐
+                         │ Authentication│
+                         └───────┬───────┘
+                                 │
+                  ┌──────────────┼──────────────┐
+                  │              │              │
+                Admin          Guru           Siswa
+                  │              │              │
+                  └───────┬──────┘              │
+                          │                     │
+                   ┌──────▼──────┐       ┌─────▼─────┐
+                   │  Bank Soal  │       │   Ujian   │
+                   └──────┬──────┘       └─────┬─────┘
+                          │                     │
+                   ┌──────▼──────┐       ┌─────▼─────┐
+                   │ Paket Soal  │       │  Jawaban  │
+                   └──────┬──────┘       └─────┬─────┘
+                          │                     │
+                   ┌──────▼──────┐       ┌─────▼─────┐
+                   │    Ujian    │       │   Hasil   │
+                   └──────┬──────┘       └───────────┘
+                          │
+                   ┌──────▼──────┐
+                   │   Analisis  │
+                   └─────────────┘
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🛠️ Tech Stack
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Backend
 
-## Code of Conduct
+- **PHP 8.3+**
+- **Laravel 13**
+- Laravel Eloquent ORM
+- Laravel Authentication
+- Laravel Excel
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Frontend
 
-## Security Vulnerabilities
+- Blade Templates
+- Bootstrap 5
+- Tailwind CSS
+- Alpine.js
+- Sass
+- Vite
+- Font Awesome
+- Chart.js
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Development & Testing
 
-## License
+- Composer
+- NPM
+- Laravel Pint
+- PHPUnit
+- Laravel Debugbar
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 📋 Requirements
+
+Sebelum menjalankan project, pastikan tersedia:
+
+- PHP `^8.3`
+- Composer
+- Node.js dan NPM
+- Database yang didukung Laravel, misalnya MySQL atau SQLite
+- Git
+
+Versi dependency utama mengikuti `composer.json` dan `package.json` pada repository.
+
+---
+
+## 🚀 Installation
+
+### 1. Clone repository
+
+```bash
+git clone https://github.com/ilhamrizqiawan21/bank-soal-cerdas.git
+cd bank-soal-cerdas
+```
+
+### 2. Install dependency PHP
+
+```bash
+composer install
+```
+
+### 3. Siapkan environment
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### 4. Konfigurasi database
+
+Edit `.env` sesuai database yang digunakan.
+
+Contoh MySQL:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bank_soal_cerdas
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Kemudian jalankan migration:
+
+```bash
+php artisan migrate
+```
+
+### 5. Install dependency frontend
+
+```bash
+npm install
+```
+
+### 6. Build asset frontend
+
+```bash
+npm run build
+```
+
+### 7. Jalankan aplikasi
+
+```bash
+php artisan serve
+```
+
+Buka:
+
+```text
+http://localhost:8000
+```
+
+---
+
+## ⚡ Development
+
+Untuk development frontend dengan Vite:
+
+```bash
+npm run dev
+```
+
+Di terminal lain:
+
+```bash
+php artisan serve
+```
+
+Project juga menyediakan script Composer untuk workflow development:
+
+```bash
+composer run dev
+```
+
+---
+
+## 🧪 Testing
+
+Menjalankan test suite:
+
+```bash
+php artisan test
+```
+
+atau:
+
+```bash
+composer run test
+```
+
+Untuk menjaga kualitas kode PHP, Laravel Pint juga tersedia:
+
+```bash
+./vendor/bin/pint
+```
+
+---
+
+## 📁 Struktur Project
+
+```text
+bank-soal-cerdas/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   └── Middleware/
+│   ├── Models/
+│   └── ...
+│
+├── database/
+│   ├── factories/
+│   ├── migrations/
+│   └── seeders/
+│
+├── resources/
+│   ├── js/
+│   ├── sass/
+│   └── views/
+│
+├── routes/
+│   └── web.php
+│
+├── public/
+├── storage/
+├── tests/
+├── composer.json
+├── package.json
+└── README.md
+```
+
+---
+
+## 🎨 Frontend & Design System
+
+Antarmuka aplikasi dikembangkan dengan pendekatan design system agar seluruh menu memiliki pengalaman visual yang konsisten.
+
+Prinsip utama:
+
+- Hierarki visual yang jelas
+- Spacing dan ukuran komponen yang konsisten
+- Komponen form, card, table, badge, dan action yang seragam
+- Responsive layout untuk desktop dan mobile
+- Light mode dan dark mode
+- Sidebar dan header yang konsisten di seluruh aplikasi
+- Fokus pada keterbacaan dan efisiensi workflow pengguna
+
+Halaman aplikasi mengikuti pola visual yang sama, termasuk:
+
+- Dashboard
+- Bank Soal
+- Paket Soal
+- Analisis
+- Manajemen Ujian
+- Kategori
+- Tag
+- Kolaborasi
+- Manajemen Pengguna
+- Profil
+
+---
+
+## 🔐 Access Control
+
+Route aplikasi dilindungi dengan authentication dan middleware role.
+
+Secara umum:
+
+```text
+Admin
+ ├── Manajemen pengguna
+ ├── Bank soal
+ ├── Paket soal
+ ├── Ujian
+ ├── Analisis
+ ├── Kategori & tag
+ └── Kolaborasi
+
+Guru
+ ├── Bank soal
+ ├── Paket soal
+ ├── Ujian
+ ├── Analisis
+ ├── Kategori & tag
+ └── Kolaborasi
+
+Siswa
+ └── Ujian saya
+      ├── Kerjakan
+      ├── Kirim jawaban
+      └── Hasil
+```
+
+---
+
+## 🔄 Git Workflow
+
+Pengembangan menggunakan branch-based workflow agar perubahan fitur dan perbaikan dapat direview secara terpisah.
+
+Contoh workflow:
+
+```bash
+git switch main
+git pull origin main
+
+git switch -c feature/nama-fitur
+```
+
+Setelah perubahan selesai:
+
+```bash
+git add .
+git commit -m "feat: deskripsi perubahan"
+git push -u origin feature/nama-fitur
+```
+
+Kemudian buat Pull Request ke `main` untuk review dan integrasi.
+
+### Konvensi commit yang disarankan
+
+```text
+feat:     fitur baru
+fix:      perbaikan bug
+style:    perubahan tampilan/style
+refactor: perubahan struktur tanpa mengubah behavior
+perf:     peningkatan performa
+docs:     dokumentasi
+test:     perubahan test
+chore:    maintenance
+```
+
+---
+
+## 🗺️ Roadmap
+
+Pengembangan dilakukan secara bertahap dengan prioritas pada stabilitas fitur, UX, dan konsistensi design system.
+
+### Saat ini
+
+- [x] Authentication
+- [x] Dashboard
+- [x] Bank Soal
+- [x] Paket Soal
+- [x] Ujian Online
+- [x] Analisis
+- [x] Kategori
+- [x] Tag
+- [x] Kolaborasi
+- [x] Manajemen Pengguna
+- [x] Profil
+- [x] Responsive UI
+- [x] Light/Dark Theme
+
+### Berikutnya
+
+- [ ] Penyempurnaan UX seluruh workflow
+- [ ] Penguatan analisis hasil evaluasi
+- [ ] Optimasi performa query dan frontend
+- [ ] Peningkatan test coverage
+- [ ] Penyempurnaan sistem kolaborasi
+- [ ] Dokumentasi teknis yang lebih lengkap
+- [ ] Persiapan deployment production
+
+---
+
+## 🤝 Contributing
+
+Perubahan fitur sebaiknya dibuat pada branch terpisah dan diajukan melalui Pull Request.
+
+Sebelum membuat Pull Request, pastikan:
+
+1. Aplikasi dapat dijalankan dengan normal.
+2. Migration dan perubahan database sudah diperiksa.
+3. Asset frontend berhasil dibuild.
+4. Test yang relevan sudah dijalankan.
+5. Tidak ada credential atau secret yang ikut di-commit.
+6. Perubahan UI diuji pada desktop dan mobile jika relevan.
+
+---
+
+## 🔒 Security
+
+Jangan commit informasi sensitif seperti:
+
+- `.env`
+- API key
+- password
+- token
+- credential database
+- private key
+
+Jika menemukan masalah keamanan pada aplikasi, jangan publikasikan detail eksploit secara terbuka sebelum dilakukan mitigasi.
+
+---
+
+## 📄 License
+
+Project ini dikembangkan sebagai aplikasi **Bank Soal Cerdas**. Ketentuan lisensi dan penggunaan project dapat ditentukan oleh pemilik repository.
+
+---
+
+## 👨‍💻 Project
+
+**Bank Soal Cerdas**  
+Platform manajemen bank soal dan evaluasi pembelajaran berbasis web.
