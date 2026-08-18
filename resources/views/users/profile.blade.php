@@ -4,174 +4,35 @@
 @section('breadcrumb', 'Profil Saya')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <!-- Profil -->
-        <div class="col-md-4 mb-4">
-            <div class="stat-card">
-                <div class="text-center">
-                    @if($user->avatar)
-                        <img src="{{ asset('storage/' . $user->avatar) }}" 
-                             alt="{{ $user->name }}" 
-                             class="rounded-circle mb-3" 
-                             width="150" height="150">
-                    @else
-                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
-                             style="width:150px;height:150px;font-size:64px;">
-                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                        </div>
-                    @endif
-                    
-                    <h5 class="fw-bold">{{ $user->name }}</h5>
-                    <span class="badge bg-{{ $user->role_badge }}">
-                        {{ $user->role_label }}
-                    </span>
-                    
-                    <hr>
-                    
-                    <form action="{{ route('users.avatar') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-2">
-                            <input type="file" name="avatar" class="form-control form-control-sm" accept="image/*">
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-primary">Upload Foto</button>
-                    </form>
+<style>
+    .profile-page .profile-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04);overflow:hidden}.profile-page .profile-cover{height:86px;background:linear-gradient(135deg,#172554,#2563eb)}.profile-page .profile-body{padding:0 22px 22px;text-align:center}.profile-page .avatar-wrap{margin-top:-42px;margin-bottom:12px}.profile-page .avatar{width:84px;height:84px;border-radius:22px;border:4px solid #fff;box-shadow:0 8px 20px rgba(15,23,42,.14);object-fit:cover}.profile-page .avatar-fallback{display:inline-flex;align-items:center;justify-content:center;background:#eef2ff;color:#4f46e5;font-size:2rem;font-weight:750}.profile-page .profile-name{font-size:1.05rem;font-weight:750;margin-bottom:4px}.profile-page .profile-meta{font-size:.76rem;color:#64748b}.profile-page .upload-box{margin-top:18px;padding-top:16px;border-top:1px solid #eef2f7;text-align:left}.profile-page .form-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04);padding:22px}.profile-page .section-title{font-size:.95rem;font-weight:750;margin:0}.profile-page .section-subtitle{font-size:.76rem;color:#64748b;margin-top:3px}.profile-page .form-label{font-size:.75rem;color:#475569}.profile-page .form-control,.profile-page .form-select{border-radius:9px;border-color:#dbe3ee;min-height:40px}.profile-page textarea.form-control{min-height:auto}.profile-page .password-section{margin-top:24px;padding-top:22px;border-top:1px solid #eef2f7}.profile-page .btn{border-radius:9px;font-weight:650}
+</style>
+<div class="container-fluid profile-page">
+    <div class="row g-4">
+        <div class="col-xl-4 col-lg-5">
+            <div class="profile-card">
+                <div class="profile-cover"></div>
+                <div class="profile-body">
+                    <div class="avatar-wrap">
+                        @if($user->avatar)<img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name }}" class="avatar">@else<div class="avatar avatar-fallback">{{ strtoupper(substr($user->name,0,1)) }}</div>@endif
+                    </div>
+                    <div class="profile-name">{{ $user->name }}</div>
+                    <span class="badge bg-{{ $user->role_badge }}">{{ $user->role_label }}</span>
+                    <div class="profile-meta mt-2">{{ $user->email }}</div>
+                    <div class="upload-box">
+                        <div class="fw-bold small mb-1">Foto profil</div><small class="text-muted d-block mb-2">Gunakan JPG, PNG, atau WebP dengan ukuran yang wajar.</small>
+                        <form action="{{ route('users.avatar') }}" method="POST" enctype="multipart/form-data"><div class="mb-2"><input type="file" name="avatar" class="form-control form-control-sm" accept="image/*"></div>@csrf @method('PUT')<button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-camera me-1"></i> Perbarui Foto</button></form>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Edit Profil -->
-        <div class="col-md-8 mb-4">
-            <div class="stat-card">
-                <h5 class="fw-bold mb-4">Edit Profil</h5>
-                
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-                
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-                
-                <form action="{{ route('users.profile.update') }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                                       value="{{ old('name', $user->name) }}" required>
-                                @error('name')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
-                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
-                                       value="{{ old('email', $user->email) }}" required>
-                                @error('email')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">No. Telepon</label>
-                                <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" 
-                                       value="{{ old('phone', $user->phone) }}">
-                                @error('phone')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Jenis Kelamin</label>
-                                <select name="gender" class="form-select @error('gender') is-invalid @enderror">
-                                    <option value="">Pilih</option>
-                                    <option value="L" {{ old('gender', $user->gender) == 'L' ? 'selected' : '' }}>Laki-laki</option>
-                                    <option value="P" {{ old('gender', $user->gender) == 'P' ? 'selected' : '' }}>Perempuan</option>
-                                </select>
-                                @error('gender')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tanggal Lahir</label>
-                                <input type="date" name="birth_date" class="form-control @error('birth_date') is-invalid @enderror" 
-                                       value="{{ old('birth_date', $user->birth_date ? $user->birth_date->format('Y-m-d') : '') }}">
-                                @error('birth_date')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Alamat</label>
-                                <textarea name="address" class="form-control @error('address') is-invalid @enderror" 
-                                          rows="2">{{ old('address', $user->address) }}</textarea>
-                                @error('address')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Update Profil
-                    </button>
-                </form>
-                
-                <hr>
-                
-                <!-- Ubah Password -->
-                <h6 class="fw-bold mt-3">Ubah Password</h6>
-                <form action="{{ route('settings.password') }}" method="POST" class="mt-3">
-                    @csrf
-                    @method('PUT')
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Password Saat Ini</label>
-                                <input type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" required>
-                                @error('current_password')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Password Baru</label>
-                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                                <small class="text-muted">Minimal 8 karakter</small>
-                                @error('password')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Konfirmasi Password</label>
-                                <input type="password" name="password_confirmation" class="form-control" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-key me-1"></i> Ubah Password
-                    </button>
-                </form>
+        <div class="col-xl-8 col-lg-7">
+            <div class="form-card">
+                <div class="mb-4"><h2 class="section-title">Informasi Profil</h2><div class="section-subtitle">Perbarui informasi pribadi yang digunakan pada akun Anda.</div></div>
+                @if(session('success'))<div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
+                @if(session('error'))<div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
+                <form action="{{ route('users.profile.update') }}" method="POST">@csrf @method('PUT')<div class="row g-3"><div class="col-md-6"><label class="form-label fw-bold">Nama Lengkap <span class="text-danger">*</span></label><input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name',$user->name) }}" required>@error('name')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-6"><label class="form-label fw-bold">Email <span class="text-danger">*</span></label><input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email',$user->email) }}" required>@error('email')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-6"><label class="form-label fw-bold">No. Telepon</label><input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone',$user->phone) }}">@error('phone')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-6"><label class="form-label fw-bold">Jenis Kelamin</label><select name="gender" class="form-select @error('gender') is-invalid @enderror"><option value="">Pilih</option><option value="L" {{ old('gender',$user->gender)=='L'?'selected':'' }}>Laki-laki</option><option value="P" {{ old('gender',$user->gender)=='P'?'selected':'' }}>Perempuan</option></select>@error('gender')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-6"><label class="form-label fw-bold">Tanggal Lahir</label><input type="date" name="birth_date" class="form-control @error('birth_date') is-invalid @enderror" value="{{ old('birth_date',$user->birth_date ? $user->birth_date->format('Y-m-d') : '') }}">@error('birth_date')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-6"><label class="form-label fw-bold">Alamat</label><textarea name="address" class="form-control @error('address') is-invalid @enderror" rows="2">{{ old('address',$user->address) }}</textarea>@error('address')<small class="text-danger">{{ $message }}</small>@enderror</div></div><div class="mt-4"><button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Simpan Perubahan</button></div></form>
+                <div class="password-section"><div class="mb-3"><h3 class="section-title">Keamanan Akun</h3><div class="section-subtitle">Gunakan password yang kuat dan jangan bagikan kepada siapa pun.</div></div><form action="{{ route('settings.password') }}" method="POST"><div class="row g-3">@csrf @method('PUT')<div class="col-md-4"><label class="form-label fw-bold">Password Saat Ini</label><input type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" required>@error('current_password')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-4"><label class="form-label fw-bold">Password Baru</label><input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required><small class="text-muted">Minimal 8 karakter</small>@error('password')<small class="text-danger">{{ $message }}</small>@enderror</div><div class="col-md-4"><label class="form-label fw-bold">Konfirmasi Password</label><input type="password" name="password_confirmation" class="form-control" required></div></div><div class="mt-4"><button type="submit" class="btn btn-warning"><i class="fas fa-key me-1"></i> Ubah Password</button></div></form></div>
             </div>
         </div>
     </div>
