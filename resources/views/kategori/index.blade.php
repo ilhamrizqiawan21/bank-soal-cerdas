@@ -4,119 +4,12 @@
 @section('breadcrumb', 'Kategori')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Daftar Kategori</h5>
-        <a href="{{ route('kategori.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Tambah Kategori
-        </a>
-    </div>
-
-    <!-- Filter -->
-    <div class="stat-card mb-4">
-        <form method="GET" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Tipe</label>
-                <select name="type" class="form-select form-select-sm">
-                    <option value="">Semua</option>
-                    <option value="kd" {{ request('type') == 'kd' ? 'selected' : '' }}>Kompetensi Dasar</option>
-                    <option value="topik" {{ request('type') == 'topik' ? 'selected' : '' }}>Topik</option>
-                    <option value="bab" {{ request('type') == 'bab' ? 'selected' : '' }}>Bab</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label small fw-bold">Cari</label>
-                <input type="text" name="search" class="form-control form-control-sm" 
-                       placeholder="Cari kategori..." value="{{ request('search') }}">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-search me-1"></i> Filter
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Tabel -->
-    <div class="stat-card">
-        <div class="table-responsive">
-            <table class="table table-striped table-hover table-responsive-card mb-0">
-                <thead>
-                    <tr>
-                        <th width="50">No</th>
-                        <th>Nama</th>
-                        <th>Kode</th>
-                        <th>Tipe</th>
-                        <th>Induk</th>
-                        <th>Total Soal</th>
-                        <th width="150">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($kategori as $index => $item)
-                        <tr>
-                            <td data-label="No">{{ $kategori->firstItem() + $index }}</td>
-                            <td data-label="Nama">
-                                <div class="fw-bold">{{ $item->name }}</div>
-                                @if($item->description)
-                                    <small class="text-muted">{{ Str::limit($item->description, 50) }}</small>
-                                @endif
-                            </td>
-                            <td data-label="Kode">{{ $item->code ?? '-' }}</td>
-                            <td data-label="Tipe">
-                                <span class="badge bg-{{ $item->type === 'kd' ? 'primary' : ($item->type === 'topik' ? 'success' : 'warning') }}">
-                                    {{ $item->type_label }}
-                                </span>
-                            </td>
-                            <td data-label="Induk">{{ $item->parent->name ?? '-' }}</td>
-                            <td data-label="Total Soal">{{ $item->questions->count() }}</td>
-                            <td data-label="Aksi">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('kategori.show', $item) }}" class="btn btn-outline-primary">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('kategori.edit', $item) }}" class="btn btn-outline-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-outline-danger"
-                                            data-confirm="Yakin hapus kategori ini?"
-                                            data-confirm-title="Hapus Kategori"
-                                            data-confirm-text="Ya, hapus"
-                                            data-confirm-form="delete-form-{{ $item->id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <form id="delete-form-{{ $item->id }}"
-                                          action="{{ route('kategori.destroy', $item) }}"
-                                          method="POST" class="d-none">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <x-empty-state
-                                    icon="fas fa-folder"
-                                    title="Belum ada kategori"
-                                    description="Klik tombol di atas untuk menambahkan kategori pertama."
-                                    button-text="Tambah Kategori"
-                                    button-href="{{ route('kategori.create') }}"
-                                    button-class="btn btn-primary"
-                                />
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <small class="text-muted">
-                Menampilkan {{ $kategori->firstItem() ?? 0 }}–{{ $kategori->lastItem() ?? 0 }} dari {{ $kategori->total() ?? 0 }} data
-            </small>
-            {{ $kategori->links() }}
-        </div>
-    </div>
+<style>
+    .resource-page .resource-hero{padding:4px 0 20px}.resource-page .kicker{font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#2563eb}.resource-page h1{font-size:1.35rem;font-weight:750;letter-spacing:-.025em;margin:3px 0}.resource-page .subtitle{font-size:.84rem;color:#64748b;margin:0}.resource-page .hero-btn{border-radius:10px;font-weight:650}.resource-page .filter-card,.resource-page .data-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04)}.resource-page .filter-card{padding:15px;margin-bottom:18px}.resource-page .form-label{font-size:.72rem;color:#475569}.resource-page .form-control,.resource-page .form-select{border-radius:9px;border-color:#dbe3ee;min-height:40px}.resource-page .data-card{overflow:hidden}.resource-page .card-head{padding:15px 18px;border-bottom:1px solid #eef2f7}.resource-page .table{margin:0;vertical-align:middle}.resource-page .table thead th{background:#f8fafc;color:#64748b;border-bottom:1px solid #e2e8f0;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;padding:12px 14px}.resource-page .table tbody td{padding:13px 14px;border-color:#eef2f7;font-size:.82rem}.resource-page .table tbody tr:hover{background:#f8fbff}.resource-page .action-group{display:flex;gap:5px}.resource-page .action-group .btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}.resource-page .card-foot{padding:12px 18px;border-top:1px solid #eef2f7}@media(max-width:768px){.resource-page .resource-hero .d-flex{align-items:flex-start!important}.resource-page .filter-card{padding:12px}}
+</style>
+<div class="container-fluid resource-page">
+    <div class="resource-hero"><div class="d-flex justify-content-between align-items-center gap-3"><div><div class="kicker"><i class="fas fa-folder-tree me-1"></i> Struktur Materi</div><h1>Manajemen Kategori</h1><p class="subtitle">Atur struktur kompetensi, topik, dan bab untuk mengorganisasi bank soal.</p></div><a href="{{ route('kategori.create') }}" class="btn btn-primary hero-btn"><i class="fas fa-plus me-1"></i> Tambah Kategori</a></div></div>
+    <div class="filter-card"><form method="GET" class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label fw-bold">Tipe</label><select name="type" class="form-select form-select-sm"><option value="">Semua tipe</option><option value="kd" {{ request('type') == 'kd' ? 'selected' : '' }}>Kompetensi Dasar</option><option value="topik" {{ request('type') == 'topik' ? 'selected' : '' }}>Topik</option><option value="bab" {{ request('type') == 'bab' ? 'selected' : '' }}>Bab</option></select></div><div class="col-md-6"><label class="form-label fw-bold">Cari kategori</label><input type="text" name="search" class="form-control form-control-sm" placeholder="Nama, kode, atau deskripsi..." value="{{ request('search') }}"></div><div class="col-md-3"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-search me-1"></i> Terapkan Filter</button></div></form></div>
+    <div class="data-card"><div class="card-head d-flex justify-content-between align-items-center"><div><div class="fw-bold">Daftar Kategori</div><small class="text-muted">{{ $kategori->total() ?? 0 }} kategori terdaftar</small></div></div><div class="table-responsive"><table class="table table-hover table-responsive-card mb-0"><thead><tr><th width="50">No</th><th>Nama</th><th>Kode</th><th>Tipe</th><th>Induk</th><th>Total Soal</th><th width="130">Aksi</th></tr></thead><tbody>@forelse($kategori as $index => $item)<tr><td data-label="No">{{ $kategori->firstItem() + $index }}</td><td data-label="Nama"><div class="fw-bold">{{ $item->name }}</div>@if($item->description)<small class="text-muted">{{ Str::limit($item->description, 50) }}</small>@endif</td><td data-label="Kode"><code>{{ $item->code ?? '-' }}</code></td><td data-label="Tipe"><span class="badge bg-{{ $item->type === 'kd' ? 'primary' : ($item->type === 'topik' ? 'success' : 'warning') }}">{{ $item->type_label }}</span></td><td data-label="Induk">{{ $item->parent->name ?? '-' }}</td><td data-label="Total Soal">{{ $item->questions->count() }}</td><td data-label="Aksi"><div class="action-group"><a href="{{ route('kategori.show', $item) }}" class="btn btn-outline-primary" title="Lihat"><i class="fas fa-eye"></i></a><a href="{{ route('kategori.edit', $item) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a><button type="button" class="btn btn-outline-danger" title="Hapus" data-confirm="Yakin hapus kategori ini?" data-confirm-title="Hapus Kategori" data-confirm-text="Ya, hapus" data-confirm-form="delete-form-{{ $item->id }}"><i class="fas fa-trash"></i></button><form id="delete-form-{{ $item->id }}" action="{{ route('kategori.destroy', $item) }}" method="POST" class="d-none">@csrf @method('DELETE')</form></div></td></tr>@empty<tr><td colspan="7" class="text-center py-5"><x-empty-state icon="fas fa-folder" title="Belum ada kategori" description="Klik tombol di atas untuk menambahkan kategori pertama." button-text="Tambah Kategori" button-href="{{ route('kategori.create') }}" button-class="btn btn-primary" /></td></tr>@endforelse</tbody></table></div><div class="card-foot d-flex justify-content-between align-items-center gap-3"><small class="text-muted">Menampilkan {{ $kategori->firstItem() ?? 0 }}–{{ $kategori->lastItem() ?? 0 }} dari {{ $kategori->total() ?? 0 }} data</small>{{ $kategori->links() }}</div></div>
 </div>
 @endsection
