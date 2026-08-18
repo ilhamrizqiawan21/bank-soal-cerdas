@@ -4,203 +4,24 @@
 @section('breadcrumb', 'Kolaborasi')
 
 @section('content')
-<div class="container-fluid">
-    <h5 class="fw-bold mb-4">Manajemen Kolaborasi</h5>
-
-    <!-- Share Soal -->
-    <div class="stat-card mb-4">
-        <h6 class="fw-bold mb-3">📤 Share Soal</h6>
-        <form action="{{ route('share.soal', ['id' => 0]) }}" method="POST" id="shareSoalForm">
-            @csrf
-            <div class="row g-2">
-                <div class="col-md-4">
-                    <select name="question_id" class="form-select" required>
-                        <option value="">Pilih Soal</option>
-                        @foreach($questions ?? [] as $q)
-                            <option value="{{ $q->id }}">{{ Str::limit($q->question_text, 50) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select name="shared_to" class="form-select" required>
-                        <option value="">Pilih Guru</option>
-                        @foreach($guruList ?? [] as $guru)
-                            <option value="{{ $guru->id }}">{{ $guru->name }} ({{ $guru->email }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="permission" class="form-select">
-                        <option value="view">Lihat</option>
-                        <option value="edit">Edit</option>
-                        <option value="copy">Copy</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-share me-1"></i> Share Soal
-                    </button>
-                </div>
-            </div>
-        </form>
+<style>
+    .collab-page .kicker{font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#2563eb}.collab-page h1{font-size:1.35rem;font-weight:750;letter-spacing:-.025em;margin:3px 0}.collab-page .subtitle{font-size:.84rem;color:#64748b;margin:0}.collab-page .collab-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04);padding:18px;margin-bottom:18px}.collab-page .collab-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#eff6ff;color:#2563eb}.collab-page .section-title{font-size:.9rem;font-weight:750;margin:0}.collab-page .section-subtitle{font-size:.75rem;color:#64748b;margin:2px 0 0}.collab-page .form-label{font-size:.72rem;color:#475569}.collab-page .form-control,.collab-page .form-select{border-radius:9px;border-color:#dbe3ee;min-height:40px}.collab-page .share-btn{border-radius:9px;font-weight:650}.collab-page .table{margin:0;vertical-align:middle}.collab-page .table thead th{background:#f8fafc;color:#64748b;border-bottom:1px solid #e2e8f0;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;padding:12px 14px}.collab-page .table tbody td{padding:12px 14px;border-color:#eef2f7;font-size:.81rem}.collab-page .table tbody tr:hover{background:#f8fbff}
+</style>
+<div class="container-fluid collab-page">
+    <div class="mb-4"><div class="kicker"><i class="fas fa-users me-1"></i> Kerja Bersama</div><h1>Kolaborasi</h1><p class="subtitle">Bagikan soal dan paket soal dengan guru lain menggunakan izin akses yang terkontrol.</p></div>
+    <div class="row g-3 mb-1">
+        <div class="col-xl-6"><div class="collab-card h-100"><div class="d-flex align-items-center gap-3 mb-3"><div class="collab-icon"><i class="fas fa-share-nodes"></i></div><div><div class="section-title">Share Soal</div><div class="section-subtitle">Kirim satu soal kepada guru lain.</div></div></div><form action="{{ route('share.soal',['id'=>0]) }}" method="POST" id="shareSoalForm">@csrf<div class="mb-3"><label class="form-label fw-bold">Pilih Soal</label><select name="question_id" class="form-select" required><option value="">Pilih soal...</option>@foreach($questions ?? [] as $q)<option value="{{ $q->id }}">{{ Str::limit($q->question_text,70) }}</option>@endforeach</select></div><div class="row g-2"><div class="col-md-7"><label class="form-label fw-bold">Bagikan kepada</label><select name="shared_to" class="form-select" required><option value="">Pilih guru...</option>@foreach($guruList ?? [] as $guru)<option value="{{ $guru->id }}">{{ $guru->name }} ({{ $guru->email }})</option>@endforeach</select></div><div class="col-md-5"><label class="form-label fw-bold">Izin</label><select name="permission" class="form-select"><option value="view">Lihat</option><option value="edit">Edit</option><option value="copy">Copy</option></select></div></div><button type="submit" class="btn btn-primary share-btn w-100 mt-3"><i class="fas fa-share me-1"></i> Share Soal</button></form></div></div>
+        <div class="col-xl-6"><div class="collab-card h-100"><div class="d-flex align-items-center gap-3 mb-3"><div class="collab-icon"><i class="fas fa-box-open"></i></div><div><div class="section-title">Share Paket Soal</div><div class="section-subtitle">Bagikan satu paket lengkap kepada guru lain.</div></div></div><form action="{{ route('share.paket',['id'=>0]) }}" method="POST" id="sharePaketForm">@csrf<div class="mb-3"><label class="form-label fw-bold">Pilih Paket</label><select name="paket_soal_id" class="form-select" required><option value="">Pilih paket...</option>@foreach($pakets ?? [] as $p)<option value="{{ $p->id }}">{{ $p->name }}</option>@endforeach</select></div><div class="row g-2"><div class="col-md-7"><label class="form-label fw-bold">Bagikan kepada</label><select name="shared_to" class="form-select" required><option value="">Pilih guru...</option>@foreach($guruList ?? [] as $guru)<option value="{{ $guru->id }}">{{ $guru->name }} ({{ $guru->email }})</option>@endforeach</select></div><div class="col-md-5"><label class="form-label fw-bold">Izin</label><select name="permission" class="form-select"><option value="view">Lihat</option><option value="edit">Edit</option><option value="copy">Copy</option></select></div></div><button type="submit" class="btn btn-primary share-btn w-100 mt-3"><i class="fas fa-share me-1"></i> Share Paket</button></form></div></div>
     </div>
-
-    <!-- Share Paket -->
-    <div class="stat-card mb-4">
-        <h6 class="fw-bold mb-3">📦 Share Paket Soal</h6>
-        <form action="{{ route('share.paket', ['id' => 0]) }}" method="POST" id="sharePaketForm">
-            @csrf
-            <div class="row g-2">
-                <div class="col-md-4">
-                    <select name="paket_soal_id" class="form-select" required>
-                        <option value="">Pilih Paket</option>
-                        @foreach($pakets ?? [] as $p)
-                            <option value="{{ $p->id }}">{{ $p->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select name="shared_to" class="form-select" required>
-                        <option value="">Pilih Guru</option>
-                        @foreach($guruList ?? [] as $guru)
-                            <option value="{{ $guru->id }}">{{ $guru->name }} ({{ $guru->email }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="permission" class="form-select">
-                        <option value="view">Lihat</option>
-                        <option value="edit">Edit</option>
-                        <option value="copy">Copy</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-share me-1"></i> Share Paket
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Daftar Share -->
-    <div class="stat-card">
-        <h6 class="fw-bold mb-3">📋 Daftar Kolaborasi</h6>
-        
-        @if(($shareSoal ?? collect())->isEmpty() && ($sharePaket ?? collect())->isEmpty())
-            <div class="text-center py-5">
-                <i class="fas fa-share-alt fa-3x text-muted mb-3 d-block"></i>
-                <p class="text-muted">Belum ada aktivitas kolaborasi.</p>
-            </div>
-        @else
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Jenis</th>
-                            <th>Judul</th>
-                            <th>Dibagikan oleh</th>
-                            <th>Kepada</th>
-                            <th>Izin</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($shareSoal ?? [] as $item)
-                            <tr>
-                                <td><span class="badge bg-primary">Soal</span></td>
-                                <td>{{ Str::limit($item->question->question_text ?? '-', 50) }}</td>
-                                <td>{{ $item->sharedBy->name ?? '-' }}</td>
-                                <td>{{ $item->sharedTo->name ?? '-' }}</td>
-                                <td>{{ $item->permission_label }}</td>
-                                <td>
-                                    @if($item->is_accepted)
-                                        <span class="badge bg-success">Diterima</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if(!$item->is_accepted && $item->shared_to == auth()->id())
-                                        <div class="btn-group btn-group-sm">
-                                            <form action="{{ route('share.soal.accept', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button>
-                                            </form>
-                                            <form action="{{ route('share.soal.reject', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button>
-                                            </form>
-                                        </div>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                        @foreach($sharePaket ?? [] as $item)
-                            <tr>
-                                <td><span class="badge bg-success">Paket</span></td>
-                                <td>{{ $item->paketSoal->name ?? '-' }}</td>
-                                <td>{{ $item->sharedBy->name ?? '-' }}</td>
-                                <td>{{ $item->sharedTo->name ?? '-' }}</td>
-                                <td>{{ $item->permission_label }}</td>
-                                <td>
-                                    @if($item->is_accepted)
-                                        <span class="badge bg-success">Diterima</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if(!$item->is_accepted && $item->shared_to == auth()->id())
-                                        <div class="btn-group btn-group-sm">
-                                            <form action="{{ route('share.paket.accept', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button>
-                                            </form>
-                                            <form action="{{ route('share.paket.reject', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button>
-                                            </form>
-                                        </div>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+    <div class="collab-card"><div class="d-flex justify-content-between align-items-center mb-3"><div><div class="section-title">Aktivitas Kolaborasi</div><div class="section-subtitle">Permintaan dan pembagian materi terbaru.</div></div><a href="{{ route('share.riwayat') }}" class="btn btn-sm btn-outline-primary">Lihat Riwayat <i class="fas fa-arrow-right ms-1"></i></a></div>
+        @if(($shareSoal ?? collect())->isEmpty() && ($sharePaket ?? collect())->isEmpty())<div class="text-center py-5"><i class="fas fa-share-alt fa-2x text-muted mb-3 d-block"></i><div class="fw-bold">Belum ada aktivitas kolaborasi</div><p class="text-muted small mb-0">Aktivitas share akan muncul di sini.</p></div>@else<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Jenis</th><th>Judul</th><th>Dibagikan oleh</th><th>Kepada</th><th>Izin</th><th>Status</th><th>Aksi</th></tr></thead><tbody>@foreach($shareSoal ?? [] as $item)<tr><td><span class="badge bg-primary">Soal</span></td><td>{{ Str::limit($item->question->question_text ?? '-',50) }}</td><td>{{ $item->sharedBy->name ?? '-' }}</td><td>{{ $item->sharedTo->name ?? '-' }}</td><td><span class="badge bg-info">{{ $item->permission_label }}</span></td><td>@if($item->is_accepted)<span class="badge bg-success">Diterima</span>@else<span class="badge bg-warning">Pending</span>@endif</td><td>@if(!$item->is_accepted && $item->shared_to == auth()->id())<div class="btn-group btn-group-sm"><form action="{{ route('share.soal.accept',$item->id) }}" method="POST">@csrf<button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button></form><form action="{{ route('share.soal.reject',$item->id) }}" method="POST">@csrf<button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button></form></div>@else<span class="text-muted">—</span>@endif</td></tr>@endforeach @foreach($sharePaket ?? [] as $item)<tr><td><span class="badge bg-success">Paket</span></td><td>{{ $item->paketSoal->name ?? '-' }}</td><td>{{ $item->sharedBy->name ?? '-' }}</td><td>{{ $item->sharedTo->name ?? '-' }}</td><td><span class="badge bg-info">{{ $item->permission_label }}</span></td><td>@if($item->is_accepted)<span class="badge bg-success">Diterima</span>@else<span class="badge bg-warning">Pending</span>@endif</td><td>@if(!$item->is_accepted && $item->shared_to == auth()->id())<div class="btn-group btn-group-sm"><form action="{{ route('share.paket.accept',$item->id) }}" method="POST">@csrf<button type="submit" class="btn btn-success"><i class="fas fa-check"></i></button></form><form action="{{ route('share.paket.reject',$item->id) }}" method="POST">@csrf<button type="submit" class="btn btn-danger"><i class="fas fa-times"></i></button></form></div>@else<span class="text-muted">—</span>@endif</td></tr>@endforeach</tbody></table></div>@endif
     </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-// Handle share soal form submission
-document.getElementById('shareSoalForm')?.addEventListener('submit', function(e) {
-    const questionId = this.querySelector('select[name="question_id"]').value;
-    if (!questionId) {
-        e.preventDefault();
-        window.toast?.('Pilih soal terlebih dahulu!', 'warning');
-        return false;
-    }
-    this.action = this.action.replace('/0', '/' + questionId);
-});
-
-// Handle share paket form submission
-document.getElementById('sharePaketForm')?.addEventListener('submit', function(e) {
-    const paketId = this.querySelector('select[name="paket_soal_id"]').value;
-    if (!paketId) {
-        e.preventDefault();
-        window.toast?.('Pilih paket soal terlebih dahulu!', 'warning');
-        return false;
-    }
-    this.action = this.action.replace('/0', '/' + paketId);
-});
+document.getElementById('shareSoalForm')?.addEventListener('submit',function(e){const id=this.querySelector('[name="question_id"]').value;if(!id){e.preventDefault();window.toast?.('Pilih soal terlebih dahulu!','warning');return false;}this.action=this.action.replace('/0','/'+id);});
+document.getElementById('sharePaketForm')?.addEventListener('submit',function(e){const id=this.querySelector('[name="paket_soal_id"]').value;if(!id){e.preventDefault();window.toast?.('Pilih paket soal terlebih dahulu!','warning');return false;}this.action=this.action.replace('/0','/'+id);});
 </script>
 @endpush
