@@ -1,0 +1,286 @@
+/* ===== GLOBAL THEME + RESPONSIVE LAYER =====
+ * Kept separate from app.scss so feature branches can evolve the core layout
+ * without making the theme layer difficult to merge.
+ */
+
+/* ----- Dark theme for the shared shell ----- */
+html[data-bs-theme="dark"] body,
+body.dark {
+    background: #020817;
+    color: #e2e8f0;
+}
+
+html[data-bs-theme="dark"] .topbar,
+body.dark .topbar {
+    background: rgba(15, 23, 42, 0.92);
+    border-bottom-color: rgba(148, 163, 184, 0.12);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset;
+}
+
+html[data-bs-theme="dark"] .topbar-page-title,
+body.dark .topbar-page-title {
+    color: #f8fafc;
+}
+
+html[data-bs-theme="dark"] .breadcrumb-wrap .breadcrumb-item a,
+html[data-bs-theme="dark"] .breadcrumb-wrap .breadcrumb-item.active,
+body.dark .breadcrumb-wrap .breadcrumb-item a,
+body.dark .breadcrumb-wrap .breadcrumb-item.active {
+    color: #94a3b8;
+}
+
+html[data-bs-theme="dark"] .topbar-toggle,
+html[data-bs-theme="dark"] .icon-button,
+body.dark .topbar-toggle,
+body.dark .icon-button {
+    color: #94a3b8;
+}
+
+html[data-bs-theme="dark"] .topbar-toggle:hover,
+html[data-bs-theme="dark"] .icon-button:hover,
+body.dark .topbar-toggle:hover,
+body.dark .icon-button:hover {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+
+html[data-bs-theme="dark"] .search-box,
+body.dark .search-box {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html[data-bs-theme="dark"] .search-box:focus-within,
+body.dark .search-box:focus-within {
+    background: #1e293b;
+    border-color: #3b82f6;
+}
+
+html[data-bs-theme="dark"] .search-box input,
+body.dark .search-box input {
+    color: #e2e8f0;
+}
+
+html[data-bs-theme="dark"] .user-button,
+body.dark .user-button {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html[data-bs-theme="dark"] .user-button:hover,
+body.dark .user-button:hover {
+    background: #263449;
+    border-color: #475569;
+}
+
+html[data-bs-theme="dark"] .user-name,
+body.dark .user-name {
+    color: #e2e8f0;
+}
+
+html[data-bs-theme="dark"] .page-content,
+body.dark .page-content {
+    background: #020817;
+}
+
+html[data-bs-theme="dark"] .dropdown-menu,
+body.dark .dropdown-menu {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+html[data-bs-theme="dark"] .dropdown-item,
+body.dark .dropdown-item {
+    color: #cbd5e1;
+}
+
+html[data-bs-theme="dark"] .dropdown-item:hover,
+body.dark .dropdown-item:hover {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+html[data-bs-theme="dark"] .dropdown-divider,
+body.dark .dropdown-divider {
+    border-color: #334155;
+}
+
+html[data-bs-theme="dark"] .modal-content,
+body.dark .modal-content {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+html[data-bs-theme="dark"] .modal-header,
+html[data-bs-theme="dark"] .modal-footer,
+body.dark .modal-header,
+body.dark .modal-footer {
+    border-color: #334155;
+}
+
+html[data-bs-theme="dark"] .btn-close,
+body.dark .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ----- Profile page responsiveness ----- */
+.profile-page .form-card,
+.profile-page .profile-card {
+    min-width: 0;
+}
+
+.profile-page .row > [class*="col-"] {
+    min-width: 0;
+}
+
+.profile-page .form-control,
+.profile-page .form-select,
+.profile-page textarea {
+    max-width: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .page-content {
+        padding: 20px;
+    }
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .search-box input {
+        width: 140px;
+    }
+
+    .profile-page .row {
+        --bs-gutter-y: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .topbar {
+        height: 64px;
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .topbar-left {
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .topbar-toggle,
+    .icon-button {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+    }
+
+    .topbar-context {
+        max-width: min(42vw, 210px);
+    }
+
+    .breadcrumb-wrap {
+        display: none;
+    }
+
+    .topbar-page-title {
+        font-size: 14px;
+    }
+
+    .topbar-actions {
+        gap: 4px;
+    }
+
+    .search-box,
+    .topbar-actions .btn-add,
+    .user-name {
+        display: none;
+    }
+
+    .user-button {
+        width: 38px;
+        height: 38px;
+        padding: 2px;
+        justify-content: center;
+        border-radius: 50%;
+        background: transparent;
+        border-color: transparent;
+    }
+
+    .user-avatar {
+        width: 34px;
+        height: 34px;
+    }
+
+    .user-button::after {
+        display: none;
+    }
+
+    .page-content {
+        padding: 16px 12px 24px;
+    }
+
+    .profile-page .profile-body,
+    .profile-page .form-card {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .profile-page .profile-cover {
+        height: 72px;
+    }
+
+    .profile-page .avatar-wrap {
+        margin-top: -36px;
+    }
+
+    .profile-page .avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+    }
+
+    .profile-page .row.g-3 > [class*="col-"] {
+        width: 100%;
+    }
+
+    .profile-page .password-section .row > [class*="col-"] {
+        width: 100%;
+    }
+
+    .profile-page .upload-box .form-control,
+    .profile-page .upload-box .btn,
+    .profile-page form .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .topbar-context {
+        max-width: 35vw;
+    }
+
+    .topbar-page-title {
+        font-size: 13px;
+    }
+
+    .topbar-actions .dropdown .icon-button {
+        width: 34px;
+        flex-basis: 34px;
+    }
+
+    .profile-page .form-card,
+    .profile-page .profile-body {
+        padding: 14px;
+    }
+
+    .profile-page .profile-body {
+        padding-top: 0;
+        padding-bottom: 16px;
+    }
+}
