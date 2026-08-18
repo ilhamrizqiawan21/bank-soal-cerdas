@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Bank Soal Cerdas - @yield('title', 'Dashboard')</title>
+    <title>Bank Soal - @yield('title', 'Dashboard')</title>
     
     <!-- Vite -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js']) 
@@ -44,7 +44,7 @@
                 <div class="brand-mark">BC</div>
                 <div class="brand-text">
                     <span class="brand-name">Bank Soal</span>
-                    <small class="brand-subtitle">Cerdas</small>
+                    <small class="brand-subtitle">V. 1.0.0</small>
                 </div>
                 <button type="button" class="sidebar-toggle-btn" @click="toggleSidebar()" aria-label="Collapse sidebar">
                     <i class="fas fa-chevron-left"></i>
@@ -144,18 +144,21 @@
                         <i class="fas fa-bars"></i>
                     </button>
 
-                    <nav aria-label="breadcrumb" class="breadcrumb-wrap">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('dashboard') }}">Dashboard</a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">@yield('breadcrumb', 'Halaman')</li>
-                        </ol>
-                    </nav>
+                    <div class="topbar-context">
+                        <nav aria-label="breadcrumb" class="breadcrumb-wrap">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">@yield('breadcrumb', 'Halaman')</li>
+                            </ol>
+                        </nav>
+                        <span class="topbar-page-title">@yield('title', 'Dashboard')</span>
+                    </div>
                 </div>
 
                 <div class="topbar-actions">
-                    <button type="button" class="icon-button" @click="toggleDark()" aria-label="Toggle Dark Mode">
+                    <button type="button" class="icon-button" @click="toggleDark()" aria-label="Aktifkan atau nonaktifkan mode gelap" title="Mode gelap">
                         <i class="fas fa-moon"></i>
                     </button>
 
@@ -166,7 +169,7 @@
                         </form>
 
                         <div class="dropdown">
-                            <button type="button" class="icon-button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifikasi">
+                            <button type="button" class="icon-button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifikasi" title="Notifikasi">
                                 <i class="fas fa-bell"></i>
                                 @if($pendingShares->isNotEmpty())
                                     <span class="notification-dot"></span>
