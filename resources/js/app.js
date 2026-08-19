@@ -2,6 +2,7 @@ import './bootstrap';
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;
 import './alpine';
+import '../sass/theme-responsive.scss';
 
 // ===== TOAST EVENT LISTENER =====
 document.addEventListener('alpine:init', () => {
