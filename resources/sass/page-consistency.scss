@@ -1,0 +1,272 @@
+/*
+ * Bank Soal Cerdas — Page Consistency Layer
+ * FE-3: normalize page-level rhythm and composition without changing
+ * page behavior. Components remain responsible for their own visuals.
+ */
+
+.page-content {
+    --page-inline-gutter: var(--space-7);
+    --page-section-gap: var(--space-6);
+    color: var(--color-text);
+}
+
+/* Keep page-level containers aligned to one content grid. */
+.page-content > .container,
+.page-content > .container-fluid,
+.page-content > .container-sm,
+.page-content > .container-md,
+.page-content > .container-lg,
+.page-content > .container-xl,
+.page-content > .container-xxl {
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+    padding-inline: 0;
+}
+
+.page-content > .row {
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+}
+
+/* A shared vocabulary for page headers/actions. Existing pages can adopt
+ * these classes incrementally without changing their controller/view logic. */
+.page-header,
+.page-heading,
+.page-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-5);
+    margin-bottom: var(--page-section-gap);
+}
+
+.page-header__content,
+.page-heading__content {
+    min-width: 0;
+}
+
+.page-title,
+.page-heading h1,
+.page-header h1 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -.025em;
+    line-height: var(--line-height-tight);
+}
+
+.page-subtitle,
+.page-heading p,
+.page-header p {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-relaxed);
+}
+
+.page-actions,
+.page-toolbar__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.section-header,
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.section-header h2,
+.section-header h3,
+.section-heading h2,
+.section-heading h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+}
+
+.section-header p,
+.section-heading p {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* Consistent vertical rhythm between direct content sections. */
+.page-content > * + * {
+    margin-top: var(--space-5);
+}
+
+.page-content > .page-header + *,
+.page-content > .page-heading + *,
+.page-content > .page-toolbar + * {
+    margin-top: 0;
+}
+
+/* Common filter/tool surfaces across list pages. */
+.page-filter,
+.filter-card,
+.filters-card,
+.page-toolbar-card {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-4);
+}
+
+.page-filter__grid,
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-4);
+    align-items: end;
+}
+
+.page-filter__field,
+.filter-field {
+    grid-column: span 3;
+    min-width: 0;
+}
+
+.page-filter__actions,
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    grid-column: span 3;
+}
+
+/* Consistent content surfaces for list/detail pages. */
+.content-surface,
+.list-surface,
+.detail-surface {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* Prevent Bootstrap utility text colors from breaking the shared theme in
+ * application content. Semantic component colors remain untouched. */
+.page-content .text-body {
+    color: var(--color-text) !important;
+}
+
+.page-content .text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+/* Role/action areas should wrap instead of forcing horizontal overflow. */
+.page-content .action-group,
+.page-content .table-actions,
+.page-content .form-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+@media (max-width: 991.98px) {
+    .page-content {
+        --page-inline-gutter: var(--space-5);
+    }
+
+    .page-header,
+    .page-heading,
+    .page-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-actions,
+    .page-toolbar__actions {
+        justify-content: flex-start;
+    }
+
+    .page-filter__field,
+    .filter-field {
+        grid-column: span 6;
+    }
+
+    .page-filter__actions,
+    .filter-actions {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .page-content {
+        --page-inline-gutter: var(--space-4);
+        --page-section-gap: var(--space-5);
+    }
+
+    .page-content > .container,
+    .page-content > .container-fluid,
+    .page-content > .container-sm,
+    .page-content > .container-md,
+    .page-content > .container-lg,
+    .page-content > .container-xl,
+    .page-content > .container-xxl {
+        padding-inline: 0;
+    }
+
+    .page-title,
+    .page-heading h1,
+    .page-header h1 {
+        font-size: var(--font-size-xl);
+    }
+
+    .page-filter,
+    .filter-card,
+    .filters-card,
+    .page-toolbar-card {
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+    }
+
+    .page-filter__grid,
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-filter__field,
+    .page-filter__actions,
+    .filter-field,
+    .filter-actions {
+        grid-column: auto;
+    }
+
+    .page-actions,
+    .page-toolbar__actions {
+        width: 100%;
+    }
+
+    .page-actions .btn,
+    .page-toolbar__actions .btn {
+        flex: 1 1 auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-content *,
+    .page-content *::before,
+    .page-content *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
