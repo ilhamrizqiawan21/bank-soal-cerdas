@@ -24,7 +24,7 @@ class FrontendRegressionTest extends TestCase
 
         $this->assertNotFalse($uxStyles);
         $this->assertNotFalse($appJs);
-        $this->assertStringContainsString("import '../sass/design-system.scss';", $appJs);
+        $this->assertStringContainsString("import '../sass/frontend-ux.scss';", $appJs);
         $this->assertStringContainsString('breadcrumb-wrap', $uxStyles);
         $this->assertStringContainsString('focus-visible', $uxStyles);
         $this->assertStringContainsString('prefers-reduced-motion', $uxStyles);
