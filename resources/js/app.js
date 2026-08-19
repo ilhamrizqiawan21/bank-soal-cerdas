@@ -4,6 +4,7 @@ window.bootstrap = bootstrap;
 import './alpine';
 import '../sass/theme-responsive.scss';
 import '../sass/secondary-table-theme.scss';
+import '../sass/design-system.scss';
 
 // ===== TOAST EVENT LISTENER =====
 document.addEventListener('alpine:init', () => {
