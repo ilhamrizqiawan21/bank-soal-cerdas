@@ -1,0 +1,124 @@
+/*
+ * Bank Soal Cerdas — Dark Theme Compatibility
+ *
+ * FE-3 fix: pages still using Bootstrap utility classes or legacy surfaces
+ * must follow the same semantic tokens when body.dark is active.
+ * Keep this file limited to compatibility overrides; new components should
+ * use components.scss and design-system.scss directly.
+ */
+
+body.dark {
+    /* Bootstrap utility surfaces */
+    .bg-light {
+        background-color: var(--color-surface-subtle) !important;
+        color: var(--color-text) !important;
+    }
+
+    .bg-white {
+        background-color: var(--color-surface) !important;
+        color: var(--color-text) !important;
+    }
+
+    .bg-body,
+    .bg-body-tertiary {
+        background-color: var(--color-surface-subtle) !important;
+    }
+
+    .text-dark,
+    .text-body {
+        color: var(--color-text) !important;
+    }
+
+    .text-secondary,
+    .text-muted {
+        color: var(--color-text-muted) !important;
+    }
+
+    /* Lists / cards / generic content surfaces */
+    .list-group-item {
+        background-color: transparent;
+        color: var(--color-text);
+        border-color: var(--color-border);
+    }
+
+    .card,
+    .card-header,
+    .card-footer {
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border);
+    }
+
+    /* Tables not yet migrated to the shared table component */
+    .table {
+        --bs-table-bg: var(--color-surface);
+        --bs-table-color: var(--color-text);
+        --bs-table-border-color: var(--color-border);
+        --bs-table-hover-bg: var(--color-surface-subtle);
+        --bs-table-hover-color: var(--color-text);
+        color: var(--color-text);
+        border-color: var(--color-border);
+    }
+
+    .table > :not(caption) > * > * {
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border);
+    }
+
+    .table-hover > tbody > tr:hover > * {
+        background-color: var(--color-surface-subtle);
+        color: var(--color-text);
+    }
+
+    /* Form controls */
+    .form-control,
+    .form-select,
+    .input-group-text {
+        background-color: var(--color-input);
+        color: var(--color-text);
+        border-color: var(--color-border-strong);
+    }
+
+    .form-control::placeholder {
+        color: var(--color-text-placeholder);
+        opacity: 1;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: var(--color-input);
+        color: var(--color-text);
+        border-color: var(--color-focus);
+        box-shadow: var(--shadow-focus);
+    }
+
+    /* Dropdowns and overlays */
+    .dropdown-menu,
+    .modal-content,
+    .popover {
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border);
+    }
+
+    .dropdown-item {
+        color: var(--color-text-soft);
+    }
+
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+        background-color: var(--color-surface-subtle);
+        color: var(--color-text);
+    }
+
+    /* Bootstrap horizontal rules / separators */
+    hr,
+    .border,
+    .border-top,
+    .border-end,
+    .border-bottom,
+    .border-start {
+        border-color: var(--color-border) !important;
+    }
+}
