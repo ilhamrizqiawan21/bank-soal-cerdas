@@ -6,6 +6,7 @@ import '../sass/theme-responsive.scss';
 import '../sass/secondary-table-theme.scss';
 import '../sass/design-system.scss';
 import '../sass/frontend-ux.scss';
+import '../sass/theme-surface.scss';
 
 // ===== TOAST EVENT LISTENER =====
 document.addEventListener('alpine:init', () => {
