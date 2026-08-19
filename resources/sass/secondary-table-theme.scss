@@ -1,0 +1,91 @@
+/* ===== SECONDARY MENU TABLE / SURFACE OVERRIDES =====
+ * Kept separate from page-local inline styles so the shared design system
+ * remains the final authority for Profile, Kolaborasi, and Riwayat.
+ */
+
+.collab-page .table,
+.history-page .table,
+.profile-page .table {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: var(--menu-text-soft) !important;
+    color: var(--menu-text-soft) !important;
+    margin-bottom: 0 !important;
+}
+
+.collab-page .table thead th,
+.history-page .table thead th,
+.profile-page .table thead th {
+    background: var(--menu-surface-2) !important;
+    border-color: var(--menu-border) !important;
+    border-bottom-width: 1px !important;
+    color: var(--menu-muted) !important;
+    font-size: .68rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .05em !important;
+    padding: 12px 14px !important;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.collab-page .table tbody td,
+.history-page .table tbody td,
+.profile-page .table tbody td {
+    background: var(--menu-surface) !important;
+    border-color: var(--menu-border) !important;
+    color: var(--menu-text-soft) !important;
+    font-size: .82rem !important;
+    padding: 13px 14px !important;
+    vertical-align: middle !important;
+}
+
+.collab-page .table tbody tr:hover td,
+.history-page .table tbody tr:hover td,
+.profile-page .table tbody tr:hover td {
+    background: var(--menu-surface-2) !important;
+}
+
+.collab-page .table-responsive,
+.history-page .table-responsive,
+.profile-page .table-responsive {
+    border-radius: 0 0 14px 14px;
+}
+
+/* Profile uses the same surface tokens even though its primary content is forms. */
+.profile-page .profile-card,
+.profile-page .form-card {
+    background: var(--menu-surface) !important;
+    border-color: var(--menu-border) !important;
+    box-shadow: var(--menu-shadow) !important;
+}
+
+.profile-page .profile-cover {
+    background: linear-gradient(135deg, #172554, #2563eb) !important;
+}
+
+.profile-page .profile-body,
+.profile-page .section-title,
+.profile-page .profile-name {
+    color: var(--menu-text) !important;
+}
+
+.profile-page .profile-meta,
+.profile-page .section-subtitle,
+.profile-page .form-label {
+    color: var(--menu-muted) !important;
+}
+
+.profile-page .upload-box,
+.profile-page .password-section {
+    border-color: var(--menu-border) !important;
+}
+
+@media (max-width: 768px) {
+    .collab-page .table thead th,
+    .history-page .table thead th,
+    .profile-page .table thead th,
+    .collab-page .table tbody td,
+    .history-page .table tbody td,
+    .profile-page .table tbody td {
+        padding: 10px 12px !important;
+    }
+}
