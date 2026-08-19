@@ -54,6 +54,43 @@
     border-radius: 0 0 14px 14px;
 }
 
+/* Share dan Riwayat memakai surface yang sama dengan menu lain, termasuk filter. */
+.collab-page .collab-card,
+.history-page .history-card {
+    background: var(--menu-surface) !important;
+    border-color: var(--menu-border) !important;
+    box-shadow: var(--menu-shadow) !important;
+}
+
+.history-page .filter,
+.history-page .card-foot {
+    background: var(--menu-surface-2) !important;
+    border-color: var(--menu-border) !important;
+}
+
+.collab-page .form-label,
+.history-page .form-label {
+    color: var(--menu-muted) !important;
+}
+
+.collab-page .form-control,
+.collab-page .form-select,
+.history-page .form-control,
+.history-page .form-select {
+    background: var(--menu-input) !important;
+    border-color: var(--menu-border) !important;
+    color: var(--menu-text) !important;
+}
+
+.collab-page .form-control:focus,
+.collab-page .form-select:focus,
+.history-page .form-control:focus,
+.history-page .form-select:focus {
+    background: var(--menu-input) !important;
+    border-color: var(--menu-accent) !important;
+    box-shadow: 0 0 0 .2rem var(--menu-accent-soft) !important;
+}
+
 .profile-page .profile-card,
 .profile-page .form-card {
     background: var(--menu-surface) !important;
