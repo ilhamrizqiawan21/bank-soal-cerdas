@@ -39,7 +39,7 @@
                                     <div class="mb-1">
                                         <strong>{{ $option->label }}.</strong> {{ $option->option_text }}
                                         @if($option->is_correct)
-                                            <span class="badge bg-success ms-2">✓ Benar</span>
+                                            <span class="badge bg-success ms-2"><i class="fas fa-check me-1"></i>Benar</span>
                                         @endif
                                     </div>
                                 @endforeach

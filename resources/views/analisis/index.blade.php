@@ -103,7 +103,7 @@
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="stat-card">
-                <h6 class="fw-bold mb-3">🏆 Top 5 Siswa Terbaik</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-trophy me-2"></i>Top 5 Siswa Terbaik</h6>
                 @if($topSiswa->isEmpty())
                     <p class="text-muted">Belum ada data ujian selesai.</p>
                 @else
@@ -129,7 +129,7 @@
         <!-- Ujian Terbaru -->
         <div class="col-md-6">
             <div class="stat-card">
-                <h6 class="fw-bold mb-3">📝 Ujian Terbaru</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-file-alt me-2"></i>Ujian Terbaru</h6>
                 @if($recentUjian->isEmpty())
                     <p class="text-muted">Belum ada ujian.</p>
                 @else
@@ -160,7 +160,7 @@
     <div class="row">
         <div class="col-12">
             <div class="stat-card">
-                <h6 class="fw-bold mb-3">📤 Export Data</h6>
+                <h6 class="fw-bold mb-3"><i class="fas fa-file-export me-2"></i>Export Data</h6>
                 <div class="d-flex gap-2">
                     <a href="{{ route('analisis.export') }}?format=pdf" class="btn btn-danger btn-sm">
                         <i class="fas fa-file-pdf me-1"></i> Export PDF

@@ -7,13 +7,10 @@
         "dev": "vite"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.0.0",
         "autoprefixer": "^10.5.4",
-        "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^1.2.0",
         "postcss": "^8.5.26",
         "sass-embedded": "^1.102.0",
-        "tailwindcss": "^4.0.0",
         "vite": "^5.4.14"
     },
     "optionalDependencies": {
@@ -23,8 +20,6 @@
         "@fortawesome/fontawesome-free": "^7.3.1",
         "@popperjs/core": "^2.11.8",
         "alpinejs": "^3.16.1",
-        "axios": "^1.19.0",
-        "bootstrap": "^5.3.8",
-        "chart.js": "^4.5.1"
+        "bootstrap": "^5.3.8"
     }
 }

@@ -9,7 +9,7 @@
 
     <!-- Share Soal -->
     <div class="stat-card mb-4">
-        <h6 class="fw-bold mb-3">📤 Share Soal</h6>
+        <h6 class="fw-bold mb-3"><i class="fas fa-share me-2"></i>Share Soal</h6>
         <form action="{{ route('share.soal', ['id' => 0]) }}" method="POST" id="shareSoalForm">
             @csrf
             <div class="row g-2">
@@ -47,7 +47,7 @@
 
     <!-- Share Paket -->
     <div class="stat-card mb-4">
-        <h6 class="fw-bold mb-3">📦 Share Paket Soal</h6>
+        <h6 class="fw-bold mb-3"><i class="fas fa-box me-2"></i>Share Paket Soal</h6>
         <form action="{{ route('share.paket', ['id' => 0]) }}" method="POST" id="sharePaketForm">
             @csrf
             <div class="row g-2">
@@ -85,7 +85,7 @@
 
     <!-- Daftar Share -->
     <div class="stat-card">
-        <h6 class="fw-bold mb-3">📋 Daftar Kolaborasi</h6>
+        <h6 class="fw-bold mb-3"><i class="fas fa-list-check me-2"></i>Daftar Kolaborasi</h6>
         
         @if(($shareSoal ?? collect())->isEmpty() && ($sharePaket ?? collect())->isEmpty())
             <div class="text-center py-5">

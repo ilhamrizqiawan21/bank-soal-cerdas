@@ -120,7 +120,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0">Soal Terbaru</h6>
                     <a href="{{ route('questions.index') }}" class="btn btn-link btn-sm text-decoration-none">
-                        Lihat Semua →
+                        Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
                     </a>
                 </div>
                 <p class="text-muted small">5 soal terakhir yang ditambahkan</p>

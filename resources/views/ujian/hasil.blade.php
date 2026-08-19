@@ -52,7 +52,7 @@
                                 <p class="mb-1">{{ Str::limit($jawaban->question->question_text ?? '', 100) }}</p>
                                 <div>
                                     <span class="badge {{ $jawaban->is_correct ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $jawaban->is_correct ? '✓ Benar' : '✗ Salah' }}
+                                        <i class="fas {{ $jawaban->is_correct ? 'fa-check' : 'fa-times' }} me-1"></i>{{ $jawaban->is_correct ? 'Benar' : 'Salah' }}
                                     </span>
                                     <small class="text-muted ms-2">Skor: {{ $jawaban->score }} / {{ $jawaban->max_score }}</small>
                                 </div>
