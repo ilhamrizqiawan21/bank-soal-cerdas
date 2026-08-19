@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/sass/app.scss',
                 'resources/sass/components.scss',
                 'resources/sass/page-consistency.scss',
+                'resources/sass/dark-theme-compat.scss',
                 'resources/js/app.js',
             ],
             refresh: true,
