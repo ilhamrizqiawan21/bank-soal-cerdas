@@ -1,8 +1,8 @@
 /* ===== SECONDARY MENU TABLE / SURFACE OVERRIDES =====
- * Kept separate from page-local inline styles so the shared design system
- * remains the final authority for Profile, Kolaborasi, and Riwayat.
+ * Shared final authority for secondary-menu tables and surfaces.
  */
 
+.secondary-page .table,
 .collab-page .table,
 .history-page .table,
 .profile-page .table {
@@ -12,6 +12,7 @@
     margin-bottom: 0 !important;
 }
 
+.secondary-page .table thead th,
 .collab-page .table thead th,
 .history-page .table thead th,
 .profile-page .table thead th {
@@ -23,10 +24,11 @@
     font-weight: 700 !important;
     letter-spacing: .05em !important;
     padding: 12px 14px !important;
-    text-transform: uppercase;
+    text-transform: uppercase !important;
     white-space: nowrap;
 }
 
+.secondary-page .table tbody td,
 .collab-page .table tbody td,
 .history-page .table tbody td,
 .profile-page .table tbody td {
@@ -38,19 +40,20 @@
     vertical-align: middle !important;
 }
 
+.secondary-page .table tbody tr:hover td,
 .collab-page .table tbody tr:hover td,
 .history-page .table tbody tr:hover td,
 .profile-page .table tbody tr:hover td {
     background: var(--menu-surface-2) !important;
 }
 
+.secondary-page .table-responsive,
 .collab-page .table-responsive,
 .history-page .table-responsive,
 .profile-page .table-responsive {
     border-radius: 0 0 14px 14px;
 }
 
-/* Profile uses the same surface tokens even though its primary content is forms. */
 .profile-page .profile-card,
 .profile-page .form-card {
     background: var(--menu-surface) !important;
@@ -80,9 +83,11 @@
 }
 
 @media (max-width: 768px) {
+    .secondary-page .table thead th,
     .collab-page .table thead th,
     .history-page .table thead th,
     .profile-page .table thead th,
+    .secondary-page .table tbody td,
     .collab-page .table tbody td,
     .history-page .table tbody td,
     .profile-page .table tbody td {
