@@ -122,3 +122,7 @@ body.dark {
         border-color: var(--color-border) !important;
     }
 }
+
+/* FE-4 is loaded through the already active app stylesheet so responsive
+ * behavior is present on every application page. */
+@import './responsive.scss';
