@@ -1,0 +1,58 @@
+/* Global theme surface — keeps the full document background in sync with body.dark. */
+
+html,
+body {
+    min-height: 100%;
+    background-color: var(--color-bg, #f1f5f9) !important;
+    color: var(--color-text, #0f172a);
+}
+
+body {
+    min-height: 100vh;
+}
+
+#app,
+.app-shell,
+.main-shell,
+.page-content {
+    min-height: 100%;
+    background-color: var(--color-bg, #f1f5f9);
+    color: var(--color-text, #0f172a);
+}
+
+.app-shell {
+    min-height: 100vh;
+}
+
+.main-shell {
+    min-height: 100vh;
+}
+
+.page-content {
+    min-height: calc(100vh - var(--header-height, 72px));
+}
+
+/* The theme switch is applied to body.dark. Keep every document-height
+ * surface tied to the same semantic background instead of viewport-sized
+ * hard-coded light backgrounds. */
+body.dark,
+body.dark #app,
+body.dark .app-shell,
+body.dark .main-shell,
+body.dark .page-content {
+    background-color: var(--color-bg, #020817) !important;
+    color: var(--color-text, #f8fafc);
+}
+
+/* Avoid a light document strip when content is taller than the viewport. */
+body.dark html,
+body.dark .main-shell,
+body.dark .page-content {
+    color-scheme: dark;
+}
+
+@media (max-width: 768px) {
+    .page-content {
+        min-height: calc(100vh - 64px);
+    }
+}
