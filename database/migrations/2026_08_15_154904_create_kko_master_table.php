@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('kko_master', function (Blueprint $table) {
             $table->id();
-            $table->enum('level', ['C1', 'C2', 'C3', 'C4', 'C5', 'C6']);
+            $table->enum('level', ['L1', 'L2', 'L3']);
             $table->string('verb', 100);
             $table->text('description')->nullable();
             $table->timestamps();
