@@ -2,6 +2,8 @@
 
 @section('title', 'Detail Soal')
 @section('breadcrumb', 'Detail Soal')
+@section('breadcrumb_parent', 'Bank Soal')
+@section('breadcrumb_parent_url', '{{ route(\'questions.index\') }}')
 
 @section('content')
 <div class="container-fluid">

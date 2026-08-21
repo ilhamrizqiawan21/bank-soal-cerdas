@@ -2,6 +2,8 @@
 
 @section('title', 'Edit Ujian')
 @section('breadcrumb', 'Edit Ujian')
+@section('breadcrumb_parent', 'Manajemen Ujian')
+@section('breadcrumb_parent_url', '{{ route(\'ujian.index\') }}')
 
 @section('content')
 <div class="container-fluid">

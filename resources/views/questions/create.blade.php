@@ -2,6 +2,8 @@
 
 @section('title', 'Tambah Soal')
 @section('breadcrumb', 'Tambah Soal')
+@section('breadcrumb_parent', 'Bank Soal')
+@section('breadcrumb_parent_url', '{{ route(\'questions.index\') }}')
 
 @section('content')
 <div class="container-fluid">
@@ -256,8 +258,96 @@
                 <a href="{{ route('questions.index') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-times me-1"></i> Batal
                 </a>
+                <button type="button" class="btn btn-outline-danger btn-sm ms-auto" id="btn-clear-draft" style="display:none;">
+                    <i class="fas fa-trash me-1"></i> Hapus Draft
+                </button>
             </div>
         </form>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const DRAFT_KEY = 'draft_create_question';
+    const form = document.querySelector('form[action="{{ route('questions.store') }}"]');
+    const btnClearDraft = document.getElementById('btn-clear-draft');
+
+    if (!form) return;
+
+    // Field yang ingin di-auto-save (exclude file, csrf)
+    const SAVED_FIELDS = [
+        'subject_id', 'jenjang', 'curriculum', 'level_c', 'kko_id',
+        'question_text', 'indicator_text', 'rubric_text', 'correct_boolean',
+    ];
+
+    function saveDraft() {
+        const draft = {};
+        SAVED_FIELDS.forEach(name => {
+            const el = form.querySelector(`[name="${name}"]`);
+            if (el) draft[name] = el.value;
+        });
+        // Simpan type dari Alpine
+        const alpineEl = form.closest('[x-data]');
+        if (alpineEl && alpineEl._x_dataStack) {
+            try { draft['type'] = alpineEl._x_dataStack[0].type; } catch(e) {}
+        }
+        draft['_saved_at'] = new Date().toISOString();
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        btnClearDraft.style.display = 'inline-block';
+    }
+
+    function restoreDraft() {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        try {
+            const draft = JSON.parse(raw);
+            const savedAt = draft['_saved_at'] ? new Date(draft['_saved_at']).toLocaleString('id-ID') : '';
+            // Tampilkan notif bahwa ada draft tersimpan
+            const banner = document.createElement('div');
+            banner.className = 'alert alert-warning alert-dismissible fade show mb-3';
+            banner.innerHTML = `<i class="fas fa-history me-2"></i><strong>Draft ditemukan</strong> — tersimpan pada ${savedAt}. Data telah dipulihkan secara otomatis.<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            form.insertAdjacentElement('beforebegin', banner);
+
+            SAVED_FIELDS.forEach(name => {
+                if (draft[name] === undefined) return;
+                const el = form.querySelector(`[name="${name}"]`);
+                if (el) el.value = draft[name];
+            });
+            btnClearDraft.style.display = 'inline-block';
+        } catch (e) {
+            localStorage.removeItem(DRAFT_KEY);
+        }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+        btnClearDraft.style.display = 'none';
+    }
+
+    // Auto-save setiap 30 detik + saat ada perubahan field (debounced)
+    let debounceTimer;
+    form.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(saveDraft, 1500);
+    });
+    form.addEventListener('change', saveDraft);
+    setInterval(saveDraft, 30000);
+
+    // Hapus draft saat form berhasil di-submit
+    form.addEventListener('submit', clearDraft);
+
+    // Tombol hapus draft manual
+    btnClearDraft.addEventListener('click', function () {
+        if (confirm('Hapus draft yang tersimpan?')) clearDraft();
+    });
+
+    // Pulihkan draft saat halaman dimuat (hanya jika tidak ada old() dari Laravel)
+    const hasOldInput = {{ session()->hasOldInput() ? 'true' : 'false' }};
+    if (!hasOldInput) {
+        restoreDraft();
+    }
+})();
+</script>
+@endpush

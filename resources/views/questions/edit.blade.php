@@ -2,6 +2,8 @@
 
 @section('title', 'Edit Soal')
 @section('breadcrumb', 'Edit Soal')
+@section('breadcrumb_parent', 'Bank Soal')
+@section('breadcrumb_parent_url', '{{ route(\'questions.index\') }}')
 
 @section('content')
 @php

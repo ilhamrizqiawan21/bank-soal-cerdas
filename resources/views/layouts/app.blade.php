@@ -21,17 +21,15 @@
 </head>
 <body x-data="app()" :class="{'dark': dark}" x-init="init()">
     <!-- Toast Notification -->
-<div x-data>
+<div x-data class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
     <template x-for="toast in $store.toast.messages" :key="toast.id">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header" :class="{'bg-success text-white': toast.type === 'success','bg-danger text-white': toast.type === 'danger','bg-warning text-dark': toast.type === 'warning','bg-info text-white': toast.type === 'info'}">
-                    <i class="fas me-2" :class="{'fa-check-circle': toast.type === 'success','fa-exclamation-circle': toast.type === 'danger','fa-exclamation-triangle': toast.type === 'warning','fa-info-circle': toast.type === 'info'}"></i>
-                    <strong class="me-auto" x-text="toast.type.charAt(0).toUpperCase() + toast.type.slice(1)"></strong>
-                    <button type="button" class="btn-close" :class="toast.type === 'warning' ? 'btn-close-dark' : 'btn-close-white'" @click="$store.toast.remove(toast.id)"></button>
-                </div>
-                <div class="toast-body" x-text="toast.message"></div>
+        <div class="toast show mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header" :class="{'bg-success text-white': toast.type === 'success','bg-danger text-white': toast.type === 'danger','bg-warning text-dark': toast.type === 'warning','bg-info text-white': toast.type === 'info'}">
+                <i class="fas me-2" :class="{'fa-check-circle': toast.type === 'success','fa-exclamation-circle': toast.type === 'danger','fa-exclamation-triangle': toast.type === 'warning','fa-info-circle': toast.type === 'info'}"></i>
+                <strong class="me-auto" x-text="toast.type.charAt(0).toUpperCase() + toast.type.slice(1)"></strong>
+                <button type="button" class="btn-close" :class="toast.type === 'warning' ? 'btn-close-dark' : 'btn-close-white'" @click="$store.toast.remove(toast.id)"></button>
             </div>
+            <div class="toast-body" x-text="toast.message"></div>
         </div>
     </template>
 </div>
@@ -78,7 +76,7 @@
             <header class="topbar">
                 <div class="topbar-left">
                     <button type="button" class="topbar-toggle" @click="toggleMobileSidebar()" aria-label="Toggle navigation"><i class="fas fa-bars"></i></button>
-                    <div class="topbar-context"><nav aria-label="breadcrumb" class="breadcrumb-wrap"><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item active" aria-current="page">@yield('breadcrumb', 'Halaman')</li></ol></nav><span class="topbar-page-title">@yield('title', 'Dashboard')</span></div>
+                    <div class="topbar-context"><nav aria-label="breadcrumb" class="breadcrumb-wrap"><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>@hasSection('breadcrumb_parent')<li class="breadcrumb-item"><a href="@yield('breadcrumb_parent_url', '#')">@yield('breadcrumb_parent')</a></li>@endif<li class="breadcrumb-item active" aria-current="page">@yield('breadcrumb', 'Halaman')</li></ol></nav><span class="topbar-page-title">@yield('title', 'Dashboard')</span></div>
                 </div>
                 <div class="topbar-actions">
                     <button type="button" class="icon-button" @click="toggleDark()" aria-label="Aktifkan atau nonaktifkan mode gelap" title="Mode gelap"><i class="fas fa-moon"></i></button>

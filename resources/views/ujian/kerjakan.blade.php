@@ -2,6 +2,8 @@
 
 @section('title', 'Kerjakan Ujian')
 @section('breadcrumb', 'Kerjakan Ujian')
+@section('breadcrumb_parent', 'Ujian Saya')
+@section('breadcrumb_parent_url', '{{ route(\'ujian.daftar\') }}')
 
 @push('styles')
 <style>
@@ -197,22 +199,46 @@
             </div>
         </div>
 
-        <!-- Navigasi -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <!-- Panel Nomor Soal (collapsible di mobile) -->
+        <div class="mb-3" x-data="{ panelOpen: window.innerWidth > 576 }">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-bold">
+                    <i class="fas fa-th me-1"></i> Navigasi Soal
+                    <span class="ms-2">
+                        <span class="badge bg-success">✓ Dijawab</span>
+                        <span class="badge bg-outline-secondary border ms-1">○ Belum</span>
+                    </span>
+                </small>
+                <!-- Toggle hanya muncul di layar kecil -->
+                <button type="button" class="btn btn-sm btn-outline-secondary d-md-none"
+                        @click="panelOpen = !panelOpen">
+                    <i class="fas" :class="panelOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                    <span x-text="panelOpen ? 'Sembunyikan' : 'Tampilkan Nomor'"></span>
+                </button>
+            </div>
+            <div x-show="panelOpen" x-collapse.duration.200ms>
+                <div class="d-flex flex-wrap gap-1 p-2 border rounded" style="max-height: 120px; overflow-y: auto;">
+                    <template x-for="(q, idx) in questions" :key="q.id">
+                        <button type="button" class="btn btn-sm"
+                                :class="{
+                                    'btn-success': isAnswered(q) && currentIndex !== idx,
+                                    'btn-primary': currentIndex === idx,
+                                    'btn-outline-secondary': !isAnswered(q) && currentIndex !== idx
+                                }"
+                                @click="goToQuestion(idx)"
+                                :title="'Soal ' + (idx + 1) + (isAnswered(q) ? ' (sudah dijawab)' : ' (belum dijawab)')">
+                            <span x-text="idx + 1"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigasi Sebelumnya / Selanjutnya -->
+        <div class="d-flex justify-content-between align-items-center gap-2">
             <button type="button" class="btn btn-outline-secondary" @click="previousQuestion()" :disabled="currentIndex === 0">
                 <i class="fas fa-arrow-left me-1"></i> Sebelumnya
             </button>
-
-            <div class="d-flex flex-wrap justify-content-center gap-1">
-                <template x-for="(q, idx) in questions" :key="q.id">
-                    <button type="button" class="btn btn-sm"
-                            :class="isAnswered(q) ? 'btn-success' : 'btn-outline-secondary'"
-                            @click="goToQuestion(idx)">
-                        <span x-text="idx + 1"></span>
-                    </button>
-                </template>
-            </div>
-
             <div>
                 <button type="button" class="btn btn-outline-primary" @click="nextQuestion()" x-show="currentIndex < questions.length - 1">
                     Selanjutnya <i class="fas fa-arrow-right ms-1"></i>
@@ -245,6 +271,9 @@
     }
 
     // ===== 2. DETEKSI TAB SWITCH =====
+    // Hanya gunakan visibilitychange sebagai sumber utama deteksi keluar.
+    // blur TIDAK dipakai untuk increment karena saat alt-tab, keduanya
+    // terpicu bersamaan dan menyebabkan double-increment (1 aksi = +2 peringatan).
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
             warningCount++;
@@ -258,15 +287,19 @@
     });
 
     // ===== 3. DETEKSI BLUR (Keluar dari Window) =====
-    window.addEventListener('blur', function() {
-        warningCount++;
-        showWarning();
+    // Hanya sebagai fallback jika visibilitychange tidak tersedia (browser lama).
+    // Tidak dijalankan jika visibilitychange sudah support.
+    if (typeof document.hidden === 'undefined') {
+        window.addEventListener('blur', function() {
+            warningCount++;
+            showWarning();
 
-        if (warningCount >= MAX_WARNING) {
-            showToast('Ujian Berakhir', 'Anda telah keluar dari ujian sebanyak 3 kali. Ujian akan otomatis disubmit.', 'danger');
-            submitUjian(true);
-        }
-    });
+            if (warningCount >= MAX_WARNING) {
+                showToast('Ujian Berakhir', 'Anda telah keluar dari ujian sebanyak 3 kali. Ujian akan otomatis disubmit.', 'danger');
+                submitUjian(true);
+            }
+        });
+    }
 
     // ===== 4. TAMPILKAN PERINGATAN =====
     function showWarning() {

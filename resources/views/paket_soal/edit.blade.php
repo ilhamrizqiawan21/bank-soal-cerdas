@@ -2,6 +2,8 @@
 
 @section('title', 'Edit Paket Soal')
 @section('breadcrumb', 'Edit Paket Soal')
+@section('breadcrumb_parent', 'Paket Soal')
+@section('breadcrumb_parent_url', '{{ route(\'paket-soal.index\') }}')
 
 @section('content')
 <div class="container-fluid">
