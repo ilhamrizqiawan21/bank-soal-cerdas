@@ -61,7 +61,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/kko/{level}', function (string $level) {
         return response()->json([
             'success' => true,
-            'data' => \App\Models\KkoMaster::where('level', $level)->orderBy('verb')->get(['id', 'verb', 'level']),
+            'data' => \App\Models\KkoMaster::where('level', $level)
+                ->orderBy('bloom_level')
+                ->orderBy('verb')
+                ->get(['id', 'verb', 'level', 'bloom_level', 'description']),
         ]);
     })->name('api.kko.by-level');
 

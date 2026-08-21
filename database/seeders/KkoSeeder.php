@@ -7,48 +7,58 @@ use App\Models\KkoMaster;
 
 class KkoSeeder extends Seeder
 {
+    /**
+     * Mapping level aplikasi:
+     * L1 = C1 Mengingat + C2 Memahami
+     * L2 = C3 Menerapkan
+     * L3 = C4 Menganalisis + C5 Mengevaluasi + C6 Mencipta
+     */
     public function run(): void
     {
         $kkoData = [
-            // L1 - Mengingat & memahami
-            ['level' => 'L1', 'verb' => 'Menyebutkan'],
-            ['level' => 'L1', 'verb' => 'Mengutip'],
-            ['level' => 'L1', 'verb' => 'Mendefinisikan'],
-            ['level' => 'L1', 'verb' => 'Menghafal'],
-            ['level' => 'L1', 'verb' => 'Mengidentifikasi'],
-            ['level' => 'L1', 'verb' => 'Menjelaskan'],
-            ['level' => 'L1', 'verb' => 'Menginterpretasi'],
-            ['level' => 'L1', 'verb' => 'Memberi contoh'],
-            ['level' => 'L1', 'verb' => 'Membedakan'],
-            ['level' => 'L1', 'verb' => 'Menyimpulkan'],
-
-            // L2 - Menerapkan
-            ['level' => 'L2', 'verb' => 'Menggunakan'],
-            ['level' => 'L2', 'verb' => 'Menerapkan'],
-            ['level' => 'L2', 'verb' => 'Menghitung'],
-            ['level' => 'L2', 'verb' => 'Menunjukkan'],
-            ['level' => 'L2', 'verb' => 'Melaksanakan'],
-
-            // L3 - Menalar / HOTS
-            ['level' => 'L3', 'verb' => 'Menganalisis'],
-            ['level' => 'L3', 'verb' => 'Membandingkan'],
-            ['level' => 'L3', 'verb' => 'Mengorganisasi'],
-            ['level' => 'L3', 'verb' => 'Mengaudit'],
-            ['level' => 'L3', 'verb' => 'Mengkategorikan'],
-            ['level' => 'L3', 'verb' => 'Mengkritisi'],
-            ['level' => 'L3', 'verb' => 'Menjustifikasi'],
-            ['level' => 'L3', 'verb' => 'Mempertimbangkan'],
-            ['level' => 'L3', 'verb' => 'Menilai'],
-            ['level' => 'L3', 'verb' => 'Merekomendasikan'],
-            ['level' => 'L3', 'verb' => 'Merancang'],
-            ['level' => 'L3', 'verb' => 'Mengkonstruksi'],
-            ['level' => 'L3', 'verb' => 'Mengabstraksi'],
-            ['level' => 'L3', 'verb' => 'Mengkombinasikan'],
-            ['level' => 'L3', 'verb' => 'Mengembangkan'],
+            'C1' => [
+                'level' => 'L1',
+                'description' => 'Mengingat kembali fakta, istilah, konsep, atau informasi yang telah dipelajari.',
+                'verbs' => ['Menyebutkan', 'Mengutip', 'Mendefinisikan', 'Menghafal', 'Mengidentifikasi', 'Mengingat', 'Menamai', 'Mendaftar', 'Memilih', 'Mencatat', 'Mengulang', 'Mengenali'],
+            ],
+            'C2' => [
+                'level' => 'L1',
+                'description' => 'Memahami makna informasi dan mampu menjelaskan, menginterpretasikan, atau mengklasifikasikannya.',
+                'verbs' => ['Menjelaskan', 'Menginterpretasi', 'Menguraikan', 'Mengartikan', 'Menafsirkan', 'Memberi contoh', 'Mengklasifikasikan', 'Mengkategorikan', 'Merangkum', 'Menyimpulkan', 'Membandingkan', 'Membedakan', 'Memperkirakan', 'Mengubah'],
+            ],
+            'C3' => [
+                'level' => 'L2',
+                'description' => 'Menerapkan konsep, aturan, prosedur, atau pengetahuan pada situasi tertentu.',
+                'verbs' => ['Menerapkan', 'Menggunakan', 'Melaksanakan', 'Menghitung', 'Mengoperasikan', 'Mendemonstrasikan', 'Menunjukkan', 'Mengimplementasikan', 'Mempraktikkan', 'Menentukan', 'Memodifikasi', 'Mensimulasikan'],
+            ],
+            'C4' => [
+                'level' => 'L3',
+                'description' => 'Menganalisis informasi dengan menguraikan bagian dan menemukan hubungan atau pola.',
+                'verbs' => ['Menganalisis', 'Mengaitkan', 'Mengorganisasikan', 'Menyeleksi', 'Mendeteksi', 'Mendiagnosis', 'Menelaah', 'Mengabstraksi', 'Menemukan hubungan'],
+            ],
+            'C5' => [
+                'level' => 'L3',
+                'description' => 'Mengevaluasi berdasarkan kriteria, bukti, standar, atau pertimbangan tertentu.',
+                'verbs' => ['Menilai', 'Mengevaluasi', 'Mengkritik', 'Mengkritisi', 'Mengaudit', 'Memvalidasi', 'Memeriksa', 'Mempertimbangkan', 'Membuktikan', 'Merekomendasikan', 'Memberi argumentasi', 'Menjustifikasi', 'Memutuskan'],
+            ],
+            'C6' => [
+                'level' => 'L3',
+                'description' => 'Menciptakan atau menghasilkan gagasan, rancangan, prosedur, atau produk baru.',
+                'verbs' => ['Merancang', 'Membuat', 'Membangun', 'Mengembangkan', 'Merumuskan', 'Mengkonstruksi', 'Mengkombinasikan', 'Mengombinasikan', 'Memproduksi', 'Merencanakan', 'Menciptakan', 'Menyusun', 'Menghasilkan'],
+            ],
         ];
 
-        foreach ($kkoData as $kko) {
-            KkoMaster::create($kko);
+        foreach ($kkoData as $bloomLevel => $group) {
+            foreach ($group['verbs'] as $verb) {
+                KkoMaster::updateOrCreate(
+                    ['verb' => $verb],
+                    [
+                        'level' => $group['level'],
+                        'bloom_level' => $bloomLevel,
+                        'description' => $group['description'],
+                    ]
+                );
+            }
         }
     }
 }
