@@ -2,6 +2,8 @@
 
 @section('title', 'Tambah Pengguna')
 @section('breadcrumb', 'Tambah Pengguna')
+@section('breadcrumb_parent', 'Manajemen Pengguna')
+@section('breadcrumb_parent_url', '{{ route(\'users.index\') }}')
 
 @section('content')
 <div class="container-fluid">

@@ -88,8 +88,7 @@
 
     <!-- Tabel Soal -->
     <div class="table-responsive">
-    <table class="table table-striped table-hover table-soal table-responsive-card mb-0">
-            <table class="table table-striped table-hover table-soal mb-0">
+        <table class="table table-striped table-hover table-soal mb-0">
                 <thead>
                     <tr>
                         <th width="50">No</th>
