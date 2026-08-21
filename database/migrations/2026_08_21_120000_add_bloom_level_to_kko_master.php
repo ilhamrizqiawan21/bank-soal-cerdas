@@ -16,13 +16,13 @@ return new class extends Migration
             $table->index(['level', 'bloom_level']);
         });
 
-        // Backfill the existing KKO rows so an existing installation immediately
+        // Backfill existing KKO rows so an existing installation immediately
         // has a Bloom classification even before KkoSeeder is run again.
         $groups = [
             'C1' => ['Menyebutkan', 'Mengutip', 'Mendefinisikan', 'Menghafal', 'Mengidentifikasi'],
             'C2' => ['Menjelaskan', 'Menginterpretasi', 'Memberi contoh', 'Membedakan', 'Menyimpulkan', 'Mengkategorikan', 'Membandingkan'],
             'C3' => ['Menggunakan', 'Menerapkan', 'Menghitung', 'Menunjukkan', 'Melaksanakan'],
-            'C4' => ['Menganalisis', 'Mengorganisasi', 'Mengkategorikan'],
+            'C4' => ['Menganalisis', 'Mengorganisasi'],
             'C5' => ['Mengaudit', 'Mengkritisi', 'Menjustifikasi', 'Mempertimbangkan', 'Menilai', 'Merekomendasikan'],
             'C6' => ['Merancang', 'Mengkonstruksi', 'Mengabstraksi', 'Mengkombinasikan', 'Mengembangkan'],
         ];
