@@ -128,7 +128,7 @@
         <!-- Soal -->
         <div class="mb-4">
             <h6 class="fw-bold">Soal <span x-text="currentIndex + 1"></span></h6>
-            <div class="p-3 bg-light rounded" x-text="currentQuestion ? currentQuestion.question_text : ''"></div>
+            <div class="p-3 bg-light rounded" x-html="currentQuestion ? currentQuestion.question_text : ''"></div>
 
             <!-- Jawaban -->
             <div class="mt-3">
