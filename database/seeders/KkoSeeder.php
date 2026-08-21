@@ -19,32 +19,32 @@ class KkoSeeder extends Seeder
             'C1' => [
                 'level' => 'L1',
                 'description' => 'Mengingat kembali fakta, istilah, konsep, atau informasi yang telah dipelajari.',
-                'verbs' => ['Menyebutkan', 'Mengidentifikasi', 'Mendefinisikan', 'Menamai', 'Mendaftar', 'Mengingat', 'Memilih', 'Mencatat', 'Mengulang', 'Mengenali'],
+                'verbs' => ['Menyebutkan', 'Mengutip', 'Mendefinisikan', 'Menghafal', 'Mengidentifikasi', 'Mengingat', 'Menamai', 'Mendaftar', 'Memilih', 'Mencatat', 'Mengulang', 'Mengenali'],
             ],
             'C2' => [
                 'level' => 'L1',
                 'description' => 'Memahami makna informasi dan mampu menjelaskan, menginterpretasikan, atau mengklasifikasikannya.',
-                'verbs' => ['Menjelaskan', 'Menguraikan', 'Mengartikan', 'Menafsirkan', 'Memberi contoh', 'Mengklasifikasikan', 'Merangkum', 'Menyimpulkan', 'Membandingkan', 'Membedakan', 'Memperkirakan', 'Mengubah'],
+                'verbs' => ['Menjelaskan', 'Menginterpretasi', 'Menguraikan', 'Mengartikan', 'Menafsirkan', 'Memberi contoh', 'Mengklasifikasikan', 'Mengkategorikan', 'Merangkum', 'Menyimpulkan', 'Membandingkan', 'Membedakan', 'Memperkirakan', 'Mengubah'],
             ],
             'C3' => [
                 'level' => 'L2',
                 'description' => 'Menerapkan konsep, aturan, prosedur, atau pengetahuan pada situasi tertentu.',
-                'verbs' => ['Menerapkan', 'Menggunakan', 'Melaksanakan', 'Menghitung', 'Mengoperasikan', 'Mendemonstrasikan', 'Mengimplementasikan', 'Mempraktikkan', 'Menentukan', 'Memodifikasi', 'Mensimulasikan'],
+                'verbs' => ['Menerapkan', 'Menggunakan', 'Melaksanakan', 'Menghitung', 'Mengoperasikan', 'Mendemonstrasikan', 'Menunjukkan', 'Mengimplementasikan', 'Mempraktikkan', 'Menentukan', 'Memodifikasi', 'Mensimulasikan'],
             ],
             'C4' => [
                 'level' => 'L3',
                 'description' => 'Menganalisis informasi dengan menguraikan bagian dan menemukan hubungan atau pola.',
-                'verbs' => ['Menganalisis', 'Mengaitkan', 'Mengorganisasikan', 'Menyeleksi', 'Mendeteksi', 'Mendiagnosis', 'Menelaah', 'Menemukan hubungan'],
+                'verbs' => ['Menganalisis', 'Mengaitkan', 'Mengorganisasikan', 'Menyeleksi', 'Mendeteksi', 'Mendiagnosis', 'Menelaah', 'Mengabstraksi', 'Menemukan hubungan'],
             ],
             'C5' => [
                 'level' => 'L3',
                 'description' => 'Mengevaluasi berdasarkan kriteria, bukti, standar, atau pertimbangan tertentu.',
-                'verbs' => ['Menilai', 'Mengevaluasi', 'Mengkritik', 'Memvalidasi', 'Memeriksa', 'Mempertimbangkan', 'Membuktikan', 'Merekomendasikan', 'Memberi argumentasi', 'Menjustifikasi', 'Memutuskan'],
+                'verbs' => ['Menilai', 'Mengevaluasi', 'Mengkritik', 'Mengkritisi', 'Mengaudit', 'Memvalidasi', 'Memeriksa', 'Mempertimbangkan', 'Membuktikan', 'Merekomendasikan', 'Memberi argumentasi', 'Menjustifikasi', 'Memutuskan'],
             ],
             'C6' => [
                 'level' => 'L3',
                 'description' => 'Menciptakan atau menghasilkan gagasan, rancangan, prosedur, atau produk baru.',
-                'verbs' => ['Merancang', 'Membuat', 'Membangun', 'Mengembangkan', 'Merumuskan', 'Mengkonstruksi', 'Mengombinasikan', 'Memproduksi', 'Merencanakan', 'Menciptakan', 'Menyusun', 'Menghasilkan'],
+                'verbs' => ['Merancang', 'Membuat', 'Membangun', 'Mengembangkan', 'Merumuskan', 'Mengkonstruksi', 'Mengkombinasikan', 'Mengombinasikan', 'Memproduksi', 'Merencanakan', 'Menciptakan', 'Menyusun', 'Menghasilkan'],
             ],
         ];
 
