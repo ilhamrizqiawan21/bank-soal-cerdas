@@ -4,16 +4,23 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite --host 0.0.0.0 --port 3000",
+        "lint": "tsc --noEmit"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
+        "@types/canvas-confetti": "^1.9.0",
+        "@types/node": "^26.2.0",
+        "@types/react": "^19.2.18",
+        "@types/react-dom": "^19.2.4",
+        "@vitejs/plugin-react": "^6.1.0",
         "autoprefixer": "^10.5.4",
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^1.2.0",
         "postcss": "^8.5.26",
         "sass-embedded": "^1.102.0",
         "tailwindcss": "^4.0.0",
+        "typescript": "^7.0.2",
         "vite": "^8.2.2"
     },
     "optionalDependencies": {
@@ -25,6 +32,14 @@
         "alpinejs": "^3.16.1",
         "axios": "^1.19.0",
         "bootstrap": "^5.3.8",
-        "chart.js": "^4.5.1"
+        "canvas-confetti": "^1.9.4",
+        "chart.js": "^4.5.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^1.33.0",
+        "motion": "^13.1.1",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
+        "tailwind-merge": "^3.6.0",
+        "xlsx": "^0.18.5"
     }
 }

@@ -1,0 +1,8 @@
+{
+  "name": "Bank Soal Cerdas",
+  "description": "Sistem Bank Soal Cerdas & CBT Ujian Online dengan Taksonomi Bloom, KKO, dan Analisis Butir Soal",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
