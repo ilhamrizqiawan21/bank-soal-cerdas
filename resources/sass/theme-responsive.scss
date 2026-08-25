@@ -19,7 +19,7 @@
     --menu-shadow: 0 6px 24px rgba(15, 23, 42, .06);
 }
 
-body.dark {
+html[data-bs-theme="dark"] {
     --menu-bg: #020817;
     --menu-surface: #0f172a;
     --menu-surface-2: #111c35;
@@ -358,114 +358,114 @@ body.dark {
 }
 
 /* ===== LIGHT MODE: override legacy dark inline page styles ===== */
-body:not(.dark) .secondary-page,
-body:not(.dark) .resource-page,
-body:not(.dark) .tag-page,
-body:not(.dark) .users-page,
-body:not(.dark) .collab-page,
-body:not(.dark) .history-page,
-body:not(.dark) .profile-page {
+html:not([data-bs-theme="dark"]) .secondary-page,
+html:not([data-bs-theme="dark"]) .resource-page,
+html:not([data-bs-theme="dark"]) .tag-page,
+html:not([data-bs-theme="dark"]) .users-page,
+html:not([data-bs-theme="dark"]) .collab-page,
+html:not([data-bs-theme="dark"]) .history-page,
+html:not([data-bs-theme="dark"]) .profile-page {
     color: #334155;
 }
 
-body:not(.dark) .secondary-page .page-title,
-body:not(.dark) .resource-page h1,
-body:not(.dark) .tag-page h1,
-body:not(.dark) .users-page h1,
-body:not(.dark) .collab-page h1,
-body:not(.dark) .history-page h1,
-body:not(.dark) .secondary-page .data-card-title,
-body:not(.dark) .resource-page .card-head .fw-bold,
-body:not(.dark) .tag-page .card-head .fw-bold,
-body:not(.dark) .users-page .card-head .fw-bold,
-body:not(.dark) .collab-page .section-title,
-body:not(.dark) .profile-page .profile-name,
-body:not(.dark) .profile-page .section-title {
+html:not([data-bs-theme="dark"]) .secondary-page .page-title,
+html:not([data-bs-theme="dark"]) .resource-page h1,
+html:not([data-bs-theme="dark"]) .tag-page h1,
+html:not([data-bs-theme="dark"]) .users-page h1,
+html:not([data-bs-theme="dark"]) .collab-page h1,
+html:not([data-bs-theme="dark"]) .history-page h1,
+html:not([data-bs-theme="dark"]) .secondary-page .data-card-title,
+html:not([data-bs-theme="dark"]) .resource-page .card-head .fw-bold,
+html:not([data-bs-theme="dark"]) .tag-page .card-head .fw-bold,
+html:not([data-bs-theme="dark"]) .users-page .card-head .fw-bold,
+html:not([data-bs-theme="dark"]) .collab-page .section-title,
+html:not([data-bs-theme="dark"]) .profile-page .profile-name,
+html:not([data-bs-theme="dark"]) .profile-page .section-title {
     color: #0f172a !important;
 }
 
-body:not(.dark) .secondary-page .filter-card,
-body:not(.dark) .secondary-page .data-card,
-body:not(.dark) .resource-page .filter-card,
-body:not(.dark) .resource-page .data-card,
-body:not(.dark) .tag-page .filter-card,
-body:not(.dark) .tag-page .data-card,
-body:not(.dark) .users-page .filter-card,
-body:not(.dark) .users-page .data-card,
-body:not(.dark) .collab-page .collab-card,
-body:not(.dark) .history-page .history-card,
-body:not(.dark) .profile-page .profile-card,
-body:not(.dark) .profile-page .form-card {
+html:not([data-bs-theme="dark"]) .secondary-page .filter-card,
+html:not([data-bs-theme="dark"]) .secondary-page .data-card,
+html:not([data-bs-theme="dark"]) .resource-page .filter-card,
+html:not([data-bs-theme="dark"]) .resource-page .data-card,
+html:not([data-bs-theme="dark"]) .tag-page .filter-card,
+html:not([data-bs-theme="dark"]) .tag-page .data-card,
+html:not([data-bs-theme="dark"]) .users-page .filter-card,
+html:not([data-bs-theme="dark"]) .users-page .data-card,
+html:not([data-bs-theme="dark"]) .collab-page .collab-card,
+html:not([data-bs-theme="dark"]) .history-page .history-card,
+html:not([data-bs-theme="dark"]) .profile-page .profile-card,
+html:not([data-bs-theme="dark"]) .profile-page .form-card {
     background: #fff !important;
     border-color: rgba(15, 23, 42, .09) !important;
     box-shadow: 0 6px 24px rgba(15, 23, 42, .06) !important;
 }
 
-body:not(.dark) .secondary-page .form-control,
-body:not(.dark) .secondary-page .form-select,
-body:not(.dark) .resource-page .form-control,
-body:not(.dark) .resource-page .form-select,
-body:not(.dark) .tag-page .form-control,
-body:not(.dark) .tag-page .form-select,
-body:not(.dark) .users-page .form-control,
-body:not(.dark) .users-page .form-select,
-body:not(.dark) .collab-page .form-control,
-body:not(.dark) .collab-page .form-select,
-body:not(.dark) .history-page .form-control,
-body:not(.dark) .history-page .form-select,
-body:not(.dark) .profile-page .form-control,
-body:not(.dark) .profile-page .form-select {
+html:not([data-bs-theme="dark"]) .secondary-page .form-control,
+html:not([data-bs-theme="dark"]) .secondary-page .form-select,
+html:not([data-bs-theme="dark"]) .resource-page .form-control,
+html:not([data-bs-theme="dark"]) .resource-page .form-select,
+html:not([data-bs-theme="dark"]) .tag-page .form-control,
+html:not([data-bs-theme="dark"]) .tag-page .form-select,
+html:not([data-bs-theme="dark"]) .users-page .form-control,
+html:not([data-bs-theme="dark"]) .users-page .form-select,
+html:not([data-bs-theme="dark"]) .collab-page .form-control,
+html:not([data-bs-theme="dark"]) .collab-page .form-select,
+html:not([data-bs-theme="dark"]) .history-page .form-control,
+html:not([data-bs-theme="dark"]) .history-page .form-select,
+html:not([data-bs-theme="dark"]) .profile-page .form-control,
+html:not([data-bs-theme="dark"]) .profile-page .form-select {
     background: #fff !important;
     border-color: #dbe3ee !important;
     color: #1e293b !important;
 }
 
-body:not(.dark) .secondary-page .table thead th,
-body:not(.dark) .resource-page .table thead th,
-body:not(.dark) .tag-page .table thead th,
-body:not(.dark) .users-page .table thead th,
-body:not(.dark) .collab-page .table thead th,
-body:not(.dark) .history-page .table thead th {
+html:not([data-bs-theme="dark"]) .secondary-page .table thead th,
+html:not([data-bs-theme="dark"]) .resource-page .table thead th,
+html:not([data-bs-theme="dark"]) .tag-page .table thead th,
+html:not([data-bs-theme="dark"]) .users-page .table thead th,
+html:not([data-bs-theme="dark"]) .collab-page .table thead th,
+html:not([data-bs-theme="dark"]) .history-page .table thead th {
     background: #f8fafc !important;
     border-bottom-color: #e2e8f0 !important;
     color: #64748b !important;
 }
 
-body:not(.dark) .secondary-page .table tbody td,
-body:not(.dark) .resource-page .table tbody td,
-body:not(.dark) .tag-page .table tbody td,
-body:not(.dark) .users-page .table tbody td,
-body:not(.dark) .collab-page .table tbody td,
-body:not(.dark) .history-page .table tbody td {
+html:not([data-bs-theme="dark"]) .secondary-page .table tbody td,
+html:not([data-bs-theme="dark"]) .resource-page .table tbody td,
+html:not([data-bs-theme="dark"]) .tag-page .table tbody td,
+html:not([data-bs-theme="dark"]) .users-page .table tbody td,
+html:not([data-bs-theme="dark"]) .collab-page .table tbody td,
+html:not([data-bs-theme="dark"]) .history-page .table tbody td {
     background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #334155 !important;
 }
 
-body:not(.dark) .secondary-page .table tbody tr:hover td,
-body:not(.dark) .resource-page .table tbody tr:hover td,
-body:not(.dark) .tag-page .table tbody tr:hover td,
-body:not(.dark) .users-page .table tbody tr:hover td,
-body:not(.dark) .collab-page .table tbody tr:hover td,
-body:not(.dark) .history-page .table tbody tr:hover td {
+html:not([data-bs-theme="dark"]) .secondary-page .table tbody tr:hover td,
+html:not([data-bs-theme="dark"]) .resource-page .table tbody tr:hover td,
+html:not([data-bs-theme="dark"]) .tag-page .table tbody tr:hover td,
+html:not([data-bs-theme="dark"]) .users-page .table tbody tr:hover td,
+html:not([data-bs-theme="dark"]) .collab-page .table tbody tr:hover td,
+html:not([data-bs-theme="dark"]) .history-page .table tbody tr:hover td {
     background: #f8fafc !important;
 }
 
-body:not(.dark) .secondary-page .fw-bold.text-light,
-body:not(.dark) .resource-page .fw-bold.text-light,
-body:not(.dark) .tag-page .fw-bold.text-light,
-body:not(.dark) .users-page .fw-bold.text-light,
-body:not(.dark) .collab-page .fw-bold.text-light,
-body:not(.dark) .profile-page .fw-bold.text-light {
+html:not([data-bs-theme="dark"]) .secondary-page .fw-bold.text-light,
+html:not([data-bs-theme="dark"]) .resource-page .fw-bold.text-light,
+html:not([data-bs-theme="dark"]) .tag-page .fw-bold.text-light,
+html:not([data-bs-theme="dark"]) .users-page .fw-bold.text-light,
+html:not([data-bs-theme="dark"]) .collab-page .fw-bold.text-light,
+html:not([data-bs-theme="dark"]) .profile-page .fw-bold.text-light {
     color: #0f172a !important;
 }
 
-body:not(.dark) .profile-page .avatar {
+html:not([data-bs-theme="dark"]) .profile-page .avatar {
     border-color: #fff !important;
 }
 
-body:not(.dark) .profile-page .upload-box,
-body:not(.dark) .profile-page .password-section {
+html:not([data-bs-theme="dark"]) .profile-page .upload-box,
+html:not([data-bs-theme="dark"]) .profile-page .password-section {
     border-color: #e2e8f0 !important;
 }
 

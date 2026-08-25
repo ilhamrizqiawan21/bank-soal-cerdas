@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -18,6 +19,22 @@ class Question extends Model
     protected $appends = ['hots_level', 'curriculum_label', 'type_label'];
 
     public function subject() { return $this->belongsTo(Subject::class); }
+
+    /**
+     * Sanitize on every write path (store, update, import, duplicate, sync).
+     * Stored question text is rendered with x-html in the exam player, so it
+     * must never contain active content.
+     */
+    public function setQuestionTextAttribute($value): void
+    {
+        $this->attributes['question_text'] = HtmlSanitizer::clean($value);
+    }
+
+    public function setIndicatorTextAttribute($value): void
+    {
+        $this->attributes['indicator_text'] = $value === null ? null : HtmlSanitizer::clean($value);
+    }
+
     public function kko() { return $this->belongsTo(KkoMaster::class); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function pgOptions() { return $this->hasMany(QuestionPgOption::class); }

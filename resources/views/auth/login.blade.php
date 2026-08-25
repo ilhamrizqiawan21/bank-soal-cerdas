@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Bank Soal Cerdas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <style>
         /* ===== LOGIN PAGE ===== */
@@ -237,7 +241,7 @@
         }
     </style>
 </head>
-<body x-data="loginPage()" :data-bs-theme="dark ? 'dark' : 'light'" x-init="init()">
+<body x-data="loginPage()" x-init="init()">
 
 <div class="login-shell">
     <!-- Panel Kiri: Branding -->
@@ -359,22 +363,6 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('loginPage', () => ({
-        dark: false,
-        init() {
-            const saved = localStorage.getItem('theme');
-            this.dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        },
-        toggleDark() {
-            this.dark = !this.dark;
-            localStorage.setItem('theme', this.dark ? 'dark' : 'light');
-        }
-    }));
-});
-</script>
 
 </body>
 </html>

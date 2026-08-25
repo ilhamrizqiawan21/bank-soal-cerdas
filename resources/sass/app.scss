@@ -1,6 +1,8 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
-@import '@fortawesome/fontawesome-free/css/all.min.css';
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+// Subset: only the solid style is used across views (185x `fas`, zero far/fab).
+@import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+@import '@fortawesome/fontawesome-free/css/solid.min.css';
+// Inter font is loaded via <link rel=preconnect/preload> in layout heads.
 
 /* ===== CSS VARIABLES ===== */
 :root {

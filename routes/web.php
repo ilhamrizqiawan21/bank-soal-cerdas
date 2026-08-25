@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Api\TagController as ApiTagController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\PaketSoalController;
 use App\Http\Controllers\UserController;
@@ -19,6 +20,17 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middlew
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
+    // React SPA shell (strangler-pattern entry point).
+    Route::view('/app', 'spa')->name('spa');
+
+    // JSON API consumed by the SPA (session + CSRF via web group).
+    Route::prefix('api')->middleware('role:admin,guru')->group(function () {
+        Route::get('/tags', [ApiTagController::class, 'index']);
+        Route::post('/tags', [ApiTagController::class, 'store']);
+        Route::put('/tags/{tag}', [ApiTagController::class, 'update']);
+        Route::delete('/tags/{tag}', [ApiTagController::class, 'destroy']);
+    });
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/questions/export', [QuestionController::class, 'export'])->name('questions.export')->middleware('role:admin,guru');

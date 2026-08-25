@@ -209,7 +209,6 @@ export const TagListView: React.FC = () => {
         description: description.trim() || undefined,
         criteria: criteria.trim() || undefined
       });
-      addToast(`Karakteristik "${name}" berhasil diperbarui.`, 'success');
     } else {
       addTag({
         name: name.trim(),
@@ -219,7 +218,6 @@ export const TagListView: React.FC = () => {
         description: description.trim() || undefined,
         criteria: criteria.trim() || undefined
       });
-      addToast(`Karakteristik "${name}" berhasil ditambahkan.`, 'success');
     }
 
     setIsModalOpen(false);

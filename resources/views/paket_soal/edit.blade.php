@@ -162,11 +162,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.getElementById('selectAll')?.addEventListener('change', function() {
-    document.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = this.checked);
-});
-</script>
-@endpush

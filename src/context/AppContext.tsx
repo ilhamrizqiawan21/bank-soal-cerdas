@@ -30,6 +30,11 @@ import {
   INITIAL_SHARE_SOAL,
   INITIAL_SHARE_PAKET,
 } from '../data/initialData';
+import api, { apiErrorMessage } from '../lib/api';
+
+const bootstrapUser = window.__BOOTSTRAP__?.user ?? null;
+/** True when the SPA is served by Laravel with a real session. */
+const bootstrapped = Boolean(bootstrapUser);
 
 interface AppContextType {
   currentUser: User;
@@ -54,9 +59,9 @@ interface AppContextType {
   deleteCategory: (id: string) => void;
 
   tags: Tag[];
-  addTag: (tag: Omit<Tag, 'id'>) => Tag;
-  updateTag: (id: string, updates: Partial<Tag>) => void;
-  deleteTag: (id: string) => void;
+  addTag: (tag: Omit<Tag, 'id'>) => Tag | Promise<Tag>;
+  updateTag: (id: string, updates: Partial<Tag>) => void | Promise<void>;
+  deleteTag: (id: string) => void | Promise<void>;
   resetTagsToDefault: () => void;
 
   theme: 'light' | 'dark';
@@ -174,6 +179,16 @@ function saveToStorage<T>(key: string, value: T): void {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(() => loadFromStorage('users', INITIAL_USERS));
   const [currentUser, setCurrentUserState] = useState<User>(() => {
+    if (bootstrapUser) {
+      return {
+        id: bootstrapUser.id,
+        name: bootstrapUser.name,
+        email: bootstrapUser.email,
+        role: bootstrapUser.role,
+        is_active: bootstrapUser.is_active ?? true,
+        created_at: new Date().toISOString(),
+      };
+    }
     const saved = loadFromStorage<User | null>('current_user', null);
     if (saved && INITIAL_USERS.some(u => u.id === saved.id)) return saved;
     return INITIAL_USERS[1]; // default to Teacher Budi Pratama
@@ -181,7 +196,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [subjects, setSubjects] = useState<Subject[]>(() => loadFromStorage('subjects', INITIAL_SUBJECTS));
   const [categories, setCategories] = useState<Kategori[]>(() => loadFromStorage('categories', INITIAL_KATEGORI));
-  const [tags, setTags] = useState<Tag[]>(() => loadFromStorage('tags', INITIAL_TAGS));
+  const [tags, setTags] = useState<Tag[]>(() => (bootstrapped ? [] : loadFromStorage('tags', INITIAL_TAGS)));
   const [kkoList] = useState<KkoMaster[]>(INITIAL_KKO);
 
   const [questions, setQuestions] = useState<Question[]>(() => loadFromStorage('questions', INITIAL_QUESTIONS));
@@ -229,6 +244,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       root.classList.remove('dark');
     }
+    // Keep Bootstrap-based views in sync with the same theme toggle.
+    root.setAttribute('data-bs-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -241,15 +258,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync state to local storage
   useEffect(() => { saveToStorage('users', users); }, [users]);
-  useEffect(() => { saveToStorage('current_user', currentUser); }, [currentUser]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('current_user', currentUser); }, [currentUser]);
   useEffect(() => { saveToStorage('subjects', subjects); }, [subjects]);
   useEffect(() => { saveToStorage('categories', categories); }, [categories]);
-  useEffect(() => { saveToStorage('tags', tags); }, [tags]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('tags', tags); }, [tags]);
   useEffect(() => { saveToStorage('questions', questions); }, [questions]);
   useEffect(() => { saveToStorage('paket_soal', paketSoalList); }, [paketSoalList]);
   useEffect(() => { saveToStorage('ujian', ujianList); }, [ujianList]);
   useEffect(() => { saveToStorage('share_soal', shareSoalList); }, [shareSoalList]);
   useEffect(() => { saveToStorage('share_paket', sharePaketList); }, [sharePaketList]);
+
+  // Hydrate tags from the Laravel API when running inside the SPA shell.
+  useEffect(() => {
+    if (!bootstrapped) return;
+    api
+      .get<{ data: Tag[] }>('/tags')
+      .then(({ data }) => setTags(data.data))
+      .catch(() => addToast('Gagal memuat tag dari server.', 'danger'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addToast = (message: string, type: 'success' | 'danger' | 'warning' | 'info' = 'success') => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -377,20 +404,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newTag;
   };
 
-  const updateTag = (id: string, updates: Partial<Tag>) => {
+  // API-backed tag CRUD (active when the SPA runs inside Laravel session).
+  const updateTagLocal = (id: string, updates: Partial<Tag>) => {
     setTags(prev => prev.map(t => (t.id === id ? { ...t, ...updates } : t)));
     addToast('Tag berhasil diperbarui.', 'success');
   };
 
-  const deleteTag = (id: string) => {
+  const deleteTagLocal = (id: string) => {
     setTags(prev => prev.filter(t => t.id !== id));
     addToast('Tag berhasil dihapus.', 'success');
   };
 
+  const addTagApi = async (tagData: Omit<Tag, 'id'>): Promise<Tag> => {
+    try {
+      const { data } = await api.post<{ data: Tag }>('/tags', {
+        name: tagData.name,
+        color: tagData.color ?? '#6366f1',
+      });
+      setTags(prev => [...prev, data.data]);
+      addToast('Tag baru berhasil dibuat.', 'success');
+      return data.data;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const updateTagApi = async (id: string, updates: Partial<Tag>): Promise<void> => {
+    const current = tags.find(t => t.id === id);
+    if (!current) return;
+    try {
+      const { data } = await api.put<{ data: Tag }>(`/tags/${id}`, {
+        name: updates.name ?? current.name,
+        color: updates.color ?? current.color ?? '#6366f1',
+      });
+      setTags(prev => prev.map(t => (t.id === id ? data.data : t)));
+      addToast('Tag berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const deleteTagApi = async (id: string): Promise<void> => {
+    try {
+      await api.delete(`/tags/${id}`);
+      setTags(prev => prev.filter(t => t.id !== id));
+      addToast('Tag berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const resetTagsToDefault = () => {
-    setTags(INITIAL_TAGS);
+    if (bootstrapped) {
+      api
+        .get<{ data: Tag[] }>('/tags')
+        .then(({ data }) => setTags(data.data))
+        .catch(() => addToast('Gagal memuat ulang tag.', 'danger'));
+    } else {
+      setTags(INITIAL_TAGS);
+    }
     addToast('Template tag & karakteristik standar berhasil dimuat ulang.', 'success');
   };
+
 
   // Question CRUD
   const addQuestion = (questionData: Omit<Question, 'id' | 'created_at' | 'created_by'>): Question => {
@@ -901,6 +979,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ];
 
   const resetToInitialData = () => {
+    if (bootstrapped) {
+      // Real session: only refresh API-backed collections, never wipe storage.
+      api
+        .get<{ data: Tag[] }>('/tags')
+        .then(({ data }) => setTags(data.data))
+        .catch(() => addToast('Gagal memuat ulang tag.', 'danger'));
+      addToast('Data tag berhasil dimuat ulang dari server.', 'info');
+      return;
+    }
     setUsers(INITIAL_USERS);
     setCurrentUserState(INITIAL_USERS[1]);
     setSubjects(INITIAL_SUBJECTS);
@@ -936,9 +1023,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCategory,
         deleteCategory,
         tags,
-        addTag,
-        updateTag,
-        deleteTag,
+        addTag: bootstrapped ? addTagApi : addTag,
+        updateTag: bootstrapped ? updateTagApi : updateTagLocal,
+        deleteTag: bootstrapped ? deleteTagApi : deleteTagLocal,
         resetTagsToDefault,
         theme,
         toggleTheme,

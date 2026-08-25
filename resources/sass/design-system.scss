@@ -122,8 +122,8 @@
     --control-radius: 9px;
 }
 
-/* The application uses body.dark as the theme switch. */
-body.dark {
+/* The application uses html[data-bs-theme="dark"] as the theme switch. */
+html[data-bs-theme="dark"] {
     --color-bg: #020817;
     --color-surface: #0f172a;
     --color-surface-subtle: #111c35;
@@ -158,7 +158,7 @@ body.dark {
  * the same source of truth while pages are migrated incrementally.
  */
 :root,
-body.dark {
+html[data-bs-theme="dark"] {
     --menu-bg: var(--color-surface);
     --menu-surface: var(--color-surface);
     --menu-surface-2: var(--color-surface-subtle);

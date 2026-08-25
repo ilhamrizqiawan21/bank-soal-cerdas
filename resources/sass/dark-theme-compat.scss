@@ -2,12 +2,12 @@
  * Bank Soal Cerdas — Dark Theme Compatibility
  *
  * FE-3 fix: pages still using Bootstrap utility classes or legacy surfaces
- * must follow the same semantic tokens when body.dark is active.
+ * must follow the same semantic tokens when html[data-bs-theme="dark"] is active.
  * Keep this file limited to compatibility overrides; new components should
  * use components.scss and design-system.scss directly.
  */
 
-body.dark {
+html[data-bs-theme="dark"] {
     /* Bootstrap utility surfaces */
     .bg-light {
         background-color: var(--color-surface-subtle) !important;

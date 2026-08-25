@@ -1,6 +1,13 @@
 import './bootstrap';
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;
+// Page modules must run before Alpine.start() (see ./alpine) so exam payloads
+// and DOM bindings are ready when components initialize.
+import './pages/login';
+import './pages/tag-form';
+import './pages/paket-form';
+import './pages/flash';
+import './pages/ujian-kerjakan';
 import './alpine';
 import '../sass/theme-responsive.scss';
 import '../sass/secondary-table-theme.scss';

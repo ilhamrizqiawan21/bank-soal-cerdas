@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('images/android-chrome-512x512.png') }}">
     <title>Bank Soal - @yield('title', 'Dashboard')</title>
@@ -16,7 +20,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body x-data="app()" :class="{'dark': dark}" x-init="init()">
+<body x-data="app()" :class="{'dark': dark}" x-init="init()" data-flash-success="{{ session('success') }}" data-flash-error="{{ session('error') }}">
 <div x-data class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
     <template x-for="toast in $store.toast.messages" :key="toast.id">
         <div class="toast show mb-2" role="alert" aria-live="assertive" aria-atomic="true">
@@ -90,8 +94,6 @@
             </div>
         </header>
         <div class="page-content">
-            @if(session('success'))<script>document.addEventListener('alpine:init',()=>{setTimeout(()=>{window.dispatchEvent(new CustomEvent('toast',{detail:{message:@json(session('success')),type:'success'}}));},100);});</script>@endif
-            @if(session('error'))<script>document.addEventListener('alpine:init',()=>{setTimeout(()=>{window.dispatchEvent(new CustomEvent('toast',{detail:{message:@json(session('error')),type:'danger'}}));},100);});</script>@endif
             @if($errors->any())<div class="alert alert-danger alert-dismissible fade show" role="alert"><i class="fas fa-exclamation-circle me-2"></i>@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>@endif
             @yield('content')
         </div>
@@ -99,17 +101,5 @@
 </div>
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="confirmModalTitle">Konfirmasi</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><p class="mb-0" id="confirmModalText">Apakah Anda yakin?</p></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-primary" id="confirmModalAction">Ya, lanjutkan</button></div></div></div></div>
 @stack('scripts')
-<script>
-document.addEventListener('alpine:init', () => { Alpine.data('app', () => ({
-    dark: false,
-    sidebarOpen: window.innerWidth > 768,
-    sidebarCollapsed: false,
-    init() { const savedTheme = localStorage.getItem('theme'); if (savedTheme) { this.dark = savedTheme === 'dark'; } else { this.dark = window.matchMedia('(prefers-color-scheme: dark)').matches; } this.applyTheme(); const savedCollapsed = localStorage.getItem('sidebar-collapsed'); if (savedCollapsed !== null) { this.sidebarCollapsed = savedCollapsed === 'true'; } const syncSidebarState = () => { if (window.innerWidth > 768) { this.sidebarOpen = true; } else { this.sidebarOpen = false; this.sidebarCollapsed = false; } }; syncSidebarState(); window.addEventListener('resize', syncSidebarState); },
-    applyTheme() { document.documentElement.setAttribute('data-bs-theme', this.dark ? 'dark' : 'light'); localStorage.setItem('theme', this.dark ? 'dark' : 'light'); },
-    toggleDark() { this.dark = !this.dark; this.applyTheme(); },
-    toggleSidebar() { if (window.innerWidth <= 768) { this.toggleMobileSidebar(); return; } this.sidebarCollapsed = !this.sidebarCollapsed; this.sidebarOpen = true; localStorage.setItem('sidebar-collapsed', String(this.sidebarCollapsed)); },
-    toggleMobileSidebar() { this.sidebarOpen = !this.sidebarOpen; if (this.sidebarOpen) { this.sidebarCollapsed = false; } }
-})); });
-</script>
 </body>
 </html>

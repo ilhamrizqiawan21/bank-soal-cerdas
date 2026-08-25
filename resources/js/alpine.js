@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import './alpine/toast';
+import './alpine/app';
 
 window.Alpine = Alpine;
 

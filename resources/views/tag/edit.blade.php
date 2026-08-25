@@ -53,11 +53,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.querySelector('input[name="color"]').addEventListener('input', function() {
-    document.getElementById('colorHex').value = this.value;
-});
-</script>
-@endpush

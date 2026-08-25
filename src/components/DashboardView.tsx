@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   HelpCircle,
@@ -17,6 +17,7 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { BloomLevel, Question } from '../types';
+import { ChartCanvas } from './charts/ChartCanvas';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -51,6 +52,59 @@ export const DashboardView: React.FC = () => {
   };
 
   const getBloomCount = (level: BloomLevel) => questions.filter(q => q.level_c === level).length;
+
+  // Chart.js visualizations (teacher/admin only).
+  const bloomChartConfig = useMemo(
+    () => ({
+      type: 'bar' as const,
+      data: {
+        labels: bloomLevels,
+        datasets: [
+          {
+            label: 'Jumlah soal',
+            data: bloomLevels.map(lvl => getBloomCount(lvl)),
+            backgroundColor: ['#0ea5e9', '#10b981', '#6366f1', '#f59e0b', '#f97316', '#f43f5e'],
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(148,163,184,0.2)' } },
+          x: { grid: { display: false } },
+        },
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [questions]
+  );
+
+  const curriculumChartConfig = useMemo(
+    () => ({
+      type: 'doughnut' as const,
+      data: {
+        labels: ['Kurikulum Merdeka', 'Kurikulum KBC'],
+        datasets: [
+          {
+            data: [merdekaCount, kbcCount],
+            backgroundColor: ['#2563eb', '#14b8a6'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: { legend: { position: 'bottom' as const } },
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [questions]
+  );
 
   // Recent questions
   const recentQuestions = [...questions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
@@ -259,6 +313,24 @@ export const DashboardView: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Chart.js visualizations */}
+      {!isStudent && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">Sebaran Tingkat Kognitif (C1-C6)</h3>
+            <div style={{ height: 260 }}>
+              <ChartCanvas config={bloomChartConfig} ariaLabel="Diagram batang sebaran soal per tingkat Taksonomi Bloom" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">Komposisi Kurikulum</h3>
+            <div style={{ height: 260 }}>
+              <ChartCanvas config={curriculumChartConfig} ariaLabel="Diagram donat komposisi soal per kurikulum" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid: Recent Questions & Active Exams */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

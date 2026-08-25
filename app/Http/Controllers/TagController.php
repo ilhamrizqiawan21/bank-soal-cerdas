@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Tag;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class TagController extends Controller
 {
@@ -34,7 +33,7 @@ class TagController extends Controller
 
         Tag::create([
             'name' => $request->name,
-            'slug' => $this->uniqueSlug($request->name),
+            'slug' => Tag::uniqueSlug($request->name),
             'color' => $request->color,
         ]);
 
@@ -62,7 +61,7 @@ class TagController extends Controller
 
         $tag->update([
             'name' => $request->name,
-            'slug' => $this->uniqueSlug($request->name, $tag->id),
+            'slug' => Tag::uniqueSlug($request->name, $tag->id),
             'color' => $request->color,
         ]);
 
@@ -75,21 +74,5 @@ class TagController extends Controller
         $tag->delete();
         return redirect()->route('tag.index')
             ->with('success', 'Tag berhasil dihapus!');
-    }
-
-    /**
-     * Pastikan slug unik (jika bentrok, tambahkan suffix -2, -3, ...).
-     */
-    private function uniqueSlug(string $name, ?int $ignoreId = null): string
-    {
-        $base = Str::slug($name);
-        $slug = $base;
-        $i = 2;
-
-        while (Tag::where('slug', $slug)->where('id', '!=', $ignoreId ?? 0)->exists()) {
-            $slug = $base . '-' . $i++;
-        }
-
-        return $slug;
     }
 }
