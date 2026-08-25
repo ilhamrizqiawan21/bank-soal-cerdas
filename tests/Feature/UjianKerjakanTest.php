@@ -21,7 +21,7 @@ class UjianKerjakanTest extends TestCase
         $siswa = User::factory()->create(['role' => 'siswa']);
         $siswaLain = User::factory()->create(['role' => 'siswa']);
 
-        $kko = KkoMaster::create(['level' => 'C1', 'verb' => 'Menguji', 'description' => 'test']);
+        $kko = KkoMaster::create(['level' => 'L1', 'verb' => 'Menguji', 'description' => 'test']);
         $subject = Subject::create(['name' => 'Matematika Uji', 'code' => 'MTK']);
         $question = Question::create([
             'subject_id' => $subject->id,
@@ -30,7 +30,7 @@ class UjianKerjakanTest extends TestCase
             'jenjang' => 'SMA',
             'curriculum' => 'merdeka',
             'type' => 'pg',
-            'level_c' => 'C1',
+            'level_c' => 'L1',
             'question_text' => 'Berapa hasil dua tambah dua? (soal uji otomatis)',
         ]);
         $question->pgOptions()->createMany([

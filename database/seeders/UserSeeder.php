@@ -2,26 +2,43 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;  // <-- Tambahkan ini
+use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin Bank Soal',
-            'email' => 'admin@banksoal.com',
-            'password' => Hash::make('password123'),
-            'role' => 'admin',
-        ]);
+        $accounts = [
+            [
+                'name' => 'Admin Bank Soal',
+                'email' => 'admin@banksoal.com',
+                'role' => 'admin',
+                'password' => env('SEED_ADMIN_PASSWORD'),
+            ],
+            [
+                'name' => 'Guru Pertama',
+                'email' => 'guru@banksoal.com',
+                'role' => 'guru',
+                'password' => env('SEED_GURU_PASSWORD'),
+            ],
+        ];
 
-        User::create([
-            'name' => 'Guru Pertama',
-            'email' => 'guru@banksoal.com',
-            'password' => Hash::make('password123'),
-            'role' => 'guru',
-        ]);
+        foreach ($accounts as $account) {
+            $plain = $account['password'] ?: Str::password(20, symbols: false);
+
+            User::create([
+                'name' => $account['name'],
+                'email' => $account['email'],
+                'password' => Hash::make($plain),
+                'role' => $account['role'],
+            ]);
+
+            if (! $account['password']) {
+                $this->command->warn("Password acak untuk {$account['email']}: {$plain}");
+            }
+        }
     }
 }

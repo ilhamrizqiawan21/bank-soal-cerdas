@@ -9,12 +9,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('kko_master', function (Blueprint $table) {
-            $table->enum('bloom_level', ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
-                ->nullable()
-                ->after('level');
-            $table->index(['level', 'bloom_level']);
-        });
+        if (! Schema::hasColumn('kko_master', 'bloom_level')) {
+            Schema::table('kko_master', function (Blueprint $table) {
+                $table->enum('bloom_level', ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
+                    ->nullable()
+                    ->after('level');
+                $table->index(['level', 'bloom_level']);
+            });
+        }
 
         // Backfill existing KKO rows so an existing installation immediately
         // has a Bloom classification even before KkoSeeder is run again.

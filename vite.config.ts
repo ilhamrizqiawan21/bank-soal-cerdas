@@ -1,16 +1,11 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
+import laravel from 'laravel-vite-plugin';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  server: {
-    host: '0.0.0.0',
-    port: 3000,
-    allowedHosts: true,
-  },
+    plugins: [
+        laravel({
+            input: ['resources/sass/app.scss', 'resources/js/app.js'],
+            refresh: true,
+        }),
+    ],
 });

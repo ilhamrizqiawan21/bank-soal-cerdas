@@ -54,7 +54,7 @@ class AuthSecurityTest extends TestCase
         $guruB = User::factory()->create();
         $outsider = User::factory()->create();
 
-        $kko = KkoMaster::create(['level' => 'C1', 'verb' => 'Menguji', 'description' => 'test']);
+        $kko = KkoMaster::create(['level' => 'L1', 'verb' => 'Menguji', 'description' => 'test']);
         $subject = Subject::create(['name' => 'Matematika Uji', 'code' => 'MTK']);
         $question = Question::create([
             'subject_id' => $subject->id,
@@ -63,7 +63,7 @@ class AuthSecurityTest extends TestCase
             'jenjang' => 'SMA',
             'curriculum' => 'merdeka',
             'type' => 'pg',
-            'level_c' => 'C1',
+            'level_c' => 'L1',
             'question_text' => 'Soal uji akses share dengan teks yang cukup panjang.',
         ]);
 
