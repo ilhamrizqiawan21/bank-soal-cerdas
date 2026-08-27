@@ -6,37 +6,36 @@ use Tests\TestCase;
 
 class FrontendRegressionTest extends TestCase
 {
-    public function test_app_layout_keeps_global_navigation_contract(): void
+    public function test_legacy_app_layout_has_been_retired(): void
     {
-        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
-
-        $this->assertNotFalse($layout);
-        $this->assertStringContainsString('aria-label="breadcrumb"', $layout);
-        $this->assertStringContainsString('@yield(\'breadcrumb\', \'Halaman\')', $layout);
-        $this->assertStringContainsString('id="confirmModal"', $layout);
-        $this->assertStringContainsString('id="confirmModalAction"', $layout);
+        $this->assertFileDoesNotExist(resource_path('views/layouts/app.blade.php'));
+        $this->assertFileDoesNotExist(resource_path('views/dashboard.blade.php'));
+        $this->assertFileDoesNotExist(resource_path('views/questions/index.blade.php'));
     }
 
-    public function test_frontend_ux_layer_is_loaded_and_contains_accessibility_contracts(): void
+    public function test_login_page_is_standalone_without_legacy_assets(): void
     {
-        $uxStyles = file_get_contents(resource_path('sass/frontend-ux.scss'));
-        $appJs = file_get_contents(resource_path('js/app.js'));
+        $login = file_get_contents(resource_path('views/auth/login.blade.php'));
 
-        $this->assertNotFalse($uxStyles);
-        $this->assertNotFalse($appJs);
-        $this->assertStringContainsString("import '../sass/frontend-ux.scss';", $appJs);
-        $this->assertStringContainsString('breadcrumb-wrap', $uxStyles);
-        $this->assertStringContainsString('focus-visible', $uxStyles);
-        $this->assertStringContainsString('prefers-reduced-motion', $uxStyles);
+        $this->assertNotFalse($login);
+        $this->assertStringContainsString(':focus-visible', $login);
+        $this->assertStringContainsString('password-toggle', $login);
+        $this->assertStringNotContainsString('x-data', $login);
+        $this->assertStringNotContainsString('legacy.js', $login);
+        $this->assertStringNotContainsString('app.scss', $login);
     }
 
-    public function test_global_confirm_dialog_contract_is_present(): void
+    public function test_vite_only_builds_react_spa_entry_after_blade_retirement(): void
     {
-        $appJs = file_get_contents(resource_path('js/app.js'));
+        $viteConfig = file_get_contents(base_path('vite.config.ts'));
+        $packageJson = file_get_contents(base_path('package.json'));
 
-        $this->assertNotFalse($appJs);
-        $this->assertStringContainsString('data-confirm', $appJs);
-        $this->assertStringContainsString('window.confirmDialog', $appJs);
-        $this->assertStringContainsString('confirmModalAction', $appJs);
+        $this->assertNotFalse($viteConfig);
+        $this->assertNotFalse($packageJson);
+        $this->assertStringContainsString("'src/main.tsx'", $viteConfig);
+        $this->assertStringNotContainsString('resources/js/legacy.js', $viteConfig);
+        $this->assertStringNotContainsString('resources/sass/app.scss', $viteConfig);
+        $this->assertStringNotContainsString('"bootstrap"', $packageJson);
+        $this->assertStringNotContainsString('"alpinejs"', $packageJson);
     }
 }

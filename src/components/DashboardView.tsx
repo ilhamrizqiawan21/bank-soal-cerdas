@@ -19,6 +19,8 @@ import {
 import { BloomLevel, Question } from '../types';
 import { ChartCanvas } from './charts/ChartCanvas';
 
+const usersCountFromExams = (exams: { siswa_id: string }[]) => new Set(exams.map(exam => exam.siswa_id)).size;
+
 export const DashboardView: React.FC = () => {
   const {
     currentUser,
@@ -29,15 +31,19 @@ export const DashboardView: React.FC = () => {
     setCurrentView,
     setSelectedQuestionId,
     setSelectedUjianId,
+    dashboardData,
   } = useApp();
 
   const isStudent = currentUser.role === 'siswa';
 
   // Stats calculation
-  const totalSoal = questions.length;
-  const merdekaCount = questions.filter(q => q.curriculum === 'merdeka').length;
-  const kbcCount = questions.filter(q => q.curriculum === 'kbc').length;
-  const hotsCount = questions.filter(q => ['C4', 'C5', 'C6'].includes(q.level_c)).length;
+  const totalSoal = dashboardData?.summary.total_soal ?? questions.length;
+  const totalPaket = dashboardData?.summary.total_paket ?? paketSoalList.length;
+  const totalUjian = dashboardData?.summary.total_ujian ?? ujianList.length;
+  const totalSiswa = dashboardData?.summary.total_siswa ?? usersCountFromExams(ujianList);
+  const merdekaCount = dashboardData?.summary.merdeka_count ?? questions.filter(q => q.curriculum === 'merdeka').length;
+  const kbcCount = dashboardData?.summary.kbc_count ?? questions.filter(q => q.curriculum === 'kbc').length;
+  const hotsCount = dashboardData?.summary.hots_count ?? questions.filter(q => ['C4', 'C5', 'C6'].includes(q.level_c)).length;
   const hotsPercentage = totalSoal > 0 ? Math.round((hotsCount / totalSoal) * 100) : 0;
 
   // Taksonomi Bloom breakdown
@@ -51,7 +57,13 @@ export const DashboardView: React.FC = () => {
     C6: { name: 'Menciptakan', type: 'HOTS (L3)', color: 'bg-rose-500 text-white' },
   };
 
-  const getBloomCount = (level: BloomLevel) => questions.filter(q => q.level_c === level).length;
+  const getBloomCount = (level: BloomLevel) => {
+    const serverLevel = dashboardData?.level_distribution;
+    if (serverLevel && ['C4', 'C5', 'C6'].includes(level)) return serverLevel.L3 ?? serverLevel[level] ?? 0;
+    if (serverLevel && level === 'C3') return serverLevel.L2 ?? serverLevel[level] ?? 0;
+    if (serverLevel && ['C1', 'C2'].includes(level)) return serverLevel.L1 ?? serverLevel[level] ?? 0;
+    return questions.filter(q => q.level_c === level).length;
+  };
 
   // Chart.js visualizations (teacher/admin only).
   const bloomChartConfig = useMemo(
@@ -107,15 +119,20 @@ export const DashboardView: React.FC = () => {
   );
 
   // Recent questions
-  const recentQuestions = [...questions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const recentQuestions = dashboardData?.recent_questions?.length
+    ? dashboardData.recent_questions
+    : [...questions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const recentUjian = dashboardData?.recent_ujian?.length ? dashboardData.recent_ujian : ujianList.slice(0, 4);
 
   // Student specific stats
   const studentExams = ujianList.filter(u => u.siswa_id === currentUser.id);
-  const activeStudentExams = studentExams.filter(u => u.status === 'active');
+  const activeStudentExams = dashboardData?.active_ujian?.length ? dashboardData.active_ujian : studentExams.filter(u => u.status === 'active');
   const finishedStudentExams = studentExams.filter(u => u.status === 'finished');
-  const averageScore = finishedStudentExams.length > 0
+  const averageScore = dashboardData?.summary.average_score ?? (finishedStudentExams.length > 0
     ? Math.round(finishedStudentExams.reduce((sum, e) => sum + (e.total_score || 0), 0) / finishedStudentExams.length)
-    : 0;
+    : 0);
+  const finishedStudentTotal = dashboardData?.summary.finished_ujian ?? finishedStudentExams.length;
+  const studentExamTotal = dashboardData?.summary.total_ujian ?? studentExams.length;
 
   return (
     <div className="space-y-6 pb-12">
@@ -180,7 +197,7 @@ export const DashboardView: React.FC = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Ujian Terjadwal</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{studentExams.length}</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{studentExamTotal}</h3>
             </div>
           </div>
 
@@ -190,7 +207,7 @@ export const DashboardView: React.FC = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ujian Selesai</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{finishedStudentExams.length}</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{finishedStudentTotal}</h3>
             </div>
           </div>
 
@@ -219,11 +236,9 @@ export const DashboardView: React.FC = () => {
 
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kurikulum Merdeka</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{merdekaCount}</h3>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                {totalSoal > 0 ? Math.round((merdekaCount / totalSoal) * 100) : 0}% dari total
-              </p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Paket Soal</p>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{totalPaket}</h3>
+              <p className="text-[11px] text-emerald-600 font-medium">{hotsPercentage}% soal HOTS</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <BookOpen className="w-6 h-6" />
@@ -232,11 +247,9 @@ export const DashboardView: React.FC = () => {
 
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kurikulum KBC</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{kbcCount}</h3>
-              <p className="text-[11px] text-indigo-600 font-medium">
-                {totalSoal > 0 ? Math.round((kbcCount / totalSoal) * 100) : 0}% dari total
-              </p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Ujian</p>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{totalUjian}</h3>
+              <p className="text-[11px] text-indigo-600 font-medium">{dashboardData?.status_distribution?.active ?? ujianList.filter(u => u.status === 'active').length} aktif</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <Layers className="w-6 h-6" />
@@ -245,9 +258,9 @@ export const DashboardView: React.FC = () => {
 
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Soal Standar HOTS</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{hotsCount}</h3>
-              <p className="text-[11px] text-amber-600 font-medium">{hotsPercentage}% Kognitif L3 (C4-C6)</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Siswa Aktif</p>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{totalSiswa}</h3>
+              <p className="text-[11px] text-amber-600 font-medium">Peserta tersedia</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <BrainCircuit className="w-6 h-6" />
@@ -397,7 +410,7 @@ export const DashboardView: React.FC = () => {
             </div>
 
             <div className="space-y-2.5">
-              {ujianList.slice(0, 4).map((u) => (
+              {recentUjian.slice(0, 4).map((u) => (
                 <div
                   key={u.id}
                   className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-1"

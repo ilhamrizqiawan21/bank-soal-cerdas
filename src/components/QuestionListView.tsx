@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Search,
@@ -20,8 +20,12 @@ import {
   Tag as TagIcon,
   X
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { BloomLevel, Curriculum, Jenjang, LevelKognitif, Question, QuestionType } from '../types';
+import { writeSpreadsheet } from '../lib/spreadsheet';
+import { apiErrorMessage, isBootstrapped } from '../lib/api';
+import { PaginationMeta, questionsApi } from '../lib/domainApi';
+import { canManageOwnableResource, canUseSharedResource } from '../lib/roleAccess';
+import { useFocusTrap } from '../lib/useFocusTrap';
 import { QuestionDetailModal } from './QuestionDetailModal';
 import { QuestionImportModal } from './QuestionImportModal';
 
@@ -40,6 +44,7 @@ export const QuestionListView: React.FC = () => {
     setSelectedQuestionId,
     selectedTagFilter,
     setSelectedTagFilter,
+    shareSoalList,
     shareSoalAction,
     users,
     addToast,
@@ -58,6 +63,12 @@ export const QuestionListView: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const productionMode = isBootstrapped();
+  const [serverQuestions, setServerQuestions] = useState<Question[]>([]);
+  const [serverMeta, setServerMeta] = useState<PaginationMeta | null>(null);
+  const [isListLoading, setIsListLoading] = useState(productionMode);
+  const [listError, setListError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [viewingQuestion, setViewingQuestion] = useState<Question | null>(null);
@@ -65,14 +76,76 @@ export const QuestionListView: React.FC = () => {
   const [selectedTeacherToShare, setSelectedTeacherToShare] = useState<string>('');
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'edit' | 'copy'>('view');
   const [shareMessage, setShareMessage] = useState<string>('');
+  const shareDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(shareDialogRef, Boolean(sharingQuestionId), () => setSharingQuestionId(null));
 
   // React to selectedTagFilter changes from context
   React.useEffect(() => {
     if (selectedTagFilter) {
       setTagFilter(selectedTagFilter);
+      setCurrentPage(1);
       setSelectedTagFilter(null);
     }
   }, [selectedTagFilter, setSelectedTagFilter]);
+
+  React.useEffect(() => {
+    setSearchFilter(searchGlobalQuery || '');
+    setCurrentPage(1);
+  }, [searchGlobalQuery]);
+
+  React.useEffect(() => {
+    if (!productionMode) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      setIsListLoading(true);
+      setListError(null);
+      questionsApi
+        .paginate({
+          page: currentPage,
+          per_page: itemsPerPage,
+          search: searchFilter.trim() || undefined,
+          subject_id: subjectFilter === 'all' ? undefined : subjectFilter,
+          curriculum: curriculumFilter === 'all' ? undefined : curriculumFilter,
+          bloom_level: bloomFilter === 'all' ? undefined : bloomFilter,
+          level_c: levelKognitifFilter === 'all' ? undefined : levelKognitifFilter,
+          type: typeFilter === 'all' ? undefined : typeFilter,
+          jenjang: jenjangFilter === 'all' ? undefined : jenjangFilter,
+          tag_id: tagFilter === 'all' ? undefined : tagFilter,
+          sort: 'latest',
+        })
+        .then(result => {
+          if (controller.signal.aborted) return;
+          setServerQuestions(result.data);
+          setServerMeta(result.meta);
+        })
+        .catch(error => {
+          if (controller.signal.aborted) return;
+          setListError(apiErrorMessage(error));
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setIsListLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [
+    productionMode,
+    currentPage,
+    searchFilter,
+    subjectFilter,
+    curriculumFilter,
+    bloomFilter,
+    levelKognitifFilter,
+    typeFilter,
+    jenjangFilter,
+    tagFilter,
+    reloadKey,
+  ]);
 
   // If preselected from dashboard or search
   React.useEffect(() => {
@@ -116,19 +189,28 @@ export const QuestionListView: React.FC = () => {
     tagFilter,
   ]);
 
-  const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage) || 1;
-  const displayedQuestions = filteredQuestions.slice(
+  const localTotalPages = Math.ceil(filteredQuestions.length / itemsPerPage) || 1;
+  const totalPages = productionMode ? serverMeta?.last_page ?? 1 : localTotalPages;
+  const displayedQuestions = productionMode ? serverQuestions : filteredQuestions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const totalQuestions = productionMode ? serverMeta?.total ?? 0 : filteredQuestions.length;
 
-  const handleExportExcel = () => {
-    if (questions.length === 0) {
+  const handleExportExcel = async () => {
+    if (productionMode) {
+      window.location.href = '/api/questions/export';
+      addToast('Export Bank Soal sedang diproses oleh server.', 'info');
+      return;
+    }
+
+    const sourceQuestions = questions;
+    if (sourceQuestions.length === 0) {
       addToast('Tidak ada data soal untuk diekspor.', 'warning');
       return;
     }
 
-    const exportRows = questions.map((q, idx) => {
+    const exportRows = sourceQuestions.map((q, idx) => {
       const subj = subjects.find(s => s.id === q.subject_id);
       const kko = kkoList.find(k => k.id === q.kko_id);
 
@@ -156,11 +238,13 @@ export const QuestionListView: React.FC = () => {
       };
     });
 
-    const ws = XLSX.utils.json_to_sheet(exportRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'BankSoal');
-    XLSX.writeFile(wb, `Export_Bank_Soal_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    addToast('Data Bank Soal berhasil diekspor ke format Excel!', 'success');
+    try {
+      await writeSpreadsheet(exportRows, `Export_Bank_Soal_${new Date().toISOString().slice(0, 10)}.xlsx`, 'BankSoal');
+      addToast('Data Bank Soal berhasil diekspor ke format Excel!', 'success');
+    } catch (error) {
+      console.error(error);
+      addToast('Gagal mengekspor data Bank Soal.', 'danger');
+    }
   };
 
   const handleOpenShare = (questionId: string) => {
@@ -172,13 +256,25 @@ export const QuestionListView: React.FC = () => {
     }
   };
 
-  const handleConfirmShare = () => {
+  const handleConfirmShare = async () => {
     if (!sharingQuestionId || !selectedTeacherToShare) return;
-    shareSoalAction(sharingQuestionId, selectedTeacherToShare, selectedPermission, shareMessage.trim() || undefined);
-    setSharingQuestionId(null);
+    const ok = await shareSoalAction(sharingQuestionId, selectedTeacherToShare, selectedPermission, shareMessage.trim() || undefined);
+    if (ok) setSharingQuestionId(null);
   };
 
   const otherTeachers = users.filter(u => (u.role === 'guru' || u.role === 'admin') && u.id !== currentUser.id);
+
+  const refreshQuestionPage = () => setReloadKey(key => key + 1);
+
+  const handleDuplicateQuestion = async (id: string) => {
+    await duplicateQuestion(id);
+    if (productionMode) refreshQuestionPage();
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    await deleteQuestion(id);
+    if (productionMode) refreshQuestionPage();
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -340,7 +436,7 @@ export const QuestionListView: React.FC = () => {
             <option value="all">Semua Karakteristik / Tag</option>
             {tags.map((t) => (
               <option key={t.id} value={t.id}>
-                🏷️ {t.name}
+                {t.name}
               </option>
             ))}
           </select>
@@ -367,11 +463,38 @@ export const QuestionListView: React.FC = () => {
       {/* Questions Table / Cards List */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <span>Menampilkan <b>{displayedQuestions.length}</b> dari <b>{filteredQuestions.length}</b> butir soal</span>
+          <span>Menampilkan <b>{displayedQuestions.length}</b> dari <b>{totalQuestions}</b> butir soal</span>
           <span>Halaman {currentPage} dari {totalPages}</span>
         </div>
 
-        {displayedQuestions.length === 0 ? (
+        {isListLoading ? (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {[0, 1, 2, 3].map(item => (
+              <div key={item} className="p-5 space-y-3">
+                <div className="flex gap-2">
+                  <div className="h-5 w-16 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                  <div className="h-5 w-24 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                </div>
+                <div className="h-5 w-3/4 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        ) : listError ? (
+          <div className="py-16 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 mx-auto flex items-center justify-center">
+              <BrainCircuit className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data bank soal gagal dimuat.</p>
+            <p className="text-xs text-slate-500">{listError}</p>
+            <button
+              onClick={() => setReloadKey(key => key + 1)}
+              className="text-xs text-blue-600 hover:underline font-medium"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        ) : displayedQuestions.length === 0 ? (
           <div className="py-16 text-center space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center">
               <BrainCircuit className="w-6 h-6" />
@@ -386,6 +509,8 @@ export const QuestionListView: React.FC = () => {
                 setLevelKognitifFilter('all');
                 setTypeFilter('all');
                 setJenjangFilter('all');
+                setTagFilter('all');
+                setCurrentPage(1);
               }}
               className="text-xs text-blue-600 hover:underline font-medium"
             >
@@ -398,6 +523,15 @@ export const QuestionListView: React.FC = () => {
               const subj = subjects.find(s => s.id === q.subject_id);
               const kko = kkoList.find(k => k.id === q.kko_id);
               const isHots = ['C4', 'C5', 'C6'].includes(q.level_c);
+              const ownershipAllowed = canManageOwnableResource(currentUser.role, currentUser.id, q.created_by);
+              const acceptedShare = shareSoalList.find(share =>
+                share.question_id === q.id &&
+                share.shared_to === currentUser.id &&
+                share.is_accepted
+              );
+              const canShare = ownershipAllowed;
+              const canEdit = ownershipAllowed || canUseSharedResource(acceptedShare?.permission, 'edit');
+              const canDuplicate = ownershipAllowed || canUseSharedResource(acceptedShare?.permission, 'copy');
 
               return (
                 <div
@@ -466,6 +600,7 @@ export const QuestionListView: React.FC = () => {
                                 setCurrentPage(1);
                               }}
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 transition-colors"
+                              aria-label={`Filter soal berdasarkan karakteristik ${tagObj.name}`}
                               title={`Filter soal berdasarkan karakteristik "${tagObj.name}"`}
                             >
                               <TagIcon className="w-2.5 h-2.5" />
@@ -484,52 +619,65 @@ export const QuestionListView: React.FC = () => {
                       onClick={() => setViewingQuestion(q)}
                       className="p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
                       title="Lihat Detail"
+                      aria-label={`Lihat detail soal ${q.id}`}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
 
-                    <button
-                      id={`btn-share-q-${q.id}`}
-                      onClick={() => handleOpenShare(q.id)}
-                      className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-                      title="Bagikan ke Guru Lain"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </button>
+                    {canShare && (
+                      <button
+                        id={`btn-share-q-${q.id}`}
+                        onClick={() => handleOpenShare(q.id)}
+                        className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                        title="Bagikan ke Guru Lain"
+                        aria-label={`Bagikan soal ${q.id} ke guru lain`}
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    <button
-                      id={`btn-duplicate-q-${q.id}`}
-                      onClick={() => duplicateQuestion(q.id)}
-                      className="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-                      title="Duplikasi Soal"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
+                    {canDuplicate && (
+                      <button
+                        id={`btn-duplicate-q-${q.id}`}
+                        onClick={() => handleDuplicateQuestion(q.id)}
+                        className="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                        title="Duplikasi Soal"
+                        aria-label={`Duplikasi soal ${q.id}`}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    <button
-                      id={`btn-edit-q-${q.id}`}
-                      onClick={() => {
-                        setSelectedQuestionId(q.id);
-                        setCurrentView('questions-edit');
-                      }}
-                      className="p-2 rounded-xl text-slate-600 hover:text-amber-600 hover:bg-amber-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-                      title="Edit Soal"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        id={`btn-edit-q-${q.id}`}
+                        onClick={() => {
+                          setSelectedQuestionId(q.id);
+                          setCurrentView('questions-edit');
+                        }}
+                        className="p-2 rounded-xl text-slate-600 hover:text-amber-600 hover:bg-amber-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                        title="Edit Soal"
+                        aria-label={`Edit soal ${q.id}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    <button
-                      id={`btn-delete-q-${q.id}`}
-                      onClick={() => {
-                        if (window.confirm('Apakah Anda yakin ingin menghapus butir soal ini dari Bank Soal?')) {
-                          deleteQuestion(q.id);
-                        }
-                      }}
-                      className="p-2 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
-                      title="Hapus Soal"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {ownershipAllowed && (
+                      <button
+                        id={`btn-delete-q-${q.id}`}
+                        onClick={() => {
+                          if (window.confirm('Apakah Anda yakin ingin menghapus butir soal ini dari Bank Soal?')) {
+                            handleDeleteQuestion(q.id);
+                          }
+                        }}
+                        className="p-2 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
+                        title="Hapus Soal"
+                        aria-label={`Hapus soal ${q.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -586,12 +734,10 @@ export const QuestionListView: React.FC = () => {
             setCurrentView('questions-edit');
           }}
           onDuplicate={(id) => {
-            duplicateQuestion(id);
-            setViewingQuestion(null);
+            handleDuplicateQuestion(id).then(() => setViewingQuestion(null));
           }}
           onDelete={(id) => {
-            deleteQuestion(id);
-            setViewingQuestion(null);
+            handleDeleteQuestion(id).then(() => setViewingQuestion(null));
           }}
           onShare={(id) => {
             setViewingQuestion(null);
@@ -608,15 +754,26 @@ export const QuestionListView: React.FC = () => {
       {sharingQuestionId && (
         <div
           id="modal-share-backdrop"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div
+            ref={shareDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-share-question-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 outline-none"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 id="modal-share-question-title" className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-blue-600" /> Bagikan Soal ke Rekan Guru
               </h3>
               <button
+                type="button"
                 onClick={() => setSharingQuestionId(null)}
+                aria-label="Tutup modal bagikan soal"
+                title="Tutup"
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
               >
                 <X className="w-4 h-4" />
@@ -678,12 +835,14 @@ export const QuestionListView: React.FC = () => {
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                type="button"
                 onClick={() => setSharingQuestionId(null)}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
               >
                 Batal
               </button>
               <button
+                type="button"
                 id="btn-confirm-share-soal"
                 onClick={handleConfirmShare}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm"

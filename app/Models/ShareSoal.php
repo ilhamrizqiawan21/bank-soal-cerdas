@@ -10,12 +10,13 @@ class ShareSoal extends Model
     
     protected $fillable = [
         'question_id', 'shared_by', 'shared_to',
-        'permission', 'is_accepted', 'accepted_at', 'note'
+        'permission', 'is_accepted', 'accepted_at', 'note', 'notes'
     ];
 
     protected $casts = [
         'is_accepted' => 'boolean',
         'accepted_at' => 'datetime',
+        'notes' => 'array',
     ];
 
     public function question()

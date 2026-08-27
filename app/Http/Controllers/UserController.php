@@ -19,26 +19,7 @@ class UserController extends Controller
             abort(403, 'Anda tidak memiliki akses.');
         }
         
-        $query = User::query();
-
-        if ($request->filled('role')) {
-            $query->where('role', $request->role);
-        }
-        if ($request->filled('status')) {
-            $query->where('is_active', $request->status === 'active');
-        }
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->latest()->paginate(10)->withQueryString();
-        
-        return view('users.index', compact('users'));
+        return redirect('/app/users');
     }
 
     public function create()
@@ -46,7 +27,7 @@ class UserController extends Controller
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses.');
         }
-        return view('users.create');
+        return redirect('/app/users');
     }
 
     public function store(Request $request)
@@ -96,8 +77,7 @@ class UserController extends Controller
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses.');
         }
-        $user->load(['questions', 'paketSoal']);
-        return view('users.show', compact('user'));
+        return redirect('/app/users');
     }
 
     public function edit(User $user)
@@ -105,7 +85,7 @@ class UserController extends Controller
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses.');
         }
-        return view('users.edit', compact('user'));
+        return redirect('/app/users');
     }
 
     public function update(Request $request, User $user)
@@ -191,8 +171,7 @@ class UserController extends Controller
     
     public function profile()
     {
-        $user = auth()->user();
-        return view('users.profile', compact('user'));
+        return redirect('/app/profile');
     }
 
     public function updateProfile(Request $request)

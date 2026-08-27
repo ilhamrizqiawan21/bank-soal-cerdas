@@ -82,6 +82,7 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
   // Specific state for Uraian
   const [rubricText, setRubricText] = useState(existingQuestion?.essay_rubric?.rubric_text || '');
   const [maxScore, setMaxScore] = useState<number>(existingQuestion?.essay_rubric?.max_score || 10);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Auto-sync cognitive level and KKO when Bloom Level changes
   const handleBloomChange = (newLevel: BloomLevel) => {
@@ -144,7 +145,7 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!questionText.trim()) {
@@ -192,13 +193,20 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
       essay_rubric: type === 'uraian' ? { rubric_text: rubricText, max_score: maxScore } : undefined,
     };
 
-    if (isEditing && existingQuestion) {
-      updateQuestion(existingQuestion.id, payload);
-    } else {
-      addQuestion(payload);
-    }
+    setIsSaving(true);
+    try {
+      if (isEditing && existingQuestion) {
+        await updateQuestion(existingQuestion.id, payload);
+      } else {
+        await addQuestion(payload);
+      }
 
-    setCurrentView('questions');
+      setCurrentView('questions');
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const availableKkos = kkoList.filter(k => k.bloom_level === levelC);
@@ -385,6 +393,7 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                         : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
                     }`}
+                    aria-label={`${isSelected ? 'Hapus' : 'Pilih'} karakteristik ${t.name}`}
                     title={t.description || t.name}
                   >
                     <TagIcon className="w-3 h-3" />
@@ -485,6 +494,11 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
                           ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
                       }`}
+                      aria-label={
+                        opt.is_correct
+                          ? `Pilihan ${opt.label} sudah menjadi kunci jawaban`
+                          : `Jadikan pilihan ${opt.label} sebagai kunci jawaban`
+                      }
                       title={opt.is_correct ? 'Kunci Jawaban Terpilih' : 'Klik untuk jadikan kunci jawaban'}
                     >
                       {opt.label}
@@ -509,6 +523,7 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
                         type="button"
                         onClick={() => handleRemovePgOption(idx)}
                         className="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                        aria-label={`Hapus opsi ${opt.label}`}
                         title="Hapus Opsi"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -681,10 +696,12 @@ export const QuestionFormView: React.FC<QuestionFormViewProps> = ({ isEditing })
           <button
             id="btn-save-question"
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-95 transition-all"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 shadow-md shadow-blue-500/20 active:scale-95 transition-all"
+            aria-label={isEditing ? 'Simpan perubahan soal' : 'Simpan soal baru ke bank soal'}
           >
             <Save className="w-4 h-4" />
-            {isEditing ? 'Simpan Perubahan Soal' : 'Simpan ke Bank Soal'}
+            {isSaving ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan Soal' : 'Simpan ke Bank Soal'}
           </button>
         </div>
       </form>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { X, UploadCloud, FileSpreadsheet, Download, CheckCircle2, AlertCircle } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { BloomLevel, Curriculum, Jenjang, LevelKognitif, Question, QuestionType } from '../types';
+import { readSpreadsheetRecords, writeSpreadsheet } from '../lib/spreadsheet';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 interface QuestionImportModalProps {
   onClose: () => void;
@@ -10,10 +11,13 @@ interface QuestionImportModalProps {
 
 export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClose }) => {
   const { subjects, importQuestionsData, addToast } = useApp();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewData, setPreviewData] = useState<Partial<Question>[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useFocusTrap(dialogRef, true, onClose);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -22,14 +26,8 @@ export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClos
     setSelectedFile(file);
     setErrorMsg(null);
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
+    readSpreadsheetRecords(file)
+      .then((rawRows) => {
 
         if (rawRows.length === 0) {
           setErrorMsg('File spreadsheet kosong atau format sheet tidak valid.');
@@ -78,15 +76,14 @@ export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClos
         });
 
         setPreviewData(parsedQuestions);
-      } catch (err) {
-        console.error(err);
+      })
+      .catch((error) => {
+        console.error(error);
         setErrorMsg('Gagal membaca file Excel/CSV. Pastikan format file sesuai.');
-      }
-    };
-    reader.readAsBinaryString(file);
+      });
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     const templateData = [
       {
         Soal: 'Berapakah hasil dari 15 × 8 + 40?',
@@ -118,18 +115,20 @@ export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClos
       },
     ];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'TemplateSoal');
-    XLSX.writeFile(wb, 'Template_Import_Bank_Soal_Cerdas.xlsx');
-    addToast('Template Excel berhasil diunduh.', 'info');
+    try {
+      await writeSpreadsheet(templateData, 'Template_Import_Bank_Soal_Cerdas.xlsx', 'TemplateSoal');
+      addToast('Template Excel berhasil diunduh.', 'info');
+    } catch (error) {
+      console.error(error);
+      addToast('Gagal mengunduh template Excel.', 'danger');
+    }
   };
 
-  const handleProcessImport = () => {
+  const handleProcessImport = async () => {
     if (previewData.length === 0) return;
     setIsProcessing(true);
     try {
-      importQuestionsData(previewData);
+      await importQuestionsData(previewData, selectedFile);
       onClose();
     } catch (e) {
       addToast('Terjadi kesalahan saat memproses import soal.', 'danger');
@@ -142,10 +141,16 @@ export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClos
     <div
       id="modal-import-backdrop"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+      role="presentation"
     >
       <div
+        ref={dialogRef}
         id="modal-import"
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-import-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 outline-none"
       >
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -154,14 +159,17 @@ export const QuestionImportModal: React.FC<QuestionImportModalProps> = ({ onClos
               <FileSpreadsheet className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Import Soal dari Spreadsheet</h3>
+              <h3 id="modal-import-title" className="text-base font-bold text-slate-900 dark:text-white">Import Soal dari Spreadsheet</h3>
               <p className="text-xs text-slate-400">Dukungan format Excel (.xlsx, .xls) dan CSV</p>
             </div>
           </div>
           <button
             id="btn-close-import-modal"
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Tutup modal import soal"
+            title="Tutup"
           >
             <X className="w-5 h-5" />
           </button>

@@ -9,19 +9,12 @@ class TagController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Tag::with(['questions']);
-
-        if ($request->filled('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
-        }
-
-        $tag = $query->latest()->paginate(10);
-        return view('tag.index', compact('tag'));
+        return redirect('/app/tags');
     }
 
     public function create()
     {
-        return view('tag.create');
+        return redirect('/app/tags');
     }
 
     public function store(Request $request)
@@ -43,13 +36,12 @@ class TagController extends Controller
 
     public function show(Tag $tag)
     {
-        $tag->load(['questions']);
-        return view('tag.show', compact('tag'));
+        return redirect('/app/tags');
     }
 
     public function edit(Tag $tag)
     {
-        return view('tag.edit', compact('tag'));
+        return redirect('/app/tags');
     }
 
     public function update(Request $request, Tag $tag)

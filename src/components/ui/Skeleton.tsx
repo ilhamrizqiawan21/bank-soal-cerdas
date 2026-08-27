@@ -1,0 +1,6 @@
+import React from 'react';
+import { cn } from '../../lib/cn';
+
+export const Skeleton: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, ...props }) => (
+  <div className={cn('animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800', className)} {...props} />
+);

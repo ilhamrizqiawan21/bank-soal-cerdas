@@ -5,9 +5,11 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite --host 0.0.0.0 --port 3000",
-        "lint": "tsc --noEmit"
+        "lint": "tsc --noEmit",
+        "test:e2e": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/vite": "^4.0.0",
         "@types/canvas-confetti": "^1.9.0",
         "@types/node": "^26.2.0",
@@ -15,10 +17,9 @@
         "@types/react-dom": "^19.2.4",
         "@vitejs/plugin-react": "^6.1.0",
         "autoprefixer": "^10.5.4",
-        "concurrently": "^10.0.3",
+        "concurrently": "^9.2.1",
         "laravel-vite-plugin": "^3.2.0",
         "postcss": "^8.5.26",
-        "sass-embedded": "^1.102.0",
         "tailwindcss": "^4.0.0",
         "typescript": "^7.0.2",
         "vite": "^8.2.2"
@@ -27,11 +28,7 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
-        "@fortawesome/fontawesome-free": "^7.3.1",
-        "@popperjs/core": "^2.11.8",
-        "alpinejs": "^3.16.1",
         "axios": "^1.19.0",
-        "bootstrap": "^5.3.8",
         "canvas-confetti": "^1.9.4",
         "chart.js": "^4.5.1",
         "clsx": "^2.1.1",
@@ -39,7 +36,8 @@
         "motion": "^13.1.1",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
+        "read-excel-file": "^9.3.10",
         "tailwind-merge": "^3.6.0",
-        "xlsx": "^0.18.5"
+        "write-excel-file": "^4.1.1"
     }
 }

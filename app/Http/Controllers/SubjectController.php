@@ -11,13 +11,12 @@ class SubjectController extends Controller
 {
     public function index()
     {
-        $subjects = Subject::withCount('questions')->orderBy('name')->get();
-        return view('subjects.index', compact('subjects'));
+        return redirect('/app/subjects');
     }
 
     public function create()
     {
-        return view('subjects.create');
+        return redirect('/app/subjects');
     }
 
     public function store(Request $request)
@@ -38,7 +37,7 @@ class SubjectController extends Controller
 
     public function edit(Subject $subject)
     {
-        return view('subjects.edit', compact('subject'));
+        return redirect('/app/subjects');
     }
 
     public function update(Request $request, Subject $subject)

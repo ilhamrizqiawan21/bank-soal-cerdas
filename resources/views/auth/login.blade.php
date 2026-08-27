@@ -8,11 +8,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         /* ===== LOGIN PAGE ===== */
         #login-html, #login-html body {
             height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
         }
 
         .login-shell {
@@ -53,6 +63,9 @@
             margin-bottom: 24px;
             box-shadow: 0 12px 32px rgba(59,130,246,0.35);
             position: relative;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0;
         }
 
         .login-panel h1 {
@@ -103,6 +116,7 @@
             flex-shrink: 0;
             font-size: 13px;
             color: #93c5fd;
+            font-weight: 800;
         }
 
         /* Panel kanan — form */
@@ -142,13 +156,24 @@
             position: relative;
         }
 
+        .form-label {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+        }
+
         .login-input-group .form-control {
+            width: 100%;
             height: 48px;
             border-radius: 10px;
             border: 1.5px solid #e2e8f0;
             padding: 0 44px 0 14px;
             font-size: 14px;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fff;
+            color: #0f172a;
         }
 
         .login-input-group .form-control:focus {
@@ -176,6 +201,7 @@
         }
 
         .login-btn {
+            width: 100%;
             height: 48px;
             border-radius: 10px;
             font-weight: 700;
@@ -185,6 +211,8 @@
             border: none;
             transition: all 0.2s ease;
             box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+            color: #fff;
+            cursor: pointer;
         }
 
         .login-btn:hover {
@@ -207,24 +235,102 @@
             font-size: 12px;
         }
 
+        .mb-3 { margin-bottom: 16px; }
+        .mb-4 { margin-bottom: 24px; }
+        .mb-0 { margin-bottom: 0; }
+        .fw-semibold { font-weight: 600; }
+        .w-100 { width: 100%; }
+        .text-muted { color: #64748b; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        .align-items-center { align-items: center; }
+        .form-check { display: flex; align-items: center; gap: 8px; }
+        .form-check-input { width: 16px; height: 16px; accent-color: #2563eb; }
+        .form-check-label { font-size: 13px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; border: 0; }
+        .btn-primary { color: #fff; }
+
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #fff;
+            color: #334155;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .alert {
+            position: relative;
+            margin-bottom: 16px;
+            padding: 12px 40px 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid transparent;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+
+        .alert-close {
+            position: absolute;
+            top: 9px;
+            right: 10px;
+            border: 0;
+            background: transparent;
+            color: currentColor;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        :focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+
         /* Dark mode untuk form panel */
-        [data-bs-theme="dark"] .login-form-panel {
+        html.dark .login-form-panel {
             background: #0f172a;
         }
 
-        [data-bs-theme="dark"] .login-form-header h2 {
+        html.dark .login-form-header h2,
+        html.dark .form-label {
             color: #f1f5f9;
         }
 
-        [data-bs-theme="dark"] .login-input-group .form-control {
+        html.dark .login-input-group .form-control {
             background: #1e293b;
             border-color: rgba(255,255,255,0.1);
             color: #e2e8f0;
         }
 
-        [data-bs-theme="dark"] .login-input-group .form-control:focus {
+        html.dark .login-input-group .form-control:focus {
             border-color: #3b82f6;
             background: #1e293b;
+        }
+
+        html.dark body,
+        html.dark .login-form-panel {
+            background: #0f172a;
+        }
+
+        html.dark .icon-button {
+            background: #1e293b;
+            border-color: #334155;
+            color: #e2e8f0;
         }
 
         /* Responsive */
@@ -241,32 +347,32 @@
         }
     </style>
 </head>
-<body x-data="loginPage()" x-init="init()">
+<body>
 
 <div class="login-shell">
     <!-- Panel Kiri: Branding -->
     <div class="login-panel">
         <div class="login-panel-logo">
-            <i class="fas fa-database"></i>
+            BS
         </div>
         <h1>Bank Soal Cerdas</h1>
         <p>Platform pengelolaan soal ujian berbasis kurikulum untuk pendidikan yang lebih cerdas.</p>
 
         <div class="login-panel-features">
             <div class="login-feature-item">
-                <div class="login-feature-icon"><i class="fas fa-layer-group"></i></div>
+                <div class="login-feature-icon">K</div>
                 <span>Multi-kurikulum: Merdeka & KBC</span>
             </div>
             <div class="login-feature-item">
-                <div class="login-feature-icon"><i class="fas fa-brain"></i></div>
+                <div class="login-feature-icon">B</div>
                 <span>Taksonomi Bloom (C1–C6) terintegrasi</span>
             </div>
             <div class="login-feature-item">
-                <div class="login-feature-icon"><i class="fas fa-share-alt"></i></div>
+                <div class="login-feature-icon">S</div>
                 <span>Kolaborasi antar guru</span>
             </div>
             <div class="login-feature-item">
-                <div class="login-feature-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="login-feature-icon">A</div>
                 <span>Analisis hasil ujian real-time</span>
             </div>
         </div>
@@ -278,10 +384,10 @@
         <div style="position:absolute; top:20px; right:20px;">
             <button type="button"
                     class="icon-button"
-                    @click="toggleDark()"
-                    :title="dark ? 'Mode terang' : 'Mode gelap'"
-                    aria-label="Toggle dark mode">
-                <i class="fas" :class="dark ? 'fa-sun' : 'fa-moon'"></i>
+                    id="theme-toggle"
+                    title="Mode gelap"
+                    aria-label="Aktifkan atau nonaktifkan mode gelap">
+                <span id="theme-toggle-icon">D</span>
             </button>
         </div>
 
@@ -292,19 +398,25 @@
             </div>
 
             @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-danger" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="alert-close" data-close-alert aria-label="Tutup pesan">&times;</button>
+                </div>
+            @endif
+
+            @if(request()->boolean('session_expired'))
+                <div class="alert alert-warning" role="alert">
+                    Sesi login Anda sudah berakhir. Silakan masuk kembali untuk melanjutkan.
+                    <button type="button" class="alert-close" data-close-alert aria-label="Tutup pesan">&times;</button>
                 </div>
             @endif
 
             @if($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
+                <div class="alert alert-danger" role="alert">
                     @foreach($errors->all() as $error)
                         <div>{{ $error }}</div>
                     @endforeach
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button" class="alert-close" data-close-alert aria-label="Tutup pesan">&times;</button>
                 </div>
             @endif
 
@@ -322,14 +434,14 @@
                                required
                                autofocus
                                autocomplete="email">
-                        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                        <span class="input-icon" aria-hidden="true">@</span>
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label fw-semibold" for="password">Password</label>
-                    <div class="login-input-group" x-data="{ show: false }">
-                        <input :type="show ? 'text' : 'password'"
+                    <div class="login-input-group">
+                        <input type="password"
                                name="password"
                                id="password"
                                class="form-control @error('password') is-invalid @enderror"
@@ -338,9 +450,9 @@
                                autocomplete="current-password">
                         <button type="button"
                                 class="input-icon"
-                                @click="show = !show"
-                                :aria-label="show ? 'Sembunyikan password' : 'Tampilkan password'">
-                            <i class="fas" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                id="password-toggle"
+                                aria-label="Tampilkan password">
+                            <span aria-hidden="true">Show</span>
                         </button>
                     </div>
                 </div>
@@ -353,7 +465,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary login-btn w-100">
-                    <i class="fas fa-sign-in-alt me-2"></i>Masuk
+                    Masuk
                 </button>
             </form>
         </div>
@@ -364,5 +476,42 @@
     </div>
 </div>
 
+<script>
+    (() => {
+        const root = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-toggle-icon');
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.getElementById('password-toggle');
+
+        const applyTheme = (theme) => {
+            root.classList.toggle('dark', theme === 'dark');
+            localStorage.setItem('cbt_app_theme', theme);
+            if (themeToggle && themeIcon) {
+                themeToggle.title = theme === 'dark' ? 'Mode terang' : 'Mode gelap';
+                themeIcon.textContent = theme === 'dark' ? 'L' : 'D';
+            }
+        };
+
+        const savedTheme = localStorage.getItem('cbt_app_theme');
+        applyTheme(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'light');
+
+        themeToggle?.addEventListener('click', () => {
+            applyTheme(root.classList.contains('dark') ? 'light' : 'dark');
+        });
+
+        passwordToggle?.addEventListener('click', () => {
+            if (!passwordInput) return;
+            const isVisible = passwordInput.type === 'text';
+            passwordInput.type = isVisible ? 'password' : 'text';
+            passwordToggle.setAttribute('aria-label', isVisible ? 'Tampilkan password' : 'Sembunyikan password');
+            passwordToggle.textContent = isVisible ? 'Show' : 'Hide';
+        });
+
+        document.querySelectorAll('[data-close-alert]').forEach((button) => {
+            button.addEventListener('click', () => button.closest('.alert')?.remove());
+        });
+    })();
+</script>
 </body>
 </html>

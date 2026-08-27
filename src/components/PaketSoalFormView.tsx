@@ -13,7 +13,9 @@ import {
   BrainCircuit,
   Layers,
   FolderTree,
-  FileDown
+  FileDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Jenjang, PaketSoal, PaketSoalItem } from '../types';
 import { PaketSoalExportModal } from './PaketSoalExportModal';
@@ -45,7 +47,7 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
   const [durationMinutes, setDurationMinutes] = useState<number>(existingPaket?.duration_minutes || 60);
   const [acakSoal, setAcakSoal] = useState<boolean>(existingPaket?.acak_soal ?? true);
   const [acakPilihan, setAcakPilihan] = useState<boolean>(existingPaket?.acak_pilihan ?? true);
-  const [status, setStatus] = useState<'draft' | 'published'>(existingPaket?.status === 'published' ? 'published' : 'draft');
+  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>(existingPaket?.status || 'draft');
   const [showExportModal, setShowExportModal] = useState(false);
 
   // Selected questions with scores
@@ -84,9 +86,23 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
     );
   };
 
+  const moveSelectedItem = (qId: string, direction: -1 | 1) => {
+    setSelectedItems(prev => {
+      const currentIndex = prev.findIndex(item => item.question_id === qId);
+      const nextIndex = currentIndex + direction;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev;
+
+      const next = [...prev];
+      const [moved] = next.splice(currentIndex, 1);
+      next.splice(nextIndex, 0, moved);
+
+      return next.map((item, index) => ({ ...item, order: index + 1 }));
+    });
+  };
+
   const totalCalculatedScore = selectedItems.reduce((sum, i) => sum + i.score, 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       addToast('Nama paket soal tidak boleh kosong!', 'warning');
@@ -119,13 +135,17 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
       items: itemsPayload,
     };
 
-    if (isEditing && existingPaket) {
-      updatePaketSoal(existingPaket.id, payload);
-    } else {
-      addPaketSoal(payload);
-    }
+    try {
+      if (isEditing && existingPaket) {
+        await updatePaketSoal(existingPaket.id, payload);
+      } else {
+        await addPaketSoal(payload);
+      }
 
-    setCurrentView('paket-soal');
+      setCurrentView('paket-soal');
+    } catch {
+      // Toast is handled by the data layer.
+    }
   };
 
   return (
@@ -231,7 +251,6 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
                   <option value="SD">SD</option>
                   <option value="SMP">SMP</option>
                   <option value="SMA">SMA</option>
-                  <option value="SMK">SMK</option>
                 </select>
               </div>
 
@@ -257,7 +276,7 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
                 <input
                   type="number"
                   min={5}
-                  max={240}
+                  max={180}
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
                   className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 outline-none font-bold"
@@ -275,6 +294,7 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
                 >
                   <option value="published">Siap Ujian (Published)</option>
                   <option value="draft">Konsep (Draft)</option>
+                  <option value="archived">Arsip (Archived)</option>
                 </select>
               </div>
             </div>
@@ -354,6 +374,87 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
               ))}
             </select>
           </div>
+
+          {selectedItems.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Urutan Soal Terpilih
+              </p>
+              <div className="space-y-2">
+                {selectedItems.map((item, index) => {
+                  const question = questions.find(q => q.id === item.question_id);
+                  const subject = question ? subjects.find(s => s.id === question.subject_id) : null;
+
+                  return (
+                    <div
+                      key={item.question_id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/20 text-xs"
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/50 text-[10px] font-bold">
+                              {subject?.code || 'MAPEL'}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold uppercase">
+                              {question?.type || 'soal'}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-slate-800 dark:text-slate-100 line-clamp-2">
+                            {question?.question_text || 'Soal tidak ditemukan'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 self-end sm:self-center shrink-0">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => moveSelectedItem(item.question_id, -1)}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-800"
+                          title="Naikkan urutan"
+                          aria-label={`Naikkan urutan soal ${question?.question_text || item.question_id}`}
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === selectedItems.length - 1}
+                          onClick={() => moveSelectedItem(item.question_id, 1)}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-800"
+                          title="Turunkan urutan"
+                          aria-label={`Turunkan urutan soal ${question?.question_text || item.question_id}`}
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={item.score}
+                          onChange={(e) => handleScoreChange(item.question_id, Number(e.target.value))}
+                          className="w-14 p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center font-bold text-indigo-600 dark:text-indigo-400 outline-none"
+                          title="Bobot poin"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleSelectQuestion(item.question_id)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          title="Hapus dari paket"
+                          aria-label={`Hapus soal ${question?.question_text || item.question_id} dari paket`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Question selection rows */}
           <div className="max-h-96 overflow-y-auto space-y-2 border border-slate-200 dark:border-slate-800 rounded-xl p-2 bg-slate-50/50 dark:bg-slate-800/30">
@@ -436,6 +537,7 @@ export const PaketSoalFormView: React.FC<PaketSoalFormViewProps> = ({ isEditing 
             id="btn-save-paket"
             type="submit"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 active:scale-95 transition-all"
+            aria-label={isEditing ? 'Simpan perubahan paket soal' : 'Simpan paket soal baru'}
           >
             <Save className="w-4 h-4" />
             {isEditing ? 'Simpan Perubahan Paket' : 'Simpan Paket Soal'}

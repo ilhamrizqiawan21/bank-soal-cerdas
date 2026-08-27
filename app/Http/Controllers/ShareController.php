@@ -134,7 +134,7 @@ class ShareController extends Controller
             ->findOrFail($id);
     }
 
-    return view('share.detail', compact('item', 'type'));
+    return redirect('/app/share');
 }
 
 public function riwayat(Request $request)
@@ -143,72 +143,7 @@ public function riwayat(Request $request)
         abort(403, 'Anda tidak memiliki akses.');
     }
 
-    $query = collect();
-
-    // Ambil share soal
-    $shareSoal = ShareSoal::with(['question', 'sharedBy', 'sharedTo'])
-        ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()));
-
-    // Ambil share paket
-    $sharePaket = SharePaket::with(['paketSoal', 'sharedBy', 'sharedTo'])
-        ->where(fn ($q) => $q->where('shared_to', Auth::id())->orWhere('shared_by', Auth::id()));
-
-    // Filter type
-    if ($request->filled('type')) {
-        if ($request->type === 'soal') {
-            $sharePaket = $sharePaket->where('id', 0); // tidak tampilkan paket
-        } else {
-            $shareSoal = $shareSoal->where('id', 0); // tidak tampilkan soal
-        }
-    }
-
-    // Filter status
-    if ($request->filled('status')) {
-        if ($request->status === 'accepted') {
-            $shareSoal->where('is_accepted', true);
-            $sharePaket->where('is_accepted', true);
-        } elseif ($request->status === 'pending') {
-            $shareSoal->where('is_accepted', false);
-            $sharePaket->where('is_accepted', false);
-        }
-        // rejected = soft delete, handle di view
-    }
-
-    // Filter search
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $shareSoal->whereHas('question', function($q) use ($search) {
-            $q->where('question_text', 'like', "%{$search}%");
-        });
-        $sharePaket->whereHas('paketSoal', function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
-        });
-    }
-
-    $shareSoal = $shareSoal->get()->map(function($item) {
-        $item->type = 'soal';
-        return $item;
-    });
-
-    $sharePaket = $sharePaket->get()->map(function($item) {
-        $item->type = 'paket';
-        return $item;
-    });
-
-    $riwayat = $shareSoal->merge($sharePaket)->sortByDesc('created_at');
-
-    // Paginate manually
-    $perPage = 10;
-    $currentPage = request()->get('page', 1);
-    $riwayat = new \Illuminate\Pagination\LengthAwarePaginator(
-        $riwayat->forPage($currentPage, $perPage),
-        $riwayat->count(),
-        $perPage,
-        $currentPage,
-        ['path' => request()->url(), 'query' => request()->query()]
-    );
-
-    return view('share.riwayat', compact('riwayat'));
+    return redirect('/app/share');
 }
 
 
@@ -242,26 +177,6 @@ public function riwayat(Request $request)
 
     public function index()
     {
-        $shareSoal = ShareSoal::where('shared_to', Auth::id())
-            ->orWhere('shared_by', Auth::id())
-            ->with(['question', 'sharedBy', 'sharedTo'])
-            ->latest()
-            ->get();
-
-        $sharePaket = SharePaket::where('shared_to', Auth::id())
-            ->orWhere('shared_by', Auth::id())
-            ->with(['paketSoal', 'sharedBy', 'sharedTo'])
-            ->latest()
-            ->get();
-
-        $guruList = User::whereIn('role', ['admin', 'guru'])
-            ->where('id', '!=', Auth::id())
-            ->get();
-
-        // Tambahkan data untuk dropdown share
-        $questions = Question::where('created_by', Auth::id())->get();
-        $pakets = PaketSoal::where('created_by', Auth::id())->get();
-
-        return view('share.index', compact('shareSoal', 'sharePaket', 'guruList', 'questions', 'pakets'));
+        return redirect('/app/share');
     }
 }

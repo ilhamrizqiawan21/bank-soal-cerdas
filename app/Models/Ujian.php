@@ -10,13 +10,13 @@ class Ujian extends Model
     use SoftDeletes;
 
     protected $table = 'ujian';
-    
+
     protected $fillable = [
         'paket_soal_id', 'siswa_id', 'created_by',
         'title', 'description', 'duration_minutes',
         'total_soal', 'total_score',
         'started_at', 'finished_at', 'submitted_at',
-        'status'
+        'status',
     ];
 
     protected $casts = [
@@ -49,7 +49,7 @@ class Ujian extends Model
     // Accessors
     public function getStatusLabelAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'Draft',
             'active' => 'Sedang Berjalan',
             'finished' => 'Selesai',
@@ -60,7 +60,7 @@ class Ujian extends Model
 
     public function getStatusBadgeAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'secondary',
             'active' => 'primary',
             'finished' => 'success',
@@ -71,14 +71,26 @@ class Ujian extends Model
 
     public function getDurationTextAttribute()
     {
-        if (!$this->duration_minutes) return 'Tidak terbatas';
-        return $this->duration_minutes . ' menit';
+        if (! $this->duration_minutes) {
+            return 'Tidak terbatas';
+        }
+
+        return $this->duration_minutes.' menit';
     }
 
     public function getProgressAttribute()
     {
-        if ($this->total_soal == 0) return 0;
-        $answered = $this->jawaban()->whereNotNull('jawaban')->count();
+        if ($this->total_soal == 0) {
+            return 0;
+        }
+        $answered = $this->jawaban()
+            ->where(function ($query) {
+                $query->whereNotNull('jawaban')
+                    ->orWhereNotNull('selected_option')
+                    ->orWhereNotNull('selected_option_id');
+            })
+            ->count();
+
         return round(($answered / $this->total_soal) * 100);
     }
 }

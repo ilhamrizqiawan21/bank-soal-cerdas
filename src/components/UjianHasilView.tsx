@@ -21,6 +21,7 @@ export const UjianHasilView: React.FC = () => {
     questions,
     users,
     selectedUjianId,
+    currentUser,
     setCurrentView
   } = useApp();
 
@@ -50,6 +51,7 @@ export const UjianHasilView: React.FC = () => {
 
   const percentage = Math.round(((exam.total_score || 0) / (exam.max_score || 100)) * 100) || 0;
   const isPassed = percentage >= 75;
+  const canShowAnswerKey = currentUser.role !== 'siswa' || exam.status === 'finished';
 
   const handlePrint = () => {
     window.print();
@@ -144,7 +146,7 @@ export const UjianHasilView: React.FC = () => {
       <div className="space-y-4">
         <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-blue-600" />
-          Telaah Jawaban & Pembahasan Soal
+          {canShowAnswerKey ? 'Telaah Jawaban & Pembahasan Soal' : 'Ringkasan Jawaban'}
         </h3>
 
         <div className="space-y-4">
@@ -200,8 +202,10 @@ export const UjianHasilView: React.FC = () => {
                 {question.type === 'pg' && question.pg_options && (
                   <div className="space-y-2 text-xs">
                     {question.pg_options.map((opt, oIdx) => {
-                      const isChosen = jawabanItem.selected_option === oIdx;
-                      const isRealKey = opt.is_correct;
+                      const isChosen = jawabanItem.selected_option_id
+                        ? jawabanItem.selected_option_id === opt.id
+                        : jawabanItem.selected_option === oIdx;
+                      const isRealKey = canShowAnswerKey && opt.is_correct;
 
                       return (
                         <div
@@ -244,10 +248,12 @@ export const UjianHasilView: React.FC = () => {
                       Jawaban Anda:{' '}
                       <b className="uppercase">{jawabanItem.selected_option === 1 ? 'Benar' : 'Salah'}</b>
                     </p>
-                    <p className="text-emerald-600 font-bold">
-                      Kunci Jawaban:{' '}
-                      <b className="uppercase">{question.correct_boolean ? 'Benar' : 'Salah'}</b>
-                    </p>
+                    {canShowAnswerKey && (
+                      <p className="text-emerald-600 font-bold">
+                        Kunci Jawaban:{' '}
+                        <b className="uppercase">{question.correct_boolean ? 'Benar' : 'Salah'}</b>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -260,7 +266,7 @@ export const UjianHasilView: React.FC = () => {
                         {typeof jawabanItem.jawaban === 'string' ? jawabanItem.jawaban : '-'}
                       </p>
                     </div>
-                    {question.essay_rubric && (
+                    {canShowAnswerKey && question.essay_rubric && (
                       <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
                         <span className="font-bold text-blue-900 dark:text-blue-300 block mb-1">
                           Rubrik Penilaian:
@@ -274,7 +280,7 @@ export const UjianHasilView: React.FC = () => {
                 )}
 
                 {/* Explanation Box */}
-                {question.explanation && (
+                {canShowAnswerKey && question.explanation && (
                   <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs space-y-1">
                     <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                       <BrainCircuit className="w-3.5 h-3.5" /> Pembahasan / Catatan Analisis:

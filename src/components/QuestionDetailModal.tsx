@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   X,
@@ -14,6 +14,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { Question } from '../types';
+import { canManageOwnableResource, canUseSharedResource } from '../lib/roleAccess';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 interface QuestionDetailModalProps {
   question: Question | null;
@@ -32,28 +34,45 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
   onDelete,
   onShare,
 }) => {
-  const { subjects, kkoList, users, currentUser, categories, tags } = useApp();
+  const { subjects, kkoList, users, currentUser, categories, tags, shareSoalList } = useApp();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(dialogRef, Boolean(question), onClose);
 
   if (!question) return null;
 
   const subject = subjects.find(s => s.id === question.subject_id);
   const kko = kkoList.find(k => k.id === question.kko_id);
   const creator = users.find(u => u.id === question.created_by);
-  const canEdit = currentUser.role === 'admin' || currentUser.id === question.created_by;
+  const ownershipAllowed = canManageOwnableResource(currentUser.role, currentUser.id, question.created_by);
+  const acceptedShare = shareSoalList.find(share =>
+    share.question_id === question.id &&
+    share.shared_to === currentUser.id &&
+    share.is_accepted
+  );
+  const canShare = ownershipAllowed;
+  const canEdit = ownershipAllowed || canUseSharedResource(acceptedShare?.permission, 'edit');
+  const canDuplicate = ownershipAllowed || canUseSharedResource(acceptedShare?.permission, 'copy');
 
   return (
     <div
       id="modal-question-detail-backdrop"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+      role="presentation"
     >
       <div
+        ref={dialogRef}
         id="modal-question-detail"
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-question-detail-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 outline-none"
       >
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+            <span id="modal-question-detail-title" className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
               {subject?.name || 'Mata Pelajaran'}
             </span>
             <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
@@ -65,8 +84,11 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
           </div>
           <button
             id="btn-close-modal-question-detail"
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Tutup modal detail soal"
+            title="Tutup"
           >
             <X className="w-5 h-5" />
           </button>
@@ -244,22 +266,26 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
 
         {/* Modal Action Buttons */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
-          <button
-            id="btn-modal-share-question"
-            onClick={() => onShare(question.id)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
-          >
-            <Share2 className="w-4 h-4 text-blue-600" /> Bagikan Soal
-          </button>
-
-          <div className="flex items-center gap-2">
+          {canShare ? (
             <button
-              id="btn-modal-duplicate-question"
-              onClick={() => onDuplicate(question.id)}
+              id="btn-modal-share-question"
+              onClick={() => onShare(question.id)}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
             >
-              <Copy className="w-4 h-4" /> Duplikasi
+              <Share2 className="w-4 h-4 text-blue-600" /> Bagikan Soal
             </button>
+          ) : <span />}
+
+          <div className="flex items-center gap-2">
+            {canDuplicate && (
+              <button
+                id="btn-modal-duplicate-question"
+                onClick={() => onDuplicate(question.id)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <Copy className="w-4 h-4" /> Duplikasi
+              </button>
+            )}
             {canEdit && (
               <>
                 <button
@@ -269,14 +295,18 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
                 >
                   <Edit className="w-4 h-4" /> Edit
                 </button>
-                <button
-                  id="btn-modal-delete-question"
-                  onClick={() => onDelete(question.id)}
-                  className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                  title="Hapus Soal"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {ownershipAllowed && (
+                  <button
+                    id="btn-modal-delete-question"
+                    type="button"
+                    onClick={() => onDelete(question.id)}
+                    className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                    aria-label={`Hapus soal ${question.id}`}
+                    title="Hapus Soal"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </>
             )}
           </div>

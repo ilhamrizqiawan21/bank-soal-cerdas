@@ -164,6 +164,7 @@ export const UjianManagementView: React.FC = () => {
                               onClick={() => publishUjian(u.id)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors"
                               title="Aktifkan Ujian untuk Siswa"
+                              aria-label={`Aktifkan ujian ${u.title} untuk siswa`}
                             >
                               <Play className="w-3 h-3" /> Buka Ujian
                             </button>
@@ -178,6 +179,7 @@ export const UjianManagementView: React.FC = () => {
                               }}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 rounded-lg transition-colors"
                               title="Lihat Lembar Jawaban & Nilai"
+                              aria-label={`Lihat hasil ujian ${u.title}`}
                             >
                               <Eye className="w-3.5 h-3.5" /> Hasil
                             </button>
@@ -192,6 +194,7 @@ export const UjianManagementView: React.FC = () => {
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                             title="Hapus Jadwal"
+                            aria-label={`Hapus jadwal ujian ${u.title}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

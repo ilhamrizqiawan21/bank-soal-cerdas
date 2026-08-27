@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Share2,
@@ -29,6 +29,7 @@ import {
   Tag as TagIcon
 } from 'lucide-react';
 import { Question, PaketSoal, User } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 export const CollaborationView: React.FC = () => {
   const {
@@ -81,6 +82,8 @@ export const CollaborationView: React.FC = () => {
     type: 'question' | 'paket_soal';
     question?: Question;
     paket?: PaketSoal;
+    title?: string;
+    canCopy?: boolean;
   } | null>(null);
 
   // Discussion Modal
@@ -101,6 +104,15 @@ export const CollaborationView: React.FC = () => {
 
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<{ id: string; type: 'question' | 'paket_soal' } | null>(null);
+  const shareDialogRef = useRef<HTMLDivElement>(null);
+  const previewDialogRef = useRef<HTMLDivElement>(null);
+  const discussionDialogRef = useRef<HTMLDivElement>(null);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(shareDialogRef, isShareModalOpen, () => setIsShareModalOpen(false));
+  useFocusTrap(previewDialogRef, Boolean(previewModalData), () => setPreviewModalData(null));
+  useFocusTrap(discussionDialogRef, Boolean(discussionModalData), () => setDiscussionModalData(null));
+  useFocusTrap(deleteDialogRef, Boolean(deleteConfirmId), () => setDeleteConfirmId(null));
 
   const otherTeachers = useMemo(() => {
     return users.filter(u => (u.role === 'guru' || u.role === 'admin') && u.id !== currentUser.id && u.is_active);
@@ -123,6 +135,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: s.is_accepted,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: questions.find(q => q.id === s.question_id),
         paket: undefined,
       }));
@@ -142,6 +157,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: s.is_accepted,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: undefined,
         paket: paketSoalList.find(p => p.id === s.paket_soal_id),
       }));
@@ -165,6 +183,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: s.is_accepted,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: questions.find(q => q.id === s.question_id),
         paket: undefined,
       }));
@@ -184,6 +205,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: s.is_accepted,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: undefined,
         paket: paketSoalList.find(p => p.id === s.paket_soal_id),
       }));
@@ -208,6 +232,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: true,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: questions.find(q => q.id === s.question_id),
         paket: undefined,
       }));
@@ -227,6 +254,9 @@ export const CollaborationView: React.FC = () => {
         is_accepted: true,
         accepted_at: s.accepted_at,
         created_at: s.created_at,
+        resourceTitle: s.resource_title,
+        sharedByUser: s.sharedBy,
+        sharedToUser: s.sharedTo,
         question: undefined,
         paket: paketSoalList.find(p => p.id === s.paket_soal_id),
       }));
@@ -272,9 +302,9 @@ export const CollaborationView: React.FC = () => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(item => {
-        const sender = users.find(u => u.id === item.sharedBy);
-        const receiver = users.find(u => u.id === item.sharedTo);
-        const titleText = item.type === 'question' ? item.question?.question_text || '' : item.paket?.name || '';
+        const sender = item.sharedByUser ?? users.find(u => u.id === item.sharedBy);
+        const receiver = item.sharedToUser ?? users.find(u => u.id === item.sharedTo);
+        const titleText = item.type === 'question' ? item.question?.question_text || item.resourceTitle || '' : item.paket?.name || item.resourceTitle || '';
         const msgText = item.message || '';
 
         return (
@@ -307,7 +337,7 @@ export const CollaborationView: React.FC = () => {
   };
 
   // Submit Share Modal
-  const handleConfirmShare = (e: React.FormEvent) => {
+  const handleConfirmShare = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalSelectedItemId || !modalSelectedTeacherId) {
       addToast('Pilih butir/paket soal dan guru penerima kolaborasi!', 'warning');
@@ -315,34 +345,43 @@ export const CollaborationView: React.FC = () => {
     }
 
     if (modalShareType === 'question') {
-      const ok = shareSoalAction(modalSelectedItemId, modalSelectedTeacherId, modalPermission, modalMessage.trim() || undefined);
+      const ok = await shareSoalAction(modalSelectedItemId, modalSelectedTeacherId, modalPermission, modalMessage.trim() || undefined);
       if (ok) setIsShareModalOpen(false);
     } else {
-      const ok = sharePaketAction(modalSelectedItemId, modalSelectedTeacherId, modalPermission, modalMessage.trim() || undefined);
+      const ok = await sharePaketAction(modalSelectedItemId, modalSelectedTeacherId, modalPermission, modalMessage.trim() || undefined);
       if (ok) setIsShareModalOpen(false);
     }
   };
 
   // Handle Accept
-  const handleAccept = (item: { shareId: string; type: 'question' | 'paket_soal' }) => {
+  const handleAccept = async (item: { shareId: string; type: 'question' | 'paket_soal' }) => {
     if (item.type === 'question') {
-      acceptShareSoal(item.shareId);
+      await acceptShareSoal(item.shareId);
     } else {
-      acceptSharePaket(item.shareId);
+      await acceptSharePaket(item.shareId);
     }
   };
 
   // Handle Reject
-  const handleReject = (item: { shareId: string; type: 'question' | 'paket_soal' }) => {
+  const handleReject = async (item: { shareId: string; type: 'question' | 'paket_soal' }) => {
     if (item.type === 'question') {
-      rejectShareSoal(item.shareId);
+      await rejectShareSoal(item.shareId);
     } else {
-      rejectSharePaket(item.shareId);
+      await rejectSharePaket(item.shareId);
     }
   };
 
   // Handle Clone
-  const handleClone = (item: { type: 'question' | 'paket_soal'; question?: Question; paket?: PaketSoal }) => {
+  const handleClone = (item: { type: 'question' | 'paket_soal'; question?: Question; paket?: PaketSoal; permission?: 'view' | 'edit' | 'copy'; is_accepted?: boolean }) => {
+    if (item.permission === 'view') {
+      addToast('Item ini hanya diberikan izin lihat, belum bisa disalin.', 'warning');
+      return;
+    }
+    if (item.is_accepted === false) {
+      addToast('Terima undangan kolaborasi terlebih dahulu sebelum menyalin item.', 'warning');
+      return;
+    }
+
     if (item.type === 'question' && item.question) {
       duplicateQuestion(item.question.id);
     } else if (item.type === 'paket_soal' && item.paket) {
@@ -351,11 +390,13 @@ export const CollaborationView: React.FC = () => {
   };
 
   // Open Preview
-  const handleOpenPreview = (item: { type: 'question' | 'paket_soal'; question?: Question; paket?: PaketSoal }) => {
+  const handleOpenPreview = (item: { type: 'question' | 'paket_soal'; question?: Question; paket?: PaketSoal; resourceTitle?: string; permission?: 'view' | 'edit' | 'copy'; is_accepted?: boolean }) => {
     setPreviewModalData({
       type: item.type,
       question: item.question,
       paket: item.paket,
+      title: item.resourceTitle,
+      canCopy: item.is_accepted !== false && item.permission !== 'view',
     });
   };
 
@@ -365,9 +406,11 @@ export const CollaborationView: React.FC = () => {
     type: 'question' | 'paket_soal';
     question?: Question;
     paket?: PaketSoal;
+    resourceTitle?: string;
     notes: Array<{ id: string; user_id: string; user_name: string; user_role: string; text: string; created_at: string }>;
   }) => {
-    const title = item.type === 'question' ? item.question?.question_text.slice(0, 50) + '...' : item.paket?.name || 'Item Kolaborasi';
+    const sourceTitle = item.type === 'question' ? item.question?.question_text : item.paket?.name;
+    const title = sourceTitle ? `${sourceTitle.slice(0, 50)}${sourceTitle.length > 50 ? '...' : ''}` : item.resourceTitle || 'Item Kolaborasi';
     setDiscussionModalData({
       shareId: item.shareId,
       type: item.type,
@@ -378,24 +421,15 @@ export const CollaborationView: React.FC = () => {
   };
 
   // Submit Note
-  const handleSubmitDiscussionNote = (e: React.FormEvent) => {
+  const handleSubmitDiscussionNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!discussionModalData || !newDiscussionText.trim()) return;
 
-    addCollaborationNote(discussionModalData.shareId, discussionModalData.type, newDiscussionText.trim());
-
-    // Update local modal state immediately
-    const newNote = {
-      id: `note-${Date.now()}`,
-      user_id: currentUser.id,
-      user_name: currentUser.name,
-      user_role: currentUser.role === 'admin' ? 'Administrator' : 'Guru',
-      text: newDiscussionText.trim(),
-      created_at: new Date().toISOString(),
-    };
-
-    setDiscussionModalData(prev => prev ? { ...prev, notes: [...prev.notes, newNote] } : null);
-    setNewDiscussionText('');
+    const newNote = await addCollaborationNote(discussionModalData.shareId, discussionModalData.type, newDiscussionText.trim());
+    if (newNote) {
+      setDiscussionModalData(prev => prev ? { ...prev, notes: [...prev.notes, newNote] } : null);
+      setNewDiscussionText('');
+    }
   };
 
   // Filter items in share modal
@@ -684,8 +718,8 @@ export const CollaborationView: React.FC = () => {
           </div>
         ) : (
           filteredList.map(item => {
-            const sender = users.find(u => u.id === item.sharedBy);
-            const receiver = users.find(u => u.id === item.sharedTo);
+            const sender = item.sharedByUser ?? users.find(u => u.id === item.sharedBy);
+            const receiver = item.sharedToUser ?? users.find(u => u.id === item.sharedTo);
             const isQuestion = item.type === 'question';
             const question = item.question;
             const paket = item.paket;
@@ -693,6 +727,11 @@ export const CollaborationView: React.FC = () => {
             const isPending = !item.is_accepted;
             const isReceived = tab === 'received';
             const isSent = tab === 'sent';
+            const titleText = isQuestion
+              ? question?.question_text || item.resourceTitle || 'Butir Soal Tidak Ditemukan'
+              : paket?.name || item.resourceTitle || 'Paket Soal Tidak Ditemukan';
+            const canCopy = item.is_accepted && (isSent || item.permission === 'copy' || item.permission === 'edit');
+            const canEdit = item.is_accepted && item.permission === 'edit';
 
             // Question tag pills
             const questionTags = isQuestion && question?.tag_ids
@@ -773,9 +812,7 @@ export const CollaborationView: React.FC = () => {
                   {/* Title & Preview Content */}
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-relaxed">
-                      {isQuestion
-                        ? question?.question_text || 'Butir Soal Tidak Ditemukan'
-                        : paket?.name || 'Paket Soal Tidak Ditemukan'}
+                      {titleText}
                     </h3>
 
                     {isQuestion && question?.indicator_text && (
@@ -875,17 +912,20 @@ export const CollaborationView: React.FC = () => {
                     ) : (
                       <>
                         {/* Duplicate/Clone Button */}
-                        <button
-                          id={`btn-clone-${item.id}`}
-                          onClick={() => handleClone(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:text-indigo-300 transition-colors"
-                          title="Salin ke Bank Soal / Paket Pribadi Saya"
-                        >
-                          <Copy className="w-3.5 h-3.5" /> Salin ke Bank Saya
-                        </button>
+                        {canCopy && (
+                          <button
+                            id={`btn-clone-${item.id}`}
+                            onClick={() => handleClone(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:text-indigo-300 transition-colors"
+                            title="Salin ke Bank Soal / Paket Pribadi Saya"
+                            aria-label={`Salin ${titleText} ke bank pribadi saya`}
+                          >
+                            <Copy className="w-3.5 h-3.5" /> Salin ke Bank Saya
+                          </button>
+                        )}
 
                         {/* Edit Button if permission is edit */}
-                        {item.permission === 'edit' && (
+                        {canEdit && (
                           <button
                             onClick={() => {
                               if (isQuestion && question) {
@@ -898,6 +938,7 @@ export const CollaborationView: React.FC = () => {
                             }}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 transition-colors"
                             title="Buka untuk Mengedit Bersama"
+                            aria-label={`Buka ${titleText} untuk mengedit bersama`}
                           >
                             <Edit3 className="w-3.5 h-3.5" /> Edit Bersama
                           </button>
@@ -911,6 +952,7 @@ export const CollaborationView: React.FC = () => {
                       onClick={() => handleOpenPreview(item)}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       title="Lihat Rincian Butir / Paket"
+                      aria-label={`Lihat rincian ${titleText}`}
                     >
                       <Eye className="w-3.5 h-3.5" /> Pratinjau
                     </button>
@@ -920,6 +962,7 @@ export const CollaborationView: React.FC = () => {
                       onClick={() => handleOpenDiscussion(item)}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       title="Buka Catatan Telaah Sejawat"
+                      aria-label={`Buka catatan telaah sejawat untuk ${titleText}`}
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />
                       Telaah ({item.notes.length})
@@ -935,6 +978,7 @@ export const CollaborationView: React.FC = () => {
                         onChange={e => updateSharePermission(item.shareId, item.type, e.target.value as any)}
                         className="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none"
                         title="Ubah Hak Akses"
+                        aria-label={`Ubah hak akses kolaborasi untuk ${titleText}`}
                       >
                         <option value="view">Izin: Lihat</option>
                         <option value="edit">Izin: Edit</option>
@@ -946,6 +990,7 @@ export const CollaborationView: React.FC = () => {
                       onClick={() => setDeleteConfirmId({ id: item.shareId, type: item.type })}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
                       title={isSent ? 'Cabut Akses Kolaborasi' : 'Hapus dari Daftar Kolaborasi'}
+                      aria-label={isSent ? `Cabut akses kolaborasi untuk ${titleText}` : `Hapus ${titleText} dari daftar kolaborasi`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -961,11 +1006,17 @@ export const CollaborationView: React.FC = () => {
       {isShareModalOpen && (
         <div
           id="modal-share-backdrop"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
         >
           <div
+            ref={shareDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-collaboration-share-title"
+            tabIndex={-1}
             id="modal-share-container"
-            className="bg-white dark:bg-slate-900 w-full max-w-xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95"
+            className="bg-white dark:bg-slate-900 w-full max-w-xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 outline-none"
           >
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -974,7 +1025,7 @@ export const CollaborationView: React.FC = () => {
                   <Share2 className="w-5 h-5" />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 id="modal-collaboration-share-title" className="text-base font-bold text-slate-900 dark:text-white">
                     Bagikan Soal / Paket Evaluasi
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -983,8 +1034,11 @@ export const CollaborationView: React.FC = () => {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsShareModalOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                aria-label="Tutup modal bagikan"
+                title="Tutup modal bagikan"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1220,11 +1274,17 @@ export const CollaborationView: React.FC = () => {
       {previewModalData && (
         <div
           id="modal-preview-backdrop"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
         >
           <div
+            ref={previewDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-preview-title"
+            tabIndex={-1}
             id="modal-preview-container"
-            className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95"
+            className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 outline-none"
           >
             {/* Header */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -1232,12 +1292,15 @@ export const CollaborationView: React.FC = () => {
                 <span className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                   {previewModalData.type === 'question' ? <BookOpen className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
                 </span>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h3 id="modal-preview-title" className="text-sm font-bold text-slate-900 dark:text-white">
                   {previewModalData.type === 'question' ? 'Pratinjau Butir Soal Kolaborasi' : 'Pratinjau Paket Soal Kolaborasi'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setPreviewModalData(null)}
+                aria-label="Tutup modal pratinjau kolaborasi"
+                title="Tutup"
                 className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
               >
                 <X className="w-5 h-5" />
@@ -1310,6 +1373,15 @@ export const CollaborationView: React.FC = () => {
                 </div>
               )}
 
+              {previewModalData.type === 'question' && !previewModalData.question && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Butir Soal:</span>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                    {previewModalData.title || 'Butir soal belum tersedia di daftar akses Anda.'}
+                  </p>
+                </div>
+              )}
+
               {previewModalData.type === 'paket_soal' && previewModalData.paket && (
                 <div className="space-y-4">
                   <div>
@@ -1364,30 +1436,43 @@ export const CollaborationView: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {previewModalData.type === 'paket_soal' && !previewModalData.paket && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Paket Soal:</span>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
+                    {previewModalData.title || 'Paket soal belum tersedia di daftar akses Anda.'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <button
+                type="button"
                 onClick={() => setPreviewModalData(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Tutup
               </button>
 
-              <button
-                onClick={() => {
-                  if (previewModalData.type === 'question' && previewModalData.question) {
-                    duplicateQuestion(previewModalData.question.id);
-                  } else if (previewModalData.type === 'paket_soal' && previewModalData.paket) {
-                    duplicatePaketSoal(previewModalData.paket.id);
-                  }
-                  setPreviewModalData(null);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
-              >
-                <Copy className="w-3.5 h-3.5" /> Salin ke Bank Pribadi Saya
-              </button>
+              {previewModalData.canCopy && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewModalData.type === 'question' && previewModalData.question) {
+                      duplicateQuestion(previewModalData.question.id);
+                    } else if (previewModalData.type === 'paket_soal' && previewModalData.paket) {
+                      duplicatePaketSoal(previewModalData.paket.id);
+                    }
+                    setPreviewModalData(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Salin ke Bank Pribadi Saya
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1397,11 +1482,17 @@ export const CollaborationView: React.FC = () => {
       {discussionModalData && (
         <div
           id="modal-discussion-backdrop"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
         >
           <div
+            ref={discussionDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-discussion-title"
+            tabIndex={-1}
             id="modal-discussion-container"
-            className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95"
+            className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 outline-none"
           >
             {/* Header */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -1410,7 +1501,7 @@ export const CollaborationView: React.FC = () => {
                   <MessageSquare className="w-4 h-4" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 id="modal-discussion-title" className="text-sm font-bold text-slate-900 dark:text-white">
                     Telaah & Diskusi Sejawat
                   </h3>
                   <p className="text-[11px] text-slate-500 truncate max-w-xs">
@@ -1419,8 +1510,11 @@ export const CollaborationView: React.FC = () => {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setDiscussionModalData(null)}
                 className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                aria-label="Tutup modal telaah sejawat"
+                title="Tutup modal telaah sejawat"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1475,6 +1569,7 @@ export const CollaborationView: React.FC = () => {
                 disabled={!newDiscussionText.trim()}
                 className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 active:scale-95 transition-all shrink-0"
                 title="Kirim Catatan"
+                aria-label="Kirim catatan telaah sejawat"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -1485,13 +1580,20 @@ export const CollaborationView: React.FC = () => {
 
       {/* Delete / Revoke Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in zoom-in-95">
+        <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div
+            ref={deleteDialogRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="modal-delete-collaboration-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in zoom-in-95 outline-none"
+          >
             <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div className="text-center">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h4 id="modal-delete-collaboration-title" className="text-sm font-bold text-slate-900 dark:text-white">
                 Hapus Akses Kolaborasi?
               </h4>
               <p className="text-xs text-slate-500 mt-1">
@@ -1500,14 +1602,16 @@ export const CollaborationView: React.FC = () => {
             </div>
             <div className="flex items-center justify-center gap-2">
               <button
+                type="button"
                 onClick={() => setDeleteConfirmId(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Batal
               </button>
               <button
-                onClick={() => {
-                  deleteShareAction(deleteConfirmId.id, deleteConfirmId.type);
+                type="button"
+                onClick={async () => {
+                  await deleteShareAction(deleteConfirmId.id, deleteConfirmId.type);
                   setDeleteConfirmId(null);
                 }}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700"

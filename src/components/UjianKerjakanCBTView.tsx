@@ -13,15 +13,35 @@ import {
   ShieldAlert,
   BrainCircuit,
   Lock,
-  Flag
+  Flag,
+  Loader2,
+  WifiOff
 } from 'lucide-react';
 import { MatchingPair, PgOption, Question } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
+
+type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'failed' | 'offline';
+
+const getServerBasedSecondsLeft = (exam: { duration_minutes: number; started_at?: string; deadline_at?: string }) => {
+  const deadline = exam.deadline_at
+    ? new Date(exam.deadline_at).getTime()
+    : exam.started_at
+    ? new Date(exam.started_at).getTime() + exam.duration_minutes * 60 * 1000
+    : Date.now() + exam.duration_minutes * 60 * 1000;
+
+  if (Number.isNaN(deadline)) {
+    return exam.duration_minutes * 60;
+  }
+
+  return Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+};
 
 export const UjianKerjakanCBTView: React.FC = () => {
   const {
     ujianList,
     questions,
     selectedUjianId,
+    startUjianCBT,
     saveUjianJawaban,
     submitUjianCBT,
     setSelectedUjianId,
@@ -32,7 +52,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
   const exam = ujianList.find(u => u.id === selectedUjianId);
   const examQuestions = exam
     ? exam.jawaban
-        .map(j => questions.find(q => q.id === j.question_id))
+        .map(j => j.question ?? questions.find(q => q.id === j.question_id))
         .filter((q): q is Question => q !== undefined)
     : [];
 
@@ -42,14 +62,85 @@ export const UjianKerjakanCBTView: React.FC = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showCheatWarning, setShowCheatWarning] = useState(false);
   const [cheatCount, setCheatCount] = useState(0);
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecoveringExam, setIsRecoveringExam] = useState(false);
+  const saveStatusTimeoutRef = useRef<number | null>(null);
+  const saveSequenceRef = useRef(0);
+  const recoveryAttemptRef = useRef<string | null>(null);
+  const submitDialogRef = useRef<HTMLDivElement>(null);
+  const cheatDialogRef = useRef<HTMLDivElement>(null);
 
   // Remaining time in seconds
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
-    return exam ? exam.duration_minutes * 60 : 3600;
+    return exam ? getServerBasedSecondsLeft(exam) : 3600;
   });
 
   const currentQuestion = examQuestions[currentIndex];
   const currentJawaban = exam?.jawaban.find(j => j.question_id === currentQuestion?.id);
+
+  useFocusTrap(submitDialogRef, showSubmitModal, () => setShowSubmitModal(false));
+  useFocusTrap(cheatDialogRef, showCheatWarning, () => setShowCheatWarning(false));
+
+  useEffect(() => {
+    if (!selectedUjianId || recoveryAttemptRef.current === selectedUjianId) return;
+    if (exam && examQuestions.length > 0) return;
+
+    recoveryAttemptRef.current = selectedUjianId;
+    setIsRecoveringExam(true);
+    Promise.resolve(startUjianCBT(selectedUjianId))
+      .catch(() => {
+        // Toast is handled by the data layer.
+      })
+      .finally(() => setIsRecoveringExam(false));
+  }, [exam, examQuestions.length, selectedUjianId, startUjianCBT]);
+
+  useEffect(() => {
+    if (exam?.id && exam.status !== 'finished') {
+      try {
+        sessionStorage.setItem('cbt_active_ujian_id', exam.id);
+      } catch {
+        // Ignore storage failures; the exam can still continue in memory.
+      }
+    }
+
+    if (exam?.status === 'finished') {
+      try {
+        sessionStorage.removeItem('cbt_active_ujian_id');
+      } catch {
+        // Ignore storage failures.
+      }
+    }
+  }, [exam?.id, exam?.status]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setAutosaveStatus(prev => (prev === 'offline' ? 'idle' : prev));
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setAutosaveStatus('offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (saveStatusTimeoutRef.current) {
+        window.clearTimeout(saveStatusTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!exam || exam.status === 'finished') return;
+    setSecondsLeft(getServerBasedSecondsLeft(exam));
+  }, [exam?.id, exam?.started_at, exam?.deadline_at, exam?.duration_minutes, exam?.status]);
 
   // Auto-timer countdown
   useEffect(() => {
@@ -118,23 +209,58 @@ export const UjianKerjakanCBTView: React.FC = () => {
     }
   };
 
+  const updateAnswer = (questionId: string, answerPayload: {
+    selected_option?: number | null;
+    selected_option_id?: string | null;
+    jawaban?: string | Record<string, string>;
+  }) => {
+    if (!exam) return;
+
+    if (!navigator.onLine) {
+      setAutosaveStatus('offline');
+    }
+
+    const sequence = saveSequenceRef.current + 1;
+    saveSequenceRef.current = sequence;
+    setAutosaveStatus('saving');
+
+    if (saveStatusTimeoutRef.current) {
+      window.clearTimeout(saveStatusTimeoutRef.current);
+    }
+
+    Promise.resolve(saveUjianJawaban(exam.id, questionId, answerPayload))
+      .then(() => {
+        if (saveSequenceRef.current !== sequence) return;
+        setLastSavedAt(new Date());
+        setAutosaveStatus('saved');
+        saveStatusTimeoutRef.current = window.setTimeout(() => {
+          setAutosaveStatus('idle');
+        }, 2500);
+      })
+      .catch(() => {
+        if (saveSequenceRef.current !== sequence) return;
+        setAutosaveStatus(navigator.onLine ? 'failed' : 'offline');
+      });
+  };
+
   const handlePgSelect = (optionIndex: number) => {
     if (!exam || !currentQuestion) return;
-    saveUjianJawaban(exam.id, currentQuestion.id, {
+    updateAnswer(currentQuestion.id, {
       selected_option: optionIndex,
+      selected_option_id: currentQuestion.pg_options?.[optionIndex]?.id ?? null,
     });
   };
 
   const handleBenarSalahSelect = (isBenar: boolean) => {
     if (!exam || !currentQuestion) return;
-    saveUjianJawaban(exam.id, currentQuestion.id, {
+    updateAnswer(currentQuestion.id, {
       selected_option: isBenar ? 1 : 0,
     });
   };
 
   const handleEssayChange = (text: string) => {
     if (!exam || !currentQuestion) return;
-    saveUjianJawaban(exam.id, currentQuestion.id, {
+    updateAnswer(currentQuestion.id, {
       jawaban: text,
     });
   };
@@ -150,7 +276,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
       [pairId]: matchedText,
     };
 
-    saveUjianJawaban(exam.id, currentQuestion.id, {
+    updateAnswer(currentQuestion.id, {
       jawaban: updated,
     });
   };
@@ -162,15 +288,41 @@ export const UjianKerjakanCBTView: React.FC = () => {
     }));
   };
 
-  const handleFinalSubmit = () => {
-    if (!exam) return;
+  const handleFinalSubmit = async () => {
+    if (!exam || isSubmitting) return;
     if (document.fullscreenElement && document.exitFullscreen) {
       document.exitFullscreen().catch(() => {});
     }
-    submitUjianCBT(exam.id);
-    setSelectedUjianId(exam.id);
-    setCurrentView('ujian-hasil');
+    setIsSubmitting(true);
+    try {
+      await submitUjianCBT(exam.id);
+      setSelectedUjianId(exam.id);
+      try {
+        sessionStorage.removeItem('cbt_active_ujian_id');
+      } catch {
+        // Ignore storage failures.
+      }
+      setCurrentView('ujian-hasil');
+    } catch {
+      // Toast is handled by the data layer.
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isRecoveringExam || (selectedUjianId && (!exam || examQuestions.length === 0))) {
+    return (
+      <div className="py-16 text-center space-y-4" aria-busy="true" aria-live="polite">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Memulihkan sesi ujian...</p>
+          <p className="text-xs text-slate-400">Jawaban dan waktu ujian sedang disinkronkan ulang.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!exam || examQuestions.length === 0) {
     return (
@@ -196,12 +348,33 @@ export const UjianKerjakanCBTView: React.FC = () => {
     const ans = exam.jawaban.find(j => j.question_id === qId);
     if (!ans) return false;
     if (ans.selected_option !== null && ans.selected_option !== undefined) return true;
+    if (ans.selected_option_id !== null && ans.selected_option_id !== undefined) return true;
     if (typeof ans.jawaban === 'string' && ans.jawaban.trim().length > 0) return true;
     if (typeof ans.jawaban === 'object' && ans.jawaban !== null && Object.keys(ans.jawaban).length > 0) return true;
     return false;
   };
 
   const answeredCount = examQuestions.filter(q => isAnswered(q.id)).length;
+  const unansweredQuestionNumbers = examQuestions
+    .map((q, idx) => (isAnswered(q.id) ? null : idx + 1))
+    .filter((item): item is number => item !== null);
+  const doubtfulQuestionNumbers = examQuestions
+    .map((_, idx) => (doubtfulFlags[idx] ? idx + 1 : null))
+    .filter((item): item is number => item !== null);
+  const autosaveCopy: Record<AutosaveStatus, string> = {
+    idle: lastSavedAt ? `Terakhir tersimpan ${lastSavedAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : 'Jawaban tersimpan otomatis',
+    saving: 'Menyimpan jawaban...',
+    saved: 'Jawaban tersimpan',
+    failed: 'Gagal menyimpan. Coba jawab ulang atau periksa koneksi.',
+    offline: 'Offline. Jawaban terbaru belum tersimpan ke server.',
+  };
+  const autosaveClass: Record<AutosaveStatus, string> = {
+    idle: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    saving: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+    saved: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+    failed: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
+    offline: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 -m-4 sm:-m-6 p-4 sm:p-6 flex flex-col justify-between select-none">
@@ -222,7 +395,23 @@ export const UjianKerjakanCBTView: React.FC = () => {
         </div>
 
         {/* Timer & Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold ${autosaveClass[autosaveStatus]}`}
+            aria-live="polite"
+          >
+            {autosaveStatus === 'saving' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : autosaveStatus === 'offline' || !isOnline ? (
+              <WifiOff className="w-3.5 h-3.5" />
+            ) : autosaveStatus === 'failed' ? (
+              <AlertTriangle className="w-3.5 h-3.5" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            )}
+            <span>{autosaveCopy[autosaveStatus]}</span>
+          </div>
+
           {/* Countdown Clock */}
           <div
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border font-mono font-bold text-sm sm:text-base transition-all ${
@@ -243,6 +432,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
             onClick={toggleFullscreen}
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors hidden sm:block"
             title="Layar Penuh"
+            aria-label={isFullscreen ? 'Keluar dari layar penuh' : 'Masuk layar penuh'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -251,10 +441,11 @@ export const UjianKerjakanCBTView: React.FC = () => {
           <button
             id="btn-cbt-submit-exam"
             onClick={() => setShowSubmitModal(true)}
+            disabled={isSubmitting}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
           >
-            <Send className="w-3.5 h-3.5" />
-            Kumpulkan Ujian
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {isSubmitting ? 'Mengumpulkan...' : 'Kumpulkan Ujian'}
           </button>
         </div>
       </header>
@@ -287,6 +478,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
                     ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
                     : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'
                 }`}
+                aria-label={doubtfulFlags[currentIndex] ? 'Hapus tanda ragu-ragu pada soal ini' : 'Tandai soal ini sebagai ragu-ragu'}
               >
                 <Flag className="w-3.5 h-3.5" />
                 {doubtfulFlags[currentIndex] ? 'Ditandai Ragu-Ragu' : 'Ragu-Ragu'}
@@ -304,7 +496,9 @@ export const UjianKerjakanCBTView: React.FC = () => {
               {currentQuestion?.type === 'pg' && currentQuestion.pg_options && (
                 <div className="space-y-2.5">
                   {currentQuestion.pg_options.map((opt, idx) => {
-                    const isSelected = currentJawaban?.selected_option === idx;
+                    const isSelected = currentJawaban?.selected_option_id
+                      ? currentJawaban.selected_option_id === opt.id
+                      : currentJawaban?.selected_option === idx;
                     return (
                       <div
                         key={idx}
@@ -433,8 +627,16 @@ export const UjianKerjakanCBTView: React.FC = () => {
               <ChevronLeft className="w-4 h-4" /> Soal Sebelumnya
             </button>
 
-            <span className="text-xs text-slate-400 font-medium">
-              Tersimpan otomatis
+            <span className={`text-xs font-bold ${
+              autosaveStatus === 'failed'
+                ? 'text-rose-600'
+                : autosaveStatus === 'offline'
+                ? 'text-amber-600'
+                : autosaveStatus === 'saving'
+                ? 'text-blue-600'
+                : 'text-slate-400'
+            }`}>
+              {autosaveCopy[autosaveStatus]}
             </span>
 
             <button
@@ -469,6 +671,9 @@ export const UjianKerjakanCBTView: React.FC = () => {
                   key={q.id}
                   id={`nav-q-btn-${idx}`}
                   onClick={() => setCurrentIndex(idx)}
+                  aria-label={`Soal nomor ${idx + 1}: ${
+                    isCurrent ? 'aktif, ' : ''
+                  }${answered ? 'sudah dijawab' : 'belum dijawab'}${isDoubt ? ', ditandai ragu-ragu' : ''}`}
                   className={`h-10 rounded-xl text-xs font-bold transition-all relative flex items-center justify-center ${
                     isCurrent
                       ? 'ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-slate-900'
@@ -498,6 +703,10 @@ export const UjianKerjakanCBTView: React.FC = () => {
               <span>Ragu-Ragu</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-slate-900" />
+              <span>Aktif</span>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded bg-slate-200 dark:bg-slate-700" />
               <span>Belum Dijawab</span>
             </div>
@@ -510,23 +719,56 @@ export const UjianKerjakanCBTView: React.FC = () => {
         <div
           id="modal-submit-exam-backdrop"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+          role="presentation"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-center">
+          <div
+            ref={submitDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-submit-exam-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-center outline-none"
+          >
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Konfirmasi Pengumpulan Ujian</h3>
+              <h3 id="modal-submit-exam-title" className="text-base font-bold text-slate-900 dark:text-white">Konfirmasi Pengumpulan Ujian</h3>
               <p className="text-xs text-slate-500">
                 Anda telah menjawab <b>{answeredCount}</b> dari <b>{examQuestions.length}</b> butir soal.
               </p>
-              {answeredCount < examQuestions.length && (
-                <p className="text-xs text-amber-600 font-semibold">
-                  Peringatan: Masih terdapat {examQuestions.length - answeredCount} butir soal yang belum dijawab!
-                </p>
-              )}
             </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/40">
+                <p className="font-black text-emerald-700 dark:text-emerald-300">{answeredCount}</p>
+                <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">Terjawab</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40">
+                <p className="font-black text-amber-700 dark:text-amber-300">{doubtfulQuestionNumbers.length}</p>
+                <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-200">Ragu-ragu</p>
+              </div>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-800 dark:bg-rose-950/40">
+                <p className="font-black text-rose-700 dark:text-rose-300">{unansweredQuestionNumbers.length}</p>
+                <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-200">Kosong</p>
+              </div>
+            </div>
+
+            {(unansweredQuestionNumbers.length > 0 || doubtfulQuestionNumbers.length > 0) && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+                {unansweredQuestionNumbers.length > 0 && (
+                  <p>
+                    <b>Belum dijawab:</b> nomor {unansweredQuestionNumbers.join(', ')}
+                  </p>
+                )}
+                {doubtfulQuestionNumbers.length > 0 && (
+                  <p>
+                    <b>Ragu-ragu:</b> nomor {doubtfulQuestionNumbers.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
@@ -539,9 +781,11 @@ export const UjianKerjakanCBTView: React.FC = () => {
               <button
                 id="btn-confirm-final-submit"
                 onClick={handleFinalSubmit}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm"
+                disabled={isSubmitting || autosaveStatus === 'saving'}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 shadow-sm"
               >
-                Ya, Kumpulkan Sekarang
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {isSubmitting ? 'Mengumpulkan...' : 'Ya, Kumpulkan Sekarang'}
               </button>
             </div>
           </div>
@@ -553,14 +797,22 @@ export const UjianKerjakanCBTView: React.FC = () => {
         <div
           id="modal-anti-cheat-backdrop"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in"
+          role="presentation"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border-2 border-rose-500 space-y-4 text-center">
+          <div
+            ref={cheatDialogRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="modal-anti-cheat-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border-2 border-rose-500 space-y-4 text-center outline-none"
+          >
             <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 mx-auto flex items-center justify-center animate-bounce">
               <ShieldAlert className="w-6 h-6" />
             </div>
 
             <div className="space-y-1.5">
-              <h3 className="text-base font-extrabold text-rose-600">Peringatan Keamanan CBT!</h3>
+              <h3 id="modal-anti-cheat-title" className="text-base font-extrabold text-rose-600">Peringatan Keamanan CBT!</h3>
               <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Sistem mendeteksi Anda beralih ke aplikasi/tab lain atau keluar dari layar ujian.
               </p>

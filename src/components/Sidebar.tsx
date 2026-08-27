@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Menu Links */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-6">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-6" aria-label="Navigasi utama aplikasi">
           {/* Section: Utama */}
           <div className="space-y-1">
             <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -108,6 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="nav-dashboard"
               onClick={() => navigateTo('dashboard')}
               className={navItemClass('dashboard')}
+              aria-current={currentView === 'dashboard' ? 'page' : undefined}
             >
               <div className="flex items-center gap-2.5">
                 <LayoutDashboard className="w-4 h-4" />
@@ -126,6 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-questions"
                 onClick={() => navigateTo('questions')}
                 className={navItemClass('questions')}
+                aria-current={currentView.startsWith('questions') ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <HelpCircle className="w-4 h-4" />
@@ -140,6 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-subjects"
                 onClick={() => navigateTo('subjects')}
                 className={navItemClass('subjects')}
+                aria-current={currentView === 'subjects' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <BookOpen className="w-4 h-4" />
@@ -154,6 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-paket-soal"
                 onClick={() => navigateTo('paket-soal')}
                 className={navItemClass('paket-soal')}
+                aria-current={currentView.startsWith('paket-soal') ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <Layers className="w-4 h-4" />
@@ -177,6 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   id="nav-ujian"
                   onClick={() => navigateTo('ujian')}
                   className={navItemClass('ujian')}
+                  aria-current={currentView === 'ujian' ? 'page' : undefined}
                 >
                   <div className="flex items-center gap-2.5">
                     <ClipboardCheck className="w-4 h-4" />
@@ -192,6 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   id="nav-analisis"
                   onClick={() => navigateTo('analisis')}
                   className={navItemClass('analisis')}
+                  aria-current={currentView === 'analisis' ? 'page' : undefined}
                 >
                   <div className="flex items-center gap-2.5">
                     <BarChart3 className="w-4 h-4" />
@@ -206,6 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-ujian-siswa"
                 onClick={() => navigateTo('ujian-siswa')}
                 className={navItemClass('ujian-siswa')}
+                aria-current={currentView === 'ujian-siswa' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <GraduationCap className="w-4 h-4" />
@@ -230,6 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-kategori"
                 onClick={() => navigateTo('kategori')}
                 className={navItemClass('kategori')}
+                aria-current={currentView === 'kategori' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <FolderTree className="w-4 h-4" />
@@ -244,6 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-tag"
                 onClick={() => navigateTo('tag')}
                 className={navItemClass('tag')}
+                aria-current={currentView === 'tag' || currentView === 'tags' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <TagIcon className="w-4 h-4" />
@@ -258,6 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-share"
                 onClick={() => navigateTo('share')}
                 className={navItemClass('share')}
+                aria-current={currentView === 'share' || currentView === 'shares' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <Share2 className="w-4 h-4" />
@@ -280,6 +290,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="nav-users"
                 onClick={() => navigateTo('users')}
                 className={navItemClass('users')}
+                aria-current={currentView === 'users' ? 'page' : undefined}
               >
                 <div className="flex items-center gap-2.5">
                   <Users className="w-4 h-4" />
@@ -288,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
-        </div>
+        </nav>
 
         {/* Footer User Card */}
         <div className="p-3 border-t border-slate-100 dark:border-slate-800">

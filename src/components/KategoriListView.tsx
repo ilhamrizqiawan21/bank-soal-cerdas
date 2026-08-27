@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   FolderTree,
@@ -20,6 +20,7 @@ import {
   Check
 } from 'lucide-react';
 import { Kategori, KategoriType } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 export const KategoriListView: React.FC = () => {
   const {
@@ -32,6 +33,7 @@ export const KategoriListView: React.FC = () => {
     setCurrentView,
     addToast
   } = useApp();
+  const categoryDialogRef = useRef<HTMLDivElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
@@ -46,6 +48,8 @@ export const KategoriListView: React.FC = () => {
   const [type, setType] = useState<KategoriType>('sumatif');
   const [color, setColor] = useState<string>('blue');
   const [description, setDescription] = useState('');
+
+  useFocusTrap(categoryDialogRef, isModalOpen, () => setIsModalOpen(false));
 
   // Filter categories
   const filteredCategories = categories.filter((cat) => {
@@ -92,32 +96,36 @@ export const KategoriListView: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       addToast('Nama kategori asesmen wajib diisi!', 'warning');
       return;
     }
 
-    if (editingCategory) {
-      updateCategory(editingCategory.id, {
-        name,
-        slug: slug.trim() || undefined,
-        type,
-        color,
-        description: description.trim() || undefined,
-      });
-    } else {
-      addCategory({
-        name,
-        slug: slug.trim() || undefined,
-        type,
-        color,
-        description: description.trim() || undefined,
-      });
-    }
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, {
+          name,
+          slug: slug.trim() || undefined,
+          type,
+          color,
+          description: description.trim() || undefined,
+        });
+      } else {
+        await addCategory({
+          name,
+          slug: slug.trim() || undefined,
+          type,
+          color,
+          description: description.trim() || undefined,
+        });
+      }
 
-    setIsModalOpen(false);
+      setIsModalOpen(false);
+    } catch {
+      // Toast is handled by the data layer.
+    }
   };
 
   const handleDelete = (cat: Kategori) => {
@@ -362,6 +370,7 @@ export const KategoriListView: React.FC = () => {
                         onClick={() => handleOpenEditModal(cat)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
                         title="Edit Kategori"
+                        aria-label={`Edit kategori ${cat.name}`}
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
@@ -370,6 +379,7 @@ export const KategoriListView: React.FC = () => {
                         onClick={() => handleDelete(cat)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
                         title="Hapus Kategori"
+                        aria-label={`Hapus kategori ${cat.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -435,20 +445,31 @@ export const KategoriListView: React.FC = () => {
         <div
           id="modal-kategori-backdrop"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+          role="presentation"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div
+            ref={categoryDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-kategori-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 outline-none"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
                   <FolderTree className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 id="modal-kategori-title" className="text-base font-bold text-slate-900 dark:text-white">
                   {editingCategory ? 'Edit Kategori Asesmen' : 'Tambah Kategori Asesmen Baru'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Tutup modal kategori asesmen"
+                title="Tutup"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -523,6 +544,7 @@ export const KategoriListView: React.FC = () => {
                       className={`w-7 h-7 rounded-xl ${c.bg} flex items-center justify-center transition-all ${
                         color === c.key ? 'ring-2 ring-offset-2 ring-slate-900 dark:ring-white scale-110' : 'opacity-70 hover:opacity-100'
                       }`}
+                      aria-label={`Pilih warna kategori ${c.label}`}
                       title={c.label}
                     >
                       {color === c.key && <Check className="w-3.5 h-3.5 text-white" />}
@@ -556,6 +578,7 @@ export const KategoriListView: React.FC = () => {
                   id="btn-save-kategori"
                   type="submit"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
+                  aria-label={editingCategory ? 'Simpan perubahan kategori' : 'Simpan kategori baru'}
                 >
                   <Save className="w-4 h-4" />
                   {editingCategory ? 'Simpan Perubahan' : 'Simpan Kategori'}

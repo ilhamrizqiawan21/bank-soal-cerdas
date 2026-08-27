@@ -19,6 +19,10 @@ export interface User {
   avatar?: string;
   is_active: boolean;
   nip_nisn?: string;
+  phone?: string;
+  address?: string;
+  gender?: 'L' | 'P' | null;
+  birth_date?: string | null;
   created_at: string;
 }
 
@@ -35,6 +39,7 @@ export type KategoriType = 'formatif' | 'sumatif' | 'diagnostik' | 'try_out' | '
 export interface Kategori {
   id: string;
   name: string;
+  code?: string;
   slug?: string;
   type?: KategoriType;
   color?: string;
@@ -158,6 +163,7 @@ export interface UjianJawabanItem {
   question?: Question;
   paket_soal_item_id?: string;
   selected_option?: number | null; // index for PG or 1/0 for benar_salah
+  selected_option_id?: string | null;
   jawaban?: string | Record<string, string>; // text for essay, or map of pairId -> text
   is_correct?: boolean;
   score: number;
@@ -182,6 +188,7 @@ export interface Ujian {
   max_score?: number;
   status: UjianStatus;
   started_at?: string;
+  deadline_at?: string;
   submitted_at?: string;
   created_at: string;
   token_ujian?: string;
@@ -199,7 +206,9 @@ export interface CollaborationNote {
 
 export interface ShareSoal {
   id: string;
+  share_key?: string;
   question_id: string;
+  resource_title?: string;
   question?: Question;
   shared_by: string;
   sharedBy?: User;
@@ -207,6 +216,7 @@ export interface ShareSoal {
   sharedTo?: User;
   permission: 'view' | 'edit' | 'copy';
   message?: string;
+  note?: string;
   notes?: CollaborationNote[];
   is_accepted: boolean;
   accepted_at?: string;
@@ -215,7 +225,9 @@ export interface ShareSoal {
 
 export interface SharePaket {
   id: string;
+  share_key?: string;
   paket_soal_id: string;
+  resource_title?: string;
   paketSoal?: PaketSoal;
   shared_by: string;
   sharedBy?: User;
@@ -223,6 +235,7 @@ export interface SharePaket {
   sharedTo?: User;
   permission: 'view' | 'edit' | 'copy';
   message?: string;
+  note?: string;
   notes?: CollaborationNote[];
   is_accepted: boolean;
   accepted_at?: string;
@@ -243,4 +256,67 @@ export interface NotificationItem {
   sender_name: string;
   item_title: string;
   created_at: string;
+}
+
+export interface DashboardData {
+  role: Role;
+  summary: {
+    total_soal?: number;
+    total_paket?: number;
+    total_ujian?: number;
+    total_siswa?: number;
+    merdeka_count?: number;
+    kbc_count?: number;
+    hots_count?: number;
+    active_ujian?: number;
+    finished_ujian?: number;
+    expired_ujian?: number;
+    average_score?: number;
+  };
+  level_distribution?: Partial<Record<LevelKognitif | BloomLevel, number>>;
+  status_distribution?: Partial<Record<UjianStatus, number>>;
+  recent_questions?: Question[];
+  recent_ujian?: Ujian[];
+  active_ujian?: Array<Ujian & { deadline_at?: string }>;
+}
+
+export interface AnalisisData {
+  summary: {
+    total_ujian: number;
+    total_siswa: number;
+    total_soal: number;
+    total_paket: number;
+    avg_score: number;
+  };
+  status_distribution: Partial<Record<UjianStatus, number>>;
+  level_distribution: Partial<Record<LevelKognitif | BloomLevel, number>>;
+  top_siswa: Array<{
+    siswa_id: string | number;
+    avg_score: number | string;
+    total_ujian: number;
+    siswa?: User;
+  }>;
+  recent_ujian: Ujian[];
+}
+
+export interface AnalisisUjianDetail {
+  ujian: Ujian;
+  soal_stats: Array<{
+    question?: Question;
+    total: number;
+    correct: number;
+    wrong: number;
+  }>;
+}
+
+export interface AnalisisSiswaDetail {
+  siswa: User;
+  stats: {
+    total_ujian: number;
+    total_ujian_selesai: number;
+    rata_rata_nilai: number;
+    nilai_tertinggi: number;
+    nilai_terendah: number;
+  };
+  riwayat_ujian: Ujian[];
 }

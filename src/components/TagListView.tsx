@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Tag as TagIcon,
@@ -22,6 +22,7 @@ import {
   Filter
 } from 'lucide-react';
 import { Tag, CharacteristicType } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 export const TagListView: React.FC = () => {
   const {
@@ -36,6 +37,8 @@ export const TagListView: React.FC = () => {
     setSelectedTagFilter,
     addToast
   } = useApp();
+  const tagDialogRef = useRef<HTMLDivElement>(null);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
 
   const isTeacherOrAdmin = currentUser.role === 'admin' || currentUser.role === 'guru';
 
@@ -55,6 +58,9 @@ export const TagListView: React.FC = () => {
 
   // Delete Confirmation Modal
   const [deletingTag, setDeletingTag] = useState<Tag | null>(null);
+
+  useFocusTrap(tagDialogRef, isModalOpen, () => setIsModalOpen(false));
+  useFocusTrap(deleteDialogRef, Boolean(deletingTag), () => setDeletingTag(null));
 
   // Color options
   const colorOptions = [
@@ -189,7 +195,7 @@ export const TagListView: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveTag = (e: React.FormEvent) => {
+  const handleSaveTag = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       addToast('Nama tag / karakteristik wajib diisi.', 'warning');
@@ -200,27 +206,31 @@ export const TagListView: React.FC = () => {
       ? slug.trim().toLowerCase().replace(/\s+/g, '-')
       : name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    if (editingTag) {
-      updateTag(editingTag.id, {
-        name: name.trim(),
-        slug: generatedSlug,
-        category,
-        color,
-        description: description.trim() || undefined,
-        criteria: criteria.trim() || undefined
-      });
-    } else {
-      addTag({
-        name: name.trim(),
-        slug: generatedSlug,
-        category,
-        color,
-        description: description.trim() || undefined,
-        criteria: criteria.trim() || undefined
-      });
-    }
+    try {
+      if (editingTag) {
+        await updateTag(editingTag.id, {
+          name: name.trim(),
+          slug: generatedSlug,
+          category,
+          color,
+          description: description.trim() || undefined,
+          criteria: criteria.trim() || undefined
+        });
+      } else {
+        await addTag({
+          name: name.trim(),
+          slug: generatedSlug,
+          category,
+          color,
+          description: description.trim() || undefined,
+          criteria: criteria.trim() || undefined
+        });
+      }
 
-    setIsModalOpen(false);
+      setIsModalOpen(false);
+    } catch {
+      // Toast is handled by the data layer.
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -259,6 +269,7 @@ export const TagListView: React.FC = () => {
               type="button"
               onClick={resetTagsToDefault}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-all"
+              aria-label="Muat ulang template karakteristik standar"
               title="Muat Ulang Template Karakteristik Standar Kemdikbudristek"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Template Standar
@@ -439,6 +450,7 @@ export const TagListView: React.FC = () => {
                     type="button"
                     onClick={() => handleNavigateToQuestionsWithTag(tag.id)}
                     className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    aria-label={`Lihat butir soal dengan karakteristik ${tag.name}`}
                     title="Lihat butir soal dengan karakteristik ini"
                   >
                     <FileQuestion className="w-3.5 h-3.5" />
@@ -454,6 +466,7 @@ export const TagListView: React.FC = () => {
                         onClick={() => handleOpenEdit(tag)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
                         title="Edit Karakteristik"
+                        aria-label={`Edit karakteristik ${tag.name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -464,6 +477,7 @@ export const TagListView: React.FC = () => {
                         onClick={() => setDeletingTag(tag)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
                         title="Hapus Karakteristik"
+                        aria-label={`Hapus karakteristik ${tag.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -478,8 +492,18 @@ export const TagListView: React.FC = () => {
 
       {/* Modal Add / Edit Tag & Karakteristik */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          role="presentation"
+        >
+          <div
+            ref={tagDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-tag-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] outline-none"
+          >
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -487,7 +511,7 @@ export const TagListView: React.FC = () => {
                   <TagIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  <h3 id="modal-tag-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {editingTag ? 'Edit Tag & Karakteristik' : 'Tambah Tag & Karakteristik Baru'}
                   </h3>
                   <p className="text-xs text-slate-400">
@@ -499,6 +523,8 @@ export const TagListView: React.FC = () => {
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Tutup modal karakteristik"
+                title="Tutup"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -556,6 +582,8 @@ export const TagListView: React.FC = () => {
                         className={`p-2 rounded-xl text-xs font-bold border text-center transition-all flex items-center justify-between ${
                           opt.bg
                         } ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1' : 'opacity-80 hover:opacity-100'}`}
+                        aria-label={`Pilih warna badge ${opt.label}`}
+                        title={opt.label}
                       >
                         <span className="truncate">{opt.label.split('/')[0]}</span>
                         {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -632,14 +660,24 @@ export const TagListView: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deletingTag && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          role="presentation"
+        >
+          <div
+            ref={deleteDialogRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="modal-delete-tag-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 outline-none"
+          >
             <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
 
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              <h3 id="modal-delete-tag-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Hapus Karakteristik?
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">

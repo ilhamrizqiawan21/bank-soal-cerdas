@@ -17,7 +17,7 @@ class UjianIndexReproTest extends TestCase
 
         $this->actingAs($guru)
             ->get(route('ujian.index'))
-            ->assertOk();
+            ->assertRedirect('/app/ujian');
     }
 
     public function test_halaman_ujian_merender_daftar_ujian(): void
@@ -26,7 +26,6 @@ class UjianIndexReproTest extends TestCase
 
         $this->actingAs($guru)
             ->get(route('ujian.index'))
-            ->assertOk()
-            ->assertSee('Manajemen Ujian');
+            ->assertRedirect('/app/ujian');
     }
 }

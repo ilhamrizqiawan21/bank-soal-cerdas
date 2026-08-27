@@ -3,17 +3,23 @@
 namespace App\Exports;
 
 use App\Models\Question;
+use App\Models\User;
+use App\Policies\QuestionPolicy;
+use Illuminate\Support\Enumerable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
 class QuestionsExport implements FromCollection, WithHeadings, WithMapping
 {
-    public function collection(): \Illuminate\Support\Enumerable
+    public function __construct(private readonly User $user) {}
+
+    public function collection(): Enumerable
     {
-        return Question::with(['subject', 'kko', 'creator', 'pgOptions', 'matchingPairs', 'essayRubric'])
-            ->orderBy('id')
-            ->get();
+        return QuestionPolicy::scopeVisibleTo(
+            Question::with(['subject', 'kko', 'creator', 'pgOptions', 'matchingPairs', 'essayRubric']),
+            $this->user
+        )->orderBy('id')->get();
     }
 
     public function headings(): array
@@ -55,7 +61,7 @@ class QuestionsExport implements FromCollection, WithHeadings, WithMapping
             $pairs[] = $pair->right_text ?? null;
         }
 
-        return [
+        return array_map($this->safeCell(...), [
             $question->id,
             $question->subject->name ?? '-',
             $question->jenjang,
@@ -72,6 +78,19 @@ class QuestionsExport implements FromCollection, WithHeadings, WithMapping
             ...$pairs,
             $question->creator->name ?? '-',
             $question->created_at->format('d/m/Y H:i'),
-        ];
+        ]);
+    }
+
+    private function safeCell(mixed $value): mixed
+    {
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        if (preg_match('/^[=\+\-@\t\r\n]/', $value) === 1) {
+            return "'{$value}";
+        }
+
+        return $value;
     }
 }

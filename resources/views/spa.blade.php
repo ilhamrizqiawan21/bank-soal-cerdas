@@ -12,6 +12,9 @@
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
     <div id="root"></div>
-    <script type="application/json" id="spa-bootstrap">@json(['user' => auth()->user()?->only(['id', 'name', 'email', 'role', 'is_active'])])</script>
+    @php
+        $spaBootstrap = ['user' => auth()->user()?->only(['id', 'name', 'email', 'role', 'is_active'])];
+    @endphp
+    <script type="application/json" id="spa-bootstrap">@json($spaBootstrap)</script>
 </body>
 </html>

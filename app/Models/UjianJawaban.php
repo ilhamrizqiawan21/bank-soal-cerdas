@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class UjianJawaban extends Model
 {
     protected $table = 'ujian_jawaban';
-    
+
     protected $fillable = [
         'ujian_id', 'question_id', 'paket_soal_item_id',
-        'jawaban', 'selected_option', 'is_correct', 'score', 'max_score'
+        'jawaban', 'selected_option', 'selected_option_id', 'is_correct', 'score', 'max_score',
     ];
 
     public function ujian()

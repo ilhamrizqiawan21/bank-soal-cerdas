@@ -9,23 +9,12 @@ class KategoriController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kategori::with(['parent', 'questions']);
-
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-        if ($request->filled('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
-        }
-
-        $kategori = $query->latest()->paginate(10);
-        return view('kategori.index', compact('kategori'));
+        return redirect('/app/kategori');
     }
 
     public function create()
     {
-        $parentKategori = Kategori::whereNull('parent_id')->get();
-        return view('kategori.create', compact('parentKategori'));
+        return redirect('/app/kategori');
     }
 
     public function store(Request $request)
@@ -46,14 +35,12 @@ class KategoriController extends Controller
 
     public function show(Kategori $kategori)
     {
-        $kategori->load(['parent', 'children', 'questions']);
-        return view('kategori.show', compact('kategori'));
+        return redirect('/app/kategori');
     }
 
     public function edit(Kategori $kategori)
     {
-        $parentKategori = Kategori::whereNull('parent_id')->get();
-        return view('kategori.edit', compact('kategori', 'parentKategori'));
+        return redirect('/app/kategori');
     }
 
     public function update(Request $request, Kategori $kategori)

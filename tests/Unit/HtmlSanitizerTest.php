@@ -3,6 +3,9 @@
 namespace Tests\Unit;
 
 use App\Models\Question;
+use App\Models\QuestionEssayRubric;
+use App\Models\QuestionMatchingPair;
+use App\Models\QuestionPgOption;
 use App\Support\HtmlSanitizer;
 use PHPUnit\Framework\TestCase;
 
@@ -51,7 +54,7 @@ class HtmlSanitizerTest extends TestCase
     public function test_safe_rich_text_is_preserved(): void
     {
         $html = '<p><strong>Rumus</strong>: <em>x</em><br><img src="https://contoh.id/a.png" alt="g" onerror="alert(1)">'
-            . '<table><tr><td colspan="2">1</td></tr></table></p>';
+            .'<table><tr><td colspan="2">1</td></tr></table></p>';
 
         $clean = HtmlSanitizer::clean($html);
 
@@ -81,5 +84,22 @@ class HtmlSanitizerTest extends TestCase
         $question = new Question(['indicator_text' => null]);
 
         $this->assertNull($question->indicator_text);
+    }
+
+    public function test_question_detail_models_sanitize_on_set(): void
+    {
+        $option = new QuestionPgOption(['option_text' => '<img src=x onerror="alert(1)">Opsi']);
+        $rubric = new QuestionEssayRubric(['rubric_text' => '<p onclick="alert(1)">Rubrik</p>']);
+        $pair = new QuestionMatchingPair([
+            'left_text' => '<svg><script>alert(1)</script></svg><strong>Kiri</strong>',
+            'right_text' => '<a href="javascript:alert(1)">Kanan</a>',
+        ]);
+
+        $this->assertStringNotContainsString('onerror', (string) $option->option_text);
+        $this->assertStringNotContainsString('onclick', (string) $rubric->rubric_text);
+        $this->assertStringContainsString('<p>Rubrik</p>', (string) $rubric->rubric_text);
+        $this->assertStringNotContainsString('<svg', (string) $pair->left_text);
+        $this->assertStringContainsString('<strong>Kiri</strong>', (string) $pair->left_text);
+        $this->assertStringNotContainsString('javascript:', (string) $pair->right_text);
     }
 }

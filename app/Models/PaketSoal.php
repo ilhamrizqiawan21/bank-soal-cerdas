@@ -13,7 +13,13 @@ class PaketSoal extends Model
     
     protected $fillable = [
         'name', 'description', 'jenjang', 'curriculum',
-        'total_soal', 'duration_minutes', 'created_by', 'status'
+        'total_soal', 'duration_minutes', 'acak_soal', 'acak_pilihan',
+        'created_by', 'status'
+    ];
+
+    protected $casts = [
+        'acak_soal' => 'boolean',
+        'acak_pilihan' => 'boolean',
     ];
 
     // Relations

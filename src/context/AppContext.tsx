@@ -12,11 +12,14 @@ import {
   SharePaket,
   ToastMessage,
   NotificationItem,
+  AnalisisData,
   QuestionType,
   Jenjang,
   Curriculum,
   BloomLevel,
-  LevelKognitif
+  LevelKognitif,
+  DashboardData,
+  CollaborationNote,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -31,32 +34,60 @@ import {
   INITIAL_SHARE_PAKET,
 } from '../data/initialData';
 import api, { apiErrorMessage } from '../lib/api';
+import { pathToView, routeSelectionFromPath, viewToPath } from '../lib/appRoutes';
+import { canAccessView, landingViewForRole } from '../lib/roleAccess';
+import {
+  analisisApi,
+  categoriesApi,
+  dashboardApi,
+  kkoApi,
+  meApi,
+  paketSoalApi,
+  ProfilePayload,
+  questionsApi,
+  shareApi,
+  subjectsApi,
+  tagsApi,
+  ujianApi,
+  usersApi,
+} from '../lib/domainApi';
 
 const bootstrapUser = window.__BOOTSTRAP__?.user ?? null;
 /** True when the SPA is served by Laravel with a real session. */
 const bootstrapped = Boolean(bootstrapUser);
+type UserFormPayload = Omit<User, 'id' | 'created_at'> & {
+  password?: string;
+  password_confirmation?: string;
+};
 
 interface AppContextType {
   currentUser: User;
   setCurrentUser: (user: User) => void;
   switchUserRole: (role: 'admin' | 'guru' | 'siswa') => void;
+  updateProfile: (profile: ProfilePayload) => Promise<void>;
+  updateAvatar: (file: File) => Promise<void>;
+  updatePassword: (payload: {
+    current_password: string;
+    password: string;
+    password_confirmation: string;
+  }) => Promise<void>;
   
   users: User[];
-  addUser: (user: Omit<User, 'id' | 'created_at'>) => User;
-  updateUser: (id: string, updates: Partial<User>) => void;
-  toggleUserStatus: (id: string) => void;
-  toggleUserActive: (id: string) => void;
-  deleteUser: (id: string) => void;
+  addUser: (user: UserFormPayload) => User | Promise<User>;
+  updateUser: (id: string, updates: Partial<UserFormPayload>) => void | Promise<void>;
+  toggleUserStatus: (id: string) => void | Promise<void>;
+  toggleUserActive: (id: string) => void | Promise<void>;
+  deleteUser: (id: string) => void | Promise<void>;
 
   subjects: Subject[];
-  addSubject: (subject: Omit<Subject, 'id'>) => Subject;
-  updateSubject: (id: string, updates: Partial<Subject>) => void;
-  deleteSubject: (id: string) => void;
+  addSubject: (subject: Omit<Subject, 'id'>) => Subject | Promise<Subject>;
+  updateSubject: (id: string, updates: Partial<Subject>) => void | Promise<void>;
+  deleteSubject: (id: string) => void | Promise<void>;
 
   categories: Kategori[];
-  addCategory: (cat: Omit<Kategori, 'id'>) => Kategori;
-  updateCategory: (id: string, updates: Partial<Kategori>) => void;
-  deleteCategory: (id: string) => void;
+  addCategory: (cat: Omit<Kategori, 'id'>) => Kategori | Promise<Kategori>;
+  updateCategory: (id: string, updates: Partial<Kategori>) => void | Promise<void>;
+  deleteCategory: (id: string) => void | Promise<void>;
 
   tags: Tag[];
   addTag: (tag: Omit<Tag, 'id'>) => Tag | Promise<Tag>;
@@ -73,17 +104,17 @@ interface AppContextType {
   kkoList: KkoMaster[];
 
   questions: Question[];
-  addQuestion: (question: Omit<Question, 'id' | 'created_at' | 'created_by'>) => Question;
-  updateQuestion: (id: string, updates: Partial<Question>) => void;
-  deleteQuestion: (id: string) => void;
-  duplicateQuestion: (id: string) => Question | null;
-  importQuestionsData: (importedList: Partial<Question>[]) => number;
+  addQuestion: (question: Omit<Question, 'id' | 'created_at' | 'created_by'>) => Question | Promise<Question>;
+  updateQuestion: (id: string, updates: Partial<Question>) => void | Promise<void>;
+  deleteQuestion: (id: string) => void | Promise<void>;
+  duplicateQuestion: (id: string) => Question | null | Promise<Question | null>;
+  importQuestionsData: (importedList: Partial<Question>[], file?: File | null) => number | Promise<number>;
 
   paketSoalList: PaketSoal[];
-  addPaketSoal: (paket: Omit<PaketSoal, 'id' | 'created_at' | 'created_by'>) => PaketSoal;
-  updatePaketSoal: (id: string, updates: Partial<PaketSoal>) => void;
-  deletePaketSoal: (id: string) => void;
-  duplicatePaketSoal: (id: string) => PaketSoal | null;
+  addPaketSoal: (paket: Omit<PaketSoal, 'id' | 'created_at' | 'created_by'>) => PaketSoal | Promise<PaketSoal>;
+  updatePaketSoal: (id: string, updates: Partial<PaketSoal>) => void | Promise<void>;
+  deletePaketSoal: (id: string) => void | Promise<void>;
+  duplicatePaketSoal: (id: string) => PaketSoal | null | Promise<PaketSoal | null>;
 
   ujianList: Ujian[];
   addUjian: (ujianData: {
@@ -92,16 +123,17 @@ interface AppContextType {
     title: string;
     description?: string;
     duration_minutes?: number;
-  }) => void;
-  updateUjian: (id: string, updates: Partial<Ujian>) => void;
-  deleteUjian: (id: string) => void;
-  publishUjian: (id: string) => void;
-  startUjianCBT: (id: string) => Ujian | null;
+  }) => void | Promise<void>;
+  updateUjian: (id: string, updates: Partial<Ujian>) => void | Promise<void>;
+  deleteUjian: (id: string) => void | Promise<void>;
+  publishUjian: (id: string) => void | Promise<void>;
+  startUjianCBT: (id: string) => Ujian | null | Promise<Ujian | null>;
   saveUjianJawaban: (ujianId: string, questionId: string, answerPayload: {
     selected_option?: number | null;
+    selected_option_id?: string | null;
     jawaban?: string | Record<string, string>;
-  }) => void;
-  submitUjianCBT: (ujianId: string) => { totalScore: number; maxScore: number };
+  }) => void | Promise<void>;
+  submitUjianCBT: (ujianId: string) => { totalScore: number; maxScore: number } | Promise<{ totalScore: number; maxScore: number }>;
 
   shareSoalList: ShareSoal[];
   sharePaketList: SharePaket[];
@@ -124,15 +156,15 @@ interface AppContextType {
     is_accepted: boolean;
     created_at: string;
   }>;
-  shareSoalAction: (questionId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string) => boolean;
-  sharePaketAction: (paketId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string) => boolean;
-  updateSharePermission: (shareId: string, type: 'question' | 'paket_soal', newPermission: 'view' | 'edit' | 'copy') => void;
-  deleteShareAction: (id: string, type?: 'question' | 'paket_soal') => void;
-  acceptShareSoal: (shareId: string) => void;
-  rejectShareSoal: (shareId: string) => void;
-  acceptSharePaket: (shareId: string) => void;
-  rejectSharePaket: (shareId: string) => void;
-  addCollaborationNote: (shareId: string, type: 'question' | 'paket_soal', text: string) => void;
+  shareSoalAction: (questionId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string) => boolean | Promise<boolean>;
+  sharePaketAction: (paketId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string) => boolean | Promise<boolean>;
+  updateSharePermission: (shareId: string, type: 'question' | 'paket_soal', newPermission: 'view' | 'edit' | 'copy') => void | Promise<void>;
+  deleteShareAction: (id: string, type?: 'question' | 'paket_soal') => void | Promise<void>;
+  acceptShareSoal: (shareId: string) => void | Promise<void>;
+  rejectShareSoal: (shareId: string) => void | Promise<void>;
+  acceptSharePaket: (shareId: string) => void | Promise<void>;
+  rejectSharePaket: (shareId: string) => void | Promise<void>;
+  addCollaborationNote: (shareId: string, type: 'question' | 'paket_soal', text: string) => CollaborationNote | Promise<CollaborationNote | void> | void;
   pendingNotifications: NotificationItem[];
 
   toasts: ToastMessage[];
@@ -154,6 +186,11 @@ interface AppContextType {
   setSearchGlobalQuery: (query: string) => void;
 
   resetToInitialData: () => void;
+  isDataLoading: boolean;
+  dataLoadError: string | null;
+  refreshServerData: () => Promise<void>;
+  dashboardData: DashboardData | null;
+  analisisData: AnalisisData | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -177,7 +214,7 @@ function saveToStorage<T>(key: string, value: T): void {
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>(() => loadFromStorage('users', INITIAL_USERS));
+  const [users, setUsers] = useState<User[]>(() => (bootstrapped ? [] : loadFromStorage('users', INITIAL_USERS)));
   const [currentUser, setCurrentUserState] = useState<User>(() => {
     if (bootstrapUser) {
       return {
@@ -194,26 +231,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_USERS[1]; // default to Teacher Budi Pratama
   });
 
-  const [subjects, setSubjects] = useState<Subject[]>(() => loadFromStorage('subjects', INITIAL_SUBJECTS));
-  const [categories, setCategories] = useState<Kategori[]>(() => loadFromStorage('categories', INITIAL_KATEGORI));
+  const [subjects, setSubjects] = useState<Subject[]>(() => (bootstrapped ? [] : loadFromStorage('subjects', INITIAL_SUBJECTS)));
+  const [categories, setCategories] = useState<Kategori[]>(() => (bootstrapped ? [] : loadFromStorage('categories', INITIAL_KATEGORI)));
   const [tags, setTags] = useState<Tag[]>(() => (bootstrapped ? [] : loadFromStorage('tags', INITIAL_TAGS)));
-  const [kkoList] = useState<KkoMaster[]>(INITIAL_KKO);
+  const [kkoList, setKkoList] = useState<KkoMaster[]>(() => (bootstrapped ? [] : INITIAL_KKO));
 
-  const [questions, setQuestions] = useState<Question[]>(() => loadFromStorage('questions', INITIAL_QUESTIONS));
-  const [paketSoalList, setPaketSoalList] = useState<PaketSoal[]>(() => loadFromStorage('paket_soal', INITIAL_PAKET_SOAL));
-  const [ujianList, setUjianList] = useState<Ujian[]>(() => loadFromStorage('ujian', INITIAL_UJIAN));
+  const [questions, setQuestions] = useState<Question[]>(() => (bootstrapped ? [] : loadFromStorage('questions', INITIAL_QUESTIONS)));
+  const [paketSoalList, setPaketSoalList] = useState<PaketSoal[]>(() => (bootstrapped ? [] : loadFromStorage('paket_soal', INITIAL_PAKET_SOAL)));
+  const [ujianList, setUjianList] = useState<Ujian[]>(() => (bootstrapped ? [] : loadFromStorage('ujian', INITIAL_UJIAN)));
 
-  const [shareSoalList, setShareSoalList] = useState<ShareSoal[]>(() => loadFromStorage('share_soal', INITIAL_SHARE_SOAL));
-  const [sharePaketList, setSharePaketList] = useState<SharePaket[]>(() => loadFromStorage('share_paket', INITIAL_SHARE_PAKET));
+  const [shareSoalList, setShareSoalList] = useState<ShareSoal[]>(() => (bootstrapped ? [] : loadFromStorage('share_soal', INITIAL_SHARE_SOAL)));
+  const [sharePaketList, setSharePaketList] = useState<SharePaket[]>(() => (bootstrapped ? [] : loadFromStorage('share_paket', INITIAL_SHARE_PAKET)));
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [currentView, setCurrentView] = useState<string>('dashboard');
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  const [selectedPaketId, setSelectedPaketId] = useState<string | null>(null);
-  const [selectedUjianId, setSelectedUjianId] = useState<string | null>(null);
+  const [currentView, setCurrentViewState] = useState<string>(() => pathToView(window.location.pathname));
+  const initialRouteSelection = routeSelectionFromPath(window.location.pathname);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialRouteSelection.questionId);
+  const [selectedPaketId, setSelectedPaketId] = useState<string | null>(initialRouteSelection.paketId);
+  const [selectedUjianId, setSelectedUjianIdState] = useState<string | null>(() => {
+    if (initialRouteSelection.ujianId) return initialRouteSelection.ujianId;
+    try {
+      return sessionStorage.getItem('cbt_active_ujian_id');
+    } catch {
+      return null;
+    }
+  });
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [searchGlobalQuery, setSearchGlobalQuery] = useState<string>('');
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(bootstrapped);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [analisisData, setAnalisisData] = useState<AnalisisData | null>(null);
 
   // Theme state: 'light' | 'dark'
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
@@ -257,26 +306,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Sync state to local storage
-  useEffect(() => { saveToStorage('users', users); }, [users]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('users', users); }, [users]);
   useEffect(() => { if (!bootstrapped) saveToStorage('current_user', currentUser); }, [currentUser]);
-  useEffect(() => { saveToStorage('subjects', subjects); }, [subjects]);
-  useEffect(() => { saveToStorage('categories', categories); }, [categories]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('subjects', subjects); }, [subjects]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('categories', categories); }, [categories]);
   useEffect(() => { if (!bootstrapped) saveToStorage('tags', tags); }, [tags]);
-  useEffect(() => { saveToStorage('questions', questions); }, [questions]);
-  useEffect(() => { saveToStorage('paket_soal', paketSoalList); }, [paketSoalList]);
-  useEffect(() => { saveToStorage('ujian', ujianList); }, [ujianList]);
-  useEffect(() => { saveToStorage('share_soal', shareSoalList); }, [shareSoalList]);
-  useEffect(() => { saveToStorage('share_paket', sharePaketList); }, [sharePaketList]);
-
-  // Hydrate tags from the Laravel API when running inside the SPA shell.
-  useEffect(() => {
-    if (!bootstrapped) return;
-    api
-      .get<{ data: Tag[] }>('/tags')
-      .then(({ data }) => setTags(data.data))
-      .catch(() => addToast('Gagal memuat tag dari server.', 'danger'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { if (!bootstrapped) saveToStorage('questions', questions); }, [questions]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('paket_soal', paketSoalList); }, [paketSoalList]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('ujian', ujianList); }, [ujianList]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('share_soal', shareSoalList); }, [shareSoalList]);
+  useEffect(() => { if (!bootstrapped) saveToStorage('share_paket', sharePaketList); }, [sharePaketList]);
 
   const addToast = (message: string, type: 'success' | 'danger' | 'warning' | 'info' = 'success') => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -290,9 +329,132 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const refreshServerData = async (): Promise<void> => {
+    if (!bootstrapped) {
+      return;
+    }
+
+    setIsDataLoading(true);
+    setDataLoadError(null);
+
+    if (currentUser.role === 'siswa') {
+      try {
+        const [serverDashboard, serverUjian] = await Promise.all([dashboardApi.show(), ujianApi.mine()]);
+        setDashboardData(serverDashboard);
+        setUsers([currentUser]);
+        setUjianList(serverUjian);
+      } catch (error) {
+        const message = apiErrorMessage(error);
+        setDataLoadError(message);
+        addToast(message, 'danger');
+        throw error;
+      } finally {
+        setIsDataLoading(false);
+      }
+      return;
+    }
+
+    try {
+      const [
+        serverDashboard,
+        serverUsers,
+        serverSubjects,
+        serverCategories,
+        serverTags,
+        serverKko,
+        serverQuestions,
+        serverPaketSoal,
+        serverUjian,
+        serverShares,
+        serverAnalisis,
+      ] = await Promise.all([
+        dashboardApi.show(),
+        currentUser.role === 'admin' ? usersApi.list() : usersApi.options(),
+        subjectsApi.list(),
+        categoriesApi.list(),
+        tagsApi.list(),
+        kkoApi.list(),
+        questionsApi.list(),
+        paketSoalApi.list(),
+        ujianApi.list(),
+        shareApi.list(),
+        analisisApi.summary(),
+      ]);
+
+      setDashboardData(serverDashboard);
+      setAnalisisData(serverAnalisis);
+      setUsers(serverUsers);
+      setSubjects(serverSubjects);
+      setCategories(serverCategories);
+      setTags(serverTags);
+      setKkoList(serverKko);
+      setQuestions(serverQuestions);
+      setPaketSoalList(serverPaketSoal);
+      setUjianList(serverUjian);
+      setShareSoalList(serverShares.soal);
+      setSharePaketList(serverShares.paket);
+    } catch (error) {
+      const message = apiErrorMessage(error);
+      setDataLoadError(message);
+      addToast(message, 'danger');
+      throw error;
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
+  // Hydrate API-backed resources from Laravel when running inside the SPA shell.
+  useEffect(() => {
+    if (!bootstrapped) return;
+    refreshServerData().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setCurrentView = (view: string) => {
+    const nextView = canAccessView(view, currentUser.role) ? view : landingViewForRole(currentUser.role);
+    if (nextView !== view) {
+      addToast('Menu tersebut tidak tersedia untuk role akun Anda.', 'warning');
+    }
+
+    setCurrentViewState(nextView);
+
+    const nextPath = viewToPath(nextView);
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, '', nextPath);
+    }
+  };
+
+  useEffect(() => {
+    const syncViewFromUrl = () => {
+      setCurrentViewState(pathToView(window.location.pathname));
+      const selection = routeSelectionFromPath(window.location.pathname);
+      setSelectedQuestionId(selection.questionId);
+      setSelectedPaketId(selection.paketId);
+      if (selection.ujianId) {
+        setSelectedUjianIdState(selection.ujianId);
+      }
+    };
+    window.addEventListener('popstate', syncViewFromUrl);
+
+    return () => window.removeEventListener('popstate', syncViewFromUrl);
+  }, []);
+
   const setCurrentUser = (user: User) => {
     setCurrentUserState(user);
     addToast(`Beralih akun ke: ${user.name} (${user.role.toUpperCase()})`, 'info');
+  };
+
+  const setSelectedUjianId = (id: string | null) => {
+    setSelectedUjianIdState(id);
+    try {
+      if (id) {
+        sessionStorage.setItem('cbt_active_ujian_id', id);
+      } else {
+        sessionStorage.removeItem('cbt_active_ujian_id');
+      }
+    } catch {
+      // Session storage can be unavailable in private browsing modes.
+    }
   };
 
   const switchUserRole = (role: 'admin' | 'guru' | 'siswa') => {
@@ -302,8 +464,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updateProfile = async (profile: ProfilePayload): Promise<void> => {
+    if (!bootstrapped) {
+      setCurrentUserState(prev => ({ ...prev, ...profile }));
+      setUsers(prev => prev.map(user => (user.id === currentUser.id ? { ...user, ...profile } : user)));
+      addToast('Profil berhasil diperbarui.', 'success');
+      return;
+    }
+
+    try {
+      const updated = await meApi.updateProfile(profile);
+      setCurrentUserState(prev => ({ ...prev, ...updated }));
+      setUsers(prev => prev.map(user => (user.id === updated.id ? updated : user)));
+      addToast('Profil berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const updateAvatar = async (file: File): Promise<void> => {
+    if (!bootstrapped) {
+      const avatar = URL.createObjectURL(file);
+      setCurrentUserState(prev => ({ ...prev, avatar }));
+      setUsers(prev => prev.map(user => (user.id === currentUser.id ? { ...user, avatar } : user)));
+      addToast('Foto profil berhasil diperbarui.', 'success');
+      return;
+    }
+
+    try {
+      const updated = await meApi.updateAvatar(file);
+      setCurrentUserState(prev => ({ ...prev, ...updated }));
+      setUsers(prev => prev.map(user => (user.id === updated.id ? updated : user)));
+      addToast('Foto profil berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const updatePassword = async (payload: {
+    current_password: string;
+    password: string;
+    password_confirmation: string;
+  }): Promise<void> => {
+    if (!bootstrapped) {
+      addToast('Password demo berhasil diperbarui.', 'success');
+      return;
+    }
+
+    try {
+      await meApi.updatePassword(payload);
+      addToast('Password berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   // User management
-  const addUser = (userData: Omit<User, 'id' | 'created_at'>): User => {
+  const addUser = (userData: UserFormPayload): User => {
     const newUser: User = {
       ...userData,
       id: `user-${Date.now()}`,
@@ -314,12 +534,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newUser;
   };
 
+  const addUserApi = async (userData: UserFormPayload): Promise<User> => {
+    try {
+      const newUser = await usersApi.create(userData);
+      setUsers(prev => [newUser, ...prev]);
+      addToast(`Pengguna ${newUser.name} berhasil didaftarkan!`, 'success');
+      return newUser;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updateUser = (id: string, updates: Partial<User>) => {
     setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updates } : u)));
     if (currentUser.id === id) {
       setCurrentUserState(prev => ({ ...prev, ...updates }));
     }
     addToast('Data pengguna berhasil diperbarui.', 'success');
+  };
+
+  const updateUserApi = async (id: string, updates: Partial<UserFormPayload>): Promise<void> => {
+    const current = users.find(u => u.id === id);
+    if (!current) return;
+    try {
+      const updated = await usersApi.update(id, { ...current, ...updates });
+      setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
+      if (currentUser.id === id) {
+        setCurrentUserState(prev => ({ ...prev, ...updated }));
+      }
+      addToast('Data pengguna berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const toggleUserStatus = (id: string) => {
@@ -335,6 +583,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleUserActive = toggleUserStatus;
 
+  const toggleUserStatusApi = async (id: string): Promise<void> => {
+    try {
+      const updated = await usersApi.toggleStatus(id);
+      setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
+      addToast(`Status ${updated.name} diubah menjadi ${updated.is_active ? 'Aktif' : 'Nonaktif'}.`, 'info');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const deleteUser = (id: string) => {
     if (id === currentUser.id) {
       addToast('Tidak dapat menghapus akun yang sedang aktif digunakan.', 'danger');
@@ -342,6 +601,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setUsers(prev => prev.filter(u => u.id !== id));
     addToast('Pengguna berhasil dihapus.', 'success');
+  };
+
+  const deleteUserApi = async (id: string): Promise<void> => {
+    if (id === currentUser.id) {
+      addToast('Tidak dapat menghapus akun yang sedang aktif digunakan.', 'danger');
+      return;
+    }
+
+    try {
+      await usersApi.delete(id);
+      setUsers(prev => prev.filter(u => u.id !== id));
+      addToast('Pengguna berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   // Subject management
@@ -356,9 +631,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSubject;
   };
 
+  const addSubjectApi = async (subjectData: Omit<Subject, 'id'>): Promise<Subject> => {
+    try {
+      const newSubject = await subjectsApi.create(subjectData);
+      setSubjects(prev => [...prev, newSubject]);
+      addToast(`Mata pelajaran ${newSubject.name} berhasil ditambahkan!`, 'success');
+      return newSubject;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updateSubject = (id: string, updates: Partial<Subject>) => {
     setSubjects(prev => prev.map(s => (s.id === id ? { ...s, ...updates } : s)));
     addToast('Mata pelajaran berhasil diperbarui.', 'success');
+  };
+
+  const updateSubjectApi = async (id: string, updates: Partial<Subject>): Promise<void> => {
+    const current = subjects.find(s => s.id === id);
+    if (!current) return;
+    try {
+      const updated = await subjectsApi.update(id, { ...current, ...updates });
+      setSubjects(prev => prev.map(s => (s.id === id ? updated : s)));
+      addToast('Mata pelajaran berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const deleteSubject = (id: string) => {
@@ -369,6 +669,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setSubjects(prev => prev.filter(s => s.id !== id));
     addToast('Mata pelajaran berhasil dihapus.', 'success');
+  };
+
+  const deleteSubjectApi = async (id: string): Promise<void> => {
+    try {
+      await subjectsApi.delete(id);
+      setSubjects(prev => prev.filter(s => s.id !== id));
+      addToast('Mata pelajaran berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   // Categories & Tags
@@ -383,14 +694,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newCat;
   };
 
+  const addCategoryApi = async (catData: Omit<Kategori, 'id'>): Promise<Kategori> => {
+    try {
+      const newCat = await categoriesApi.create(catData);
+      setCategories(prev => [...prev, newCat]);
+      addToast('Kategori baru berhasil dibuat.', 'success');
+      return newCat;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updateCategory = (id: string, updates: Partial<Kategori>) => {
     setCategories(prev => prev.map(c => (c.id === id ? { ...c, ...updates } : c)));
     addToast('Kategori berhasil diperbarui.', 'success');
   };
 
+  const updateCategoryApi = async (id: string, updates: Partial<Kategori>): Promise<void> => {
+    const current = categories.find(c => c.id === id);
+    if (!current) return;
+    try {
+      const updated = await categoriesApi.update(id, { ...current, ...updates });
+      setCategories(prev => prev.map(c => (c.id === id ? updated : c)));
+      addToast('Kategori berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const deleteCategory = (id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
     addToast('Kategori berhasil dihapus.', 'success');
+  };
+
+  const deleteCategoryApi = async (id: string): Promise<void> => {
+    try {
+      await categoriesApi.delete(id);
+      setCategories(prev => prev.filter(c => c.id !== id));
+      addToast('Kategori berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const addTag = (tagData: Omit<Tag, 'id'>): Tag => {
@@ -417,13 +764,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addTagApi = async (tagData: Omit<Tag, 'id'>): Promise<Tag> => {
     try {
-      const { data } = await api.post<{ data: Tag }>('/tags', {
-        name: tagData.name,
-        color: tagData.color ?? '#6366f1',
-      });
-      setTags(prev => [...prev, data.data]);
+      const newTag = await tagsApi.create(tagData);
+      setTags(prev => [...prev, newTag]);
       addToast('Tag baru berhasil dibuat.', 'success');
-      return data.data;
+      return newTag;
     } catch (error) {
       addToast(apiErrorMessage(error), 'danger');
       throw error;
@@ -434,11 +778,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const current = tags.find(t => t.id === id);
     if (!current) return;
     try {
-      const { data } = await api.put<{ data: Tag }>(`/tags/${id}`, {
-        name: updates.name ?? current.name,
-        color: updates.color ?? current.color ?? '#6366f1',
-      });
-      setTags(prev => prev.map(t => (t.id === id ? data.data : t)));
+      const updated = await tagsApi.update(id, { ...current, ...updates });
+      setTags(prev => prev.map(t => (t.id === id ? updated : t)));
       addToast('Tag berhasil diperbarui.', 'success');
     } catch (error) {
       addToast(apiErrorMessage(error), 'danger');
@@ -448,7 +789,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteTagApi = async (id: string): Promise<void> => {
     try {
-      await api.delete(`/tags/${id}`);
+      await tagsApi.delete(id);
       setTags(prev => prev.filter(t => t.id !== id));
       addToast('Tag berhasil dihapus.', 'success');
     } catch (error) {
@@ -459,10 +800,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetTagsToDefault = () => {
     if (bootstrapped) {
-      api
-        .get<{ data: Tag[] }>('/tags')
-        .then(({ data }) => setTags(data.data))
-        .catch(() => addToast('Gagal memuat ulang tag.', 'danger'));
+      tagsApi
+        .list()
+        .then(setTags)
+        .catch(error => addToast(apiErrorMessage(error), 'danger'));
     } else {
       setTags(INITIAL_TAGS);
     }
@@ -483,9 +824,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newQuestion;
   };
 
+  const addQuestionApi = async (questionData: Omit<Question, 'id' | 'created_at' | 'created_by'>): Promise<Question> => {
+    try {
+      const newQuestion = await questionsApi.create(questionData);
+      setQuestions(prev => [newQuestion, ...prev]);
+      addToast('Soal berhasil ditambahkan ke Bank Soal!', 'success');
+      return newQuestion;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updateQuestion = (id: string, updates: Partial<Question>) => {
     setQuestions(prev => prev.map(q => (q.id === id ? { ...q, ...updates, updated_at: new Date().toISOString() } : q)));
     addToast('Soal berhasil diperbarui!', 'success');
+  };
+
+  const updateQuestionApi = async (id: string, updates: Partial<Question>): Promise<void> => {
+    const current = questions.find(q => q.id === id);
+    if (!current) return;
+    try {
+      const updated = await questionsApi.update(id, { ...current, ...updates });
+      setQuestions(prev => prev.map(q => (q.id === id ? updated : q)));
+      addToast('Soal berhasil diperbarui!', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const deleteQuestion = (id: string) => {
@@ -497,6 +863,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       total_soal: p.items.filter(item => item.question_id !== id).length,
     })));
     addToast('Soal berhasil dihapus dari Bank Soal.', 'success');
+  };
+
+  const deleteQuestionApi = async (id: string): Promise<void> => {
+    try {
+      await questionsApi.delete(id);
+      setQuestions(prev => prev.filter(q => q.id !== id));
+      setPaketSoalList(prev => prev.map(p => ({
+        ...p,
+        items: p.items.filter(item => item.question_id !== id),
+        total_soal: p.items.filter(item => item.question_id !== id).length,
+      })));
+      addToast('Soal berhasil dihapus dari Bank Soal.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const duplicateQuestion = (id: string): Question | null => {
@@ -518,7 +900,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return duplicated;
   };
 
-  const importQuestionsData = (importedList: Partial<Question>[]): number => {
+  const duplicateQuestionApi = async (id: string): Promise<Question | null> => {
+    try {
+      const duplicated = await questionsApi.duplicate(id);
+      setQuestions(prev => [duplicated, ...prev]);
+      addToast('Soal berhasil diduplikasi!', 'success');
+      return duplicated;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const importQuestionsData = async (importedList: Partial<Question>[], file?: File | null): Promise<number> => {
+    if (bootstrapped) {
+      if (!file) {
+        addToast('File import tidak ditemukan.', 'danger');
+        return 0;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        await api.post('/questions/import', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const refreshedQuestions = await questionsApi.list();
+        setQuestions(refreshedQuestions);
+        addToast(`Import selesai. ${refreshedQuestions.length} soal tersedia di Bank Soal.`, 'success');
+        return importedList.length;
+      } catch (error) {
+        addToast(apiErrorMessage(error), 'danger');
+        throw error;
+      }
+    }
+
     let count = 0;
     const newItems: Question[] = [];
 
@@ -569,14 +986,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newPaket;
   };
 
+  const addPaketSoalApi = async (paketData: Omit<PaketSoal, 'id' | 'created_at' | 'created_by'>): Promise<PaketSoal> => {
+    try {
+      const newPaket = await paketSoalApi.create(paketData);
+      setPaketSoalList(prev => [newPaket, ...prev]);
+      addToast('Paket Soal berhasil dibuat!', 'success');
+      return newPaket;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updatePaketSoal = (id: string, updates: Partial<PaketSoal>) => {
     setPaketSoalList(prev => prev.map(p => (p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p)));
     addToast('Paket Soal berhasil diperbarui.', 'success');
   };
 
+  const updatePaketSoalApi = async (id: string, updates: Partial<PaketSoal>): Promise<void> => {
+    const current = paketSoalList.find(p => p.id === id);
+    if (!current) return;
+    try {
+      const updated = await paketSoalApi.update(id, { ...current, ...updates });
+      setPaketSoalList(prev => prev.map(p => (p.id === id ? updated : p)));
+      addToast('Paket Soal berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const deletePaketSoal = (id: string) => {
     setPaketSoalList(prev => prev.filter(p => p.id !== id));
     addToast('Paket Soal berhasil dihapus.', 'success');
+  };
+
+  const deletePaketSoalApi = async (id: string): Promise<void> => {
+    try {
+      await paketSoalApi.delete(id);
+      setPaketSoalList(prev => prev.filter(p => p.id !== id));
+      addToast('Paket Soal berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const duplicatePaketSoal = (id: string): PaketSoal | null => {
@@ -596,6 +1049,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPaketSoalList(prev => [duplicated, ...prev]);
     addToast('Paket Soal berhasil diduplikasi!', 'success');
     return duplicated;
+  };
+
+  const duplicatePaketSoalApi = async (id: string): Promise<PaketSoal | null> => {
+    try {
+      const duplicated = await paketSoalApi.duplicate(id);
+      setPaketSoalList(prev => [duplicated, ...prev]);
+      addToast('Paket Soal berhasil diduplikasi!', 'success');
+      return duplicated;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   // Ujian & CBT Engine
@@ -661,14 +1126,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Berhasil membuat ${newExams.length} jadwal ujian untuk peserta!`, 'success');
   };
 
+  const addUjianApi = async ({
+    paket_soal_id,
+    siswa_ids,
+    title,
+    description,
+    duration_minutes,
+  }: {
+    paket_soal_id: string;
+    siswa_ids: string[];
+    title: string;
+    description?: string;
+    duration_minutes?: number;
+  }): Promise<void> => {
+    try {
+      const created = await Promise.all(siswa_ids.map(async (siswaId, idx) => {
+        const siswa = users.find(u => u.id === siswaId);
+        const studentName = siswa ? siswa.name.split(' ')[0] : `Siswa ${idx + 1}`;
+        return ujianApi.create({
+          paket_soal_id,
+          siswa_id: siswaId,
+          title: siswa_ids.length === 1 ? title : `${title} - ${studentName}`,
+          description,
+          duration_minutes,
+        });
+      }));
+      setUjianList(prev => [...created, ...prev]);
+      addToast(`Berhasil membuat ${created.length} jadwal ujian untuk peserta!`, 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const updateUjian = (id: string, updates: Partial<Ujian>) => {
     setUjianList(prev => prev.map(u => (u.id === id ? { ...u, ...updates } : u)));
     addToast('Data ujian berhasil diperbarui.', 'success');
   };
 
+  const updateUjianApi = async (id: string, updates: Partial<Ujian>): Promise<void> => {
+    const current = ujianList.find(u => u.id === id);
+    if (!current) return;
+    try {
+      const updated = await ujianApi.update(id, { ...current, ...updates });
+      setUjianList(prev => prev.map(u => (u.id === id ? updated : u)));
+      addToast('Data ujian berhasil diperbarui.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const deleteUjian = (id: string) => {
     setUjianList(prev => prev.filter(u => u.id !== id));
     addToast('Ujian berhasil dihapus.', 'success');
+  };
+
+  const deleteUjianApi = async (id: string): Promise<void> => {
+    try {
+      await ujianApi.delete(id);
+      setUjianList(prev => prev.filter(u => u.id !== id));
+      addToast('Ujian berhasil dihapus.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const publishUjian = (id: string) => {
@@ -683,6 +1205,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return u;
     }));
     addToast('Ujian telah dipublikasikan dan aktif untuk siswa!', 'success');
+  };
+
+  const publishUjianApi = async (id: string): Promise<void> => {
+    try {
+      const updated = await ujianApi.publish(id);
+      setUjianList(prev => prev.map(u => (u.id === id ? updated : u)));
+      addToast('Ujian telah dipublikasikan dan aktif untuk siswa!', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const startUjianCBT = (id: string): Ujian | null => {
@@ -701,8 +1234,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return exam;
   };
 
+  const startUjianCBTApi = async (id: string): Promise<Ujian | null> => {
+    try {
+      const exam = await ujianApi.show(id);
+      setUjianList(prev => prev.map(u => (u.id === id ? exam : u)));
+      return exam;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const saveUjianJawaban = (ujianId: string, questionId: string, answerPayload: {
     selected_option?: number | null;
+    selected_option_id?: string | null;
     jawaban?: string | Record<string, string>;
   }) => {
     setUjianList(prev => prev.map(exam => {
@@ -713,6 +1258,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...j,
             selected_option: answerPayload.selected_option !== undefined ? answerPayload.selected_option : j.selected_option,
+            selected_option_id: answerPayload.selected_option_id !== undefined ? answerPayload.selected_option_id : j.selected_option_id,
             jawaban: answerPayload.jawaban !== undefined ? answerPayload.jawaban : j.jawaban,
           };
         }
@@ -724,6 +1270,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         jawaban: updatedJawaban,
       };
     }));
+  };
+
+  const saveUjianJawabanApi = async (ujianId: string, questionId: string, answerPayload: {
+    selected_option?: number | null;
+    selected_option_id?: string | null;
+    jawaban?: string | Record<string, string>;
+  }): Promise<void> => {
+    const question = questions.find(q => q.id === questionId);
+    const exam = ujianList.find(u => u.id === ujianId);
+    const examQuestion = exam?.jawaban.find(j => j.question_id === questionId)?.question;
+    const sourceQuestion = question ?? examQuestion;
+    const selectedOptionId = answerPayload.selected_option_id ?? (sourceQuestion?.type === 'pg' && answerPayload.selected_option != null
+      ? sourceQuestion.pg_options?.[answerPayload.selected_option]?.id ?? null
+      : null);
+    const optimisticPayload = {
+      ...answerPayload,
+      selected_option_id: selectedOptionId,
+    };
+
+    setUjianList(prev => prev.map(exam => {
+      if (exam.id !== ujianId) return exam;
+
+      return {
+        ...exam,
+        jawaban: exam.jawaban.map(item => item.question_id === questionId
+          ? {
+              ...item,
+              selected_option: optimisticPayload.selected_option !== undefined ? optimisticPayload.selected_option : item.selected_option,
+              selected_option_id: optimisticPayload.selected_option_id !== undefined ? optimisticPayload.selected_option_id : item.selected_option_id,
+              jawaban: optimisticPayload.jawaban !== undefined ? optimisticPayload.jawaban : item.jawaban,
+            }
+          : item
+        ),
+      };
+    }));
+
+    try {
+      const updated = await ujianApi.answer(ujianId, questionId, {
+        ...optimisticPayload,
+      });
+      setUjianList(prev => prev.map(u => (u.id === ujianId ? { ...u, jawaban: updated.jawaban } : u)));
+    } catch (error) {
+      throw error;
+    }
   };
 
   const submitUjianCBT = (ujianId: string): { totalScore: number; maxScore: number } => {
@@ -805,6 +1395,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { totalScore, maxScore };
   };
 
+  const submitUjianCBTApi = async (ujianId: string): Promise<{ totalScore: number; maxScore: number }> => {
+    try {
+      const finishedExam = await ujianApi.submit(ujianId);
+      const maxScore = finishedExam.jawaban.reduce((sum, item) => sum + item.max_score, 0);
+      setUjianList(prev => prev.map(u => (u.id === ujianId ? finishedExam : u)));
+      addToast(`Ujian berhasil dikumpulkan! Nilai Anda: ${finishedExam.total_score ?? 0}/${maxScore || 100}`, 'success');
+
+      return { totalScore: finishedExam.total_score ?? 0, maxScore: maxScore || 100 };
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   // Collaboration / Share Actions
   const shareSoalAction = (questionId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string): boolean => {
     const existing = shareSoalList.find(s => s.question_id === questionId && s.shared_to === sharedToId);
@@ -828,6 +1432,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShareSoalList(prev => [newShare, ...prev]);
     addToast('Undangan kolaborasi butir soal berhasil dikirim!', 'success');
     return true;
+  };
+
+  const shareSoalActionApi = async (questionId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string): Promise<boolean> => {
+    try {
+      const share = await shareApi.create('question', questionId, sharedToId, permission, message);
+      if ('question_id' in share) {
+        setShareSoalList(prev => [share, ...prev]);
+      }
+      addToast('Undangan kolaborasi butir soal berhasil dikirim!', 'success');
+      return true;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      return false;
+    }
   };
 
   const sharePaketAction = (paketId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string): boolean => {
@@ -854,6 +1472,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
+  const sharePaketActionApi = async (paketId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string): Promise<boolean> => {
+    try {
+      const share = await shareApi.create('paket_soal', paketId, sharedToId, permission, message);
+      if ('paket_soal_id' in share) {
+        setSharePaketList(prev => [share, ...prev]);
+      }
+      addToast('Undangan kolaborasi paket soal berhasil dikirim!', 'success');
+      return true;
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      return false;
+    }
+  };
+
   const updateSharePermission = (shareId: string, type: 'question' | 'paket_soal', newPermission: 'view' | 'edit' | 'copy') => {
     if (type === 'question') {
       setShareSoalList(prev => prev.map(s => (s.id === shareId ? { ...s, permission: newPermission } : s)));
@@ -861,6 +1493,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSharePaketList(prev => prev.map(s => (s.id === shareId ? { ...s, permission: newPermission } : s)));
     }
     addToast(`Hak akses kolaborasi diperbarui menjadi "${newPermission === 'view' ? 'Lihat Saja' : newPermission === 'edit' ? 'Edit Bersama' : 'Boleh Salin'}".`, 'success');
+  };
+
+  const updateSharePermissionApi = async (shareId: string, type: 'question' | 'paket_soal', newPermission: 'view' | 'edit' | 'copy'): Promise<void> => {
+    try {
+      const updated = await shareApi.update(shareId, type, newPermission);
+      if (type === 'question' && 'question_id' in updated) {
+        setShareSoalList(prev => prev.map(s => (s.id === shareId ? updated : s)));
+      } else if (type === 'paket_soal' && 'paket_soal_id' in updated) {
+        setSharePaketList(prev => prev.map(s => (s.id === shareId ? updated : s)));
+      }
+      addToast(`Hak akses kolaborasi diperbarui menjadi "${newPermission === 'view' ? 'Lihat Saja' : newPermission === 'edit' ? 'Edit Bersama' : 'Boleh Salin'}".`, 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const deleteShareAction = (id: string, type?: 'question' | 'paket_soal') => {
@@ -878,9 +1525,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('Akses kolaborasi berhasil dihapus.', 'info');
   };
 
+  const deleteShareActionApi = async (id: string, type?: 'question' | 'paket_soal'): Promise<void> => {
+    const resolvedType = type ?? (shareSoalList.some(s => s.id === id) ? 'question' : 'paket_soal');
+    try {
+      await shareApi.delete(id, resolvedType);
+      if (resolvedType === 'question') {
+        setShareSoalList(prev => prev.filter(s => s.id !== id));
+      } else {
+        setSharePaketList(prev => prev.filter(s => s.id !== id));
+      }
+      addToast('Akses kolaborasi berhasil dihapus.', 'info');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const acceptShareSoal = (shareId: string) => {
     setShareSoalList(prev => prev.map(s => (s.id === shareId ? { ...s, is_accepted: true, accepted_at: new Date().toISOString() } : s)));
     addToast('Undangan kolaborasi soal diterima.', 'success');
+  };
+
+  const acceptShareSoalApi = async (shareId: string): Promise<void> => {
+    try {
+      const updated = await shareApi.accept(shareId, 'question');
+      if ('question_id' in updated) {
+        setShareSoalList(prev => prev.map(s => (s.id === shareId ? updated : s)));
+      }
+      const refreshedQuestions = await questionsApi.list();
+      setQuestions(refreshedQuestions);
+      addToast('Undangan kolaborasi soal diterima.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const rejectShareSoal = (shareId: string) => {
@@ -888,9 +1566,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('Undangan kolaborasi soal ditolak.', 'info');
   };
 
+  const rejectShareSoalApi = async (shareId: string): Promise<void> => {
+    try {
+      await shareApi.reject(shareId, 'question');
+      setShareSoalList(prev => prev.filter(s => s.id !== shareId));
+      addToast('Undangan kolaborasi soal ditolak.', 'info');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
   const acceptSharePaket = (shareId: string) => {
     setSharePaketList(prev => prev.map(s => (s.id === shareId ? { ...s, is_accepted: true, accepted_at: new Date().toISOString() } : s)));
     addToast('Undangan kolaborasi paket soal diterima.', 'success');
+  };
+
+  const acceptSharePaketApi = async (shareId: string): Promise<void> => {
+    try {
+      const updated = await shareApi.accept(shareId, 'paket_soal');
+      if ('paket_soal_id' in updated) {
+        setSharePaketList(prev => prev.map(s => (s.id === shareId ? updated : s)));
+      }
+      const refreshedPaket = await paketSoalApi.list();
+      setPaketSoalList(refreshedPaket);
+      addToast('Undangan kolaborasi paket soal diterima.', 'success');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
   };
 
   const rejectSharePaket = (shareId: string) => {
@@ -898,7 +1602,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('Undangan kolaborasi paket soal ditolak.', 'info');
   };
 
-  const addCollaborationNote = (shareId: string, type: 'question' | 'paket_soal', text: string) => {
+  const rejectSharePaketApi = async (shareId: string): Promise<void> => {
+    try {
+      await shareApi.reject(shareId, 'paket_soal');
+      setSharePaketList(prev => prev.filter(s => s.id !== shareId));
+      addToast('Undangan kolaborasi paket soal ditolak.', 'info');
+    } catch (error) {
+      addToast(apiErrorMessage(error), 'danger');
+      throw error;
+    }
+  };
+
+  const addCollaborationNote = async (shareId: string, type: 'question' | 'paket_soal', text: string) => {
     const newNote = {
       id: `note-${Date.now()}`,
       user_id: currentUser.id,
@@ -908,12 +1623,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString(),
     };
 
+    if (bootstrapped) {
+      try {
+        const { share, note } = await shareApi.addNote(shareId, type, text);
+        if (type === 'question' && 'question_id' in share) {
+          setShareSoalList(prev => prev.map(s => (s.id === shareId ? share : s)));
+        } else if (type === 'paket_soal' && 'paket_soal_id' in share) {
+          setSharePaketList(prev => prev.map(s => (s.id === shareId ? share : s)));
+        }
+        addToast('Catatan telaah / umpan balik berhasil ditambahkan.', 'success');
+        return note;
+      } catch (error) {
+        addToast(apiErrorMessage(error), 'danger');
+        throw error;
+      }
+    }
+
     if (type === 'question') {
       setShareSoalList(prev => prev.map(s => (s.id === shareId ? { ...s, notes: [...(s.notes || []), newNote] } : s)));
     } else {
       setSharePaketList(prev => prev.map(s => (s.id === shareId ? { ...s, notes: [...(s.notes || []), newNote] } : s)));
     }
     addToast('Catatan telaah / umpan balik berhasil ditambahkan.', 'success');
+    return newNote;
   };
 
   // Unified derived shares list
@@ -980,12 +1712,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToInitialData = () => {
     if (bootstrapped) {
-      // Real session: only refresh API-backed collections, never wipe storage.
-      api
-        .get<{ data: Tag[] }>('/tags')
-        .then(({ data }) => setTags(data.data))
-        .catch(() => addToast('Gagal memuat ulang tag.', 'danger'));
-      addToast('Data tag berhasil dimuat ulang dari server.', 'info');
+      refreshServerData().catch(() => {});
+      addToast('Data berhasil dimuat ulang dari server.', 'info');
       return;
     }
     setUsers(INITIAL_USERS);
@@ -1008,20 +1736,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         setCurrentUser,
         switchUserRole,
+        updateProfile,
+        updateAvatar,
+        updatePassword,
         users,
-        addUser,
-        updateUser,
-        toggleUserStatus,
-        toggleUserActive,
-        deleteUser,
+        addUser: bootstrapped ? addUserApi : addUser,
+        updateUser: bootstrapped ? updateUserApi : updateUser,
+        toggleUserStatus: bootstrapped ? toggleUserStatusApi : toggleUserStatus,
+        toggleUserActive: bootstrapped ? toggleUserStatusApi : toggleUserActive,
+        deleteUser: bootstrapped ? deleteUserApi : deleteUser,
         subjects,
-        addSubject,
-        updateSubject,
-        deleteSubject,
+        addSubject: bootstrapped ? addSubjectApi : addSubject,
+        updateSubject: bootstrapped ? updateSubjectApi : updateSubject,
+        deleteSubject: bootstrapped ? deleteSubjectApi : deleteSubject,
         categories,
-        addCategory,
-        updateCategory,
-        deleteCategory,
+        addCategory: bootstrapped ? addCategoryApi : addCategory,
+        updateCategory: bootstrapped ? updateCategoryApi : updateCategory,
+        deleteCategory: bootstrapped ? deleteCategoryApi : deleteCategory,
         tags,
         addTag: bootstrapped ? addTagApi : addTag,
         updateTag: bootstrapped ? updateTagApi : updateTagLocal,
@@ -1034,35 +1765,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedTagFilter,
         kkoList,
         questions,
-        addQuestion,
-        updateQuestion,
-        deleteQuestion,
-        duplicateQuestion,
+        addQuestion: bootstrapped ? addQuestionApi : addQuestion,
+        updateQuestion: bootstrapped ? updateQuestionApi : updateQuestion,
+        deleteQuestion: bootstrapped ? deleteQuestionApi : deleteQuestion,
+        duplicateQuestion: bootstrapped ? duplicateQuestionApi : duplicateQuestion,
         importQuestionsData,
         paketSoalList,
-        addPaketSoal,
-        updatePaketSoal,
-        deletePaketSoal,
-        duplicatePaketSoal,
+        addPaketSoal: bootstrapped ? addPaketSoalApi : addPaketSoal,
+        updatePaketSoal: bootstrapped ? updatePaketSoalApi : updatePaketSoal,
+        deletePaketSoal: bootstrapped ? deletePaketSoalApi : deletePaketSoal,
+        duplicatePaketSoal: bootstrapped ? duplicatePaketSoalApi : duplicatePaketSoal,
         ujianList,
-        addUjian,
-        updateUjian,
-        deleteUjian,
-        publishUjian,
-        startUjianCBT,
-        saveUjianJawaban,
-        submitUjianCBT,
+        addUjian: bootstrapped ? addUjianApi : addUjian,
+        updateUjian: bootstrapped ? updateUjianApi : updateUjian,
+        deleteUjian: bootstrapped ? deleteUjianApi : deleteUjian,
+        publishUjian: bootstrapped ? publishUjianApi : publishUjian,
+        startUjianCBT: bootstrapped ? startUjianCBTApi : startUjianCBT,
+        saveUjianJawaban: bootstrapped ? saveUjianJawabanApi : saveUjianJawaban,
+        submitUjianCBT: bootstrapped ? submitUjianCBTApi : submitUjianCBT,
         shareSoalList,
         sharePaketList,
         shares,
-        shareSoalAction,
-        sharePaketAction,
-        updateSharePermission,
-        deleteShareAction,
-        acceptShareSoal,
-        rejectShareSoal,
-        acceptSharePaket,
-        rejectSharePaket,
+        shareSoalAction: bootstrapped ? shareSoalActionApi : shareSoalAction,
+        sharePaketAction: bootstrapped ? sharePaketActionApi : sharePaketAction,
+        updateSharePermission: bootstrapped ? updateSharePermissionApi : updateSharePermission,
+        deleteShareAction: bootstrapped ? deleteShareActionApi : deleteShareAction,
+        acceptShareSoal: bootstrapped ? acceptShareSoalApi : acceptShareSoal,
+        rejectShareSoal: bootstrapped ? rejectShareSoalApi : rejectShareSoal,
+        acceptSharePaket: bootstrapped ? acceptSharePaketApi : acceptSharePaket,
+        rejectSharePaket: bootstrapped ? rejectSharePaketApi : rejectSharePaket,
         addCollaborationNote,
         pendingNotifications,
         toasts,
@@ -1081,6 +1812,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         searchGlobalQuery,
         setSearchGlobalQuery,
         resetToInitialData,
+        isDataLoading,
+        dataLoadError,
+        refreshServerData,
+        dashboardData,
+        analisisData,
       }}
     >
       {children}

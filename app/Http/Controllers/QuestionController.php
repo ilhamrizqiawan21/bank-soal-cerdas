@@ -2,43 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
-use App\Models\Subject;
-use App\Models\KkoMaster;
+use App\Exports\QuestionsExport;
 use App\Http\Requests\StoreQuestionRequest;
 use App\Http\Requests\UpdateQuestionRequest;
+use App\Imports\QuestionsImport;
+use App\Models\KkoMaster;
+use App\Models\Question;
+use App\Models\Subject;
+use App\Policies\QuestionPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\QuestionsImport;
-use App\Exports\QuestionsExport;
 
 class QuestionController extends Controller
 {
     public function index(Request $request)
     {
         try {
-            $query = Question::with(['subject', 'kko', 'creator']);
-            foreach (['curriculum', 'level_c', 'type', 'kko_id'] as $filter) {
-                if ($request->filled($filter) && $request->{$filter} !== 'semua') $query->where($filter, $request->{$filter});
-            }
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(fn ($q) => $q->where('question_text', 'like', "%{$search}%")->orWhere('indicator_text', 'like', "%{$search}%"));
-            }
-            $questions = $query->latest()->paginate($request->get('per_page', 10))->withQueryString();
-            return view('questions.index', ['questions' => $questions, 'subjects' => Subject::all(), 'kkoList' => KkoMaster::all()]);
+            Gate::authorize('viewAny', Question::class);
+
+            return redirect('/app/questions');
         } catch (\Exception $e) {
-            Log::error('Question index error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal memuat data soal.');
+            Log::error('Question index error: '.$e->getMessage());
+
+            return redirect('/app/questions')->with('error', 'Gagal memuat data soal.');
         }
     }
 
-    public function create() { return view('questions.create', ['subjects' => Subject::all(), 'kkoList' => KkoMaster::all()]); }
+    public function create()
+    {
+        Gate::authorize('create', Question::class);
+
+        return redirect('/app/questions/create');
+    }
 
     public function store(StoreQuestionRequest $request)
     {
+        Gate::authorize('create', Question::class);
+
         try {
             $question = Question::create([
                 'subject_id' => $request->subject_id, 'kko_id' => $request->kko_id, 'created_by' => Auth::id(),
@@ -47,18 +51,33 @@ class QuestionController extends Controller
                 'correct_boolean' => $request->type === 'benar_salah' ? $request->correct_boolean : null,
             ]);
             $this->saveQuestionDetails($question, $request);
+
             return redirect()->route('questions.index')->with('success', 'Soal berhasil ditambahkan!');
         } catch (\Exception $e) {
-            Log::error('Store question error: ' . $e->getMessage());
+            Log::error('Store question error: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Gagal menyimpan soal.');
         }
     }
 
-    public function show(Question $question) { $question->load(['subject', 'kko', 'creator', 'pgOptions', 'matchingPairs', 'essayRubric']); return view('questions.show', compact('question')); }
-    public function edit(Question $question) { $question->load(['pgOptions', 'matchingPairs', 'essayRubric']); return view('questions.edit', ['question' => $question, 'subjects' => Subject::all(), 'kkoList' => KkoMaster::all()]); }
+    public function show(Question $question)
+    {
+        Gate::authorize('view', $question);
+
+        return redirect("/app/questions/{$question->id}");
+    }
+
+    public function edit(Question $question)
+    {
+        Gate::authorize('update', $question);
+
+        return redirect("/app/questions/{$question->id}/edit");
+    }
 
     public function update(UpdateQuestionRequest $request, Question $question)
     {
+        Gate::authorize('update', $question);
+
         try {
             $question->update([
                 'subject_id' => $request->subject_id, 'kko_id' => $request->kko_id, 'jenjang' => $request->jenjang,
@@ -67,50 +86,106 @@ class QuestionController extends Controller
                 'correct_boolean' => $request->type === 'benar_salah' ? $request->correct_boolean : null,
             ]);
             $this->updateQuestionDetails($question, $request);
+
             return redirect()->route('questions.index')->with('success', 'Soal berhasil diperbarui!');
         } catch (\Exception $e) {
-            Log::error('Update question error: ' . $e->getMessage());
+            Log::error('Update question error: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Gagal memperbarui soal.');
         }
     }
 
-    public function destroy(Question $question) { try { $question->delete(); return redirect()->route('questions.index')->with('success', 'Soal berhasil dihapus!'); } catch (\Exception $e) { Log::error('Delete question error: '.$e->getMessage()); return back()->with('error', 'Gagal menghapus soal.'); } }
+    public function destroy(Question $question)
+    {
+        Gate::authorize('delete', $question);
+        try {
+            $question->delete();
+
+            return redirect()->route('questions.index')->with('success', 'Soal berhasil dihapus!');
+        } catch (\Exception $e) {
+            Log::error('Delete question error: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal menghapus soal.');
+        }
+    }
 
     public function duplicate(Question $question)
     {
+        Gate::authorize('duplicate', $question);
+
         try {
-            if (Question::where('question_text', $question->question_text . ' (Copy)')->where('subject_id', $question->subject_id)->exists()) return back()->with('error', 'Soal ini sudah diduplikasi sebelumnya!');
-            $newQuestion = $question->replicate(); $newQuestion->created_by = Auth::id(); $newQuestion->question_text .= ' (Copy)'; $newQuestion->save();
-            foreach ($question->pgOptions as $option) $newQuestion->pgOptions()->create($option->toArray());
-            foreach ($question->matchingPairs as $pair) $newQuestion->matchingPairs()->create($pair->toArray());
-            if ($question->essayRubric) $newQuestion->essayRubric()->create($question->essayRubric->toArray());
+            if (Question::where('question_text', $question->question_text.' (Copy)')->where('subject_id', $question->subject_id)->exists()) {
+                return back()->with('error', 'Soal ini sudah diduplikasi sebelumnya!');
+            }
+            $newQuestion = $question->replicate();
+            $newQuestion->created_by = Auth::id();
+            $newQuestion->question_text .= ' (Copy)';
+            $newQuestion->save();
+            foreach ($question->pgOptions as $option) {
+                $newQuestion->pgOptions()->create($option->toArray());
+            }
+            foreach ($question->matchingPairs as $pair) {
+                $newQuestion->matchingPairs()->create($pair->toArray());
+            }
+            if ($question->essayRubric) {
+                $newQuestion->essayRubric()->create($question->essayRubric->toArray());
+            }
+
             return redirect()->route('questions.index')->with('success', 'Soal berhasil diduplikasi!');
-        } catch (\Exception $e) { Log::error('Duplicate question error: '.$e->getMessage()); return back()->with('error', 'Gagal menduplikasi soal.'); }
+        } catch (\Exception $e) {
+            Log::error('Duplicate question error: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal menduplikasi soal.');
+        }
     }
 
     private function saveQuestionDetails(Question $question, $request): void
     {
         if ($request->type === 'pg') {
-            foreach (($request->options ?? []) as $index => $text) if (!empty($text)) $question->pgOptions()->create(['label' => ['A','B','C','D','E'][$index] ?? '?', 'option_text' => $text, 'is_correct' => $index == $request->correct_option]);
+            foreach (($request->options ?? []) as $index => $text) {
+                if (! empty($text)) {
+                    $question->pgOptions()->create(['label' => ['A', 'B', 'C', 'D', 'E'][$index] ?? '?', 'option_text' => $text, 'is_correct' => $index == $request->correct_option]);
+                }
+            }
         } elseif ($request->type === 'uraian') {
-            if ($request->filled('rubric_text')) $question->essayRubric()->create(['rubric_text' => $request->rubric_text]);
+            if ($request->filled('rubric_text')) {
+                $question->essayRubric()->create(['rubric_text' => $request->rubric_text]);
+            }
         } elseif ($request->type === 'menjodohkan') {
-            foreach (($request->left_texts ?? []) as $index => $left) if (!empty($left)) $question->matchingPairs()->create(['pair_order' => $index + 1, 'left_text' => $left, 'right_text' => $request->right_texts[$index] ?? '']);
+            foreach (($request->left_texts ?? []) as $index => $left) {
+                if (! empty($left)) {
+                    $question->matchingPairs()->create(['pair_order' => $index + 1, 'left_text' => $left, 'right_text' => $request->right_texts[$index] ?? '']);
+                }
+            }
         }
     }
 
     private function updateQuestionDetails(Question $question, $request): void
     {
-        $question->pgOptions()->delete(); $question->matchingPairs()->delete(); $question->essayRubric()->delete();
+        $question->pgOptions()->delete();
+        $question->matchingPairs()->delete();
+        $question->essayRubric()->delete();
         $this->saveQuestionDetails($question, $request);
     }
 
-    public function export() { return Excel::download(new QuestionsExport, 'bank-soal.xlsx'); }
+    public function export()
+    {
+        Gate::authorize('viewAny', Question::class);
+
+        return Excel::download(new QuestionsExport(Auth::user()), 'bank-soal.xlsx');
+    }
 
     public function import(Request $request)
     {
         $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:2048']);
-        try { Excel::import(new QuestionsImport, $request->file('file')); return back()->with('success', 'Soal berhasil diimport!'); }
-        catch (\Exception $e) { Log::error('Question import error: '.$e->getMessage()); return back()->with('error', 'Gagal import file. Periksa format file Anda.'); }
+        try {
+            DB::transaction(fn () => Excel::import(new QuestionsImport, $request->file('file')));
+
+            return back()->with('success', 'Soal berhasil diimport!');
+        } catch (\Exception $e) {
+            Log::error('Question import error: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal import file. Periksa format file Anda.');
+        }
     }
 }

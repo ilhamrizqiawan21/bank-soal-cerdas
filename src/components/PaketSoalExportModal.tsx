@@ -17,6 +17,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { PaketSoal, Question } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 interface PaketSoalExportModalProps {
   paket: PaketSoal;
@@ -64,6 +65,9 @@ export const PaketSoalExportModal: React.FC<PaketSoalExportModalProps> = ({ pake
   const detectedCategory = categories.find(c => c.id === paket.kategori_id)?.name || 'Asesmen Sumatif';
 
   const printRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(dialogRef, true, onClose);
 
   // Handle Print / PDF
   const handlePrintPDF = () => {
@@ -191,8 +195,16 @@ export const PaketSoalExportModal: React.FC<PaketSoalExportModalProps> = ({ pake
     <div
       id="modal-export-paket-backdrop"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/70 backdrop-blur-xs animate-in fade-in"
+      role="presentation"
     >
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[92vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-export-paket-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[92vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden outline-none"
+      >
         {/* Header Modal */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
@@ -200,7 +212,7 @@ export const PaketSoalExportModal: React.FC<PaketSoalExportModalProps> = ({ pake
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 id="modal-export-paket-title" className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 Ekspor Naskah Soal & Evaluasi
               </h3>
               <p className="text-xs text-slate-500">
@@ -235,8 +247,11 @@ export const PaketSoalExportModal: React.FC<PaketSoalExportModalProps> = ({ pake
             </div>
 
             <button
+              type="button"
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label="Tutup modal ekspor paket soal"
+              title="Tutup"
             >
               <X className="w-5 h-5" />
             </button>

@@ -75,10 +75,10 @@ class AuthSecurityTest extends TestCase
             'is_accepted' => false,
         ]);
 
-        // Peserta (penerima) boleh melihat
+        // Peserta (penerima) lolos guard legacy, lalu diarahkan ke React SPA.
         $this->actingAs($guruB)
             ->get(route('share.detail', ['type' => 'soal', 'id' => $share->id]))
-            ->assertOk();
+            ->assertRedirect('/app/share');
 
         // Bukan peserta -> 404 (IDOR tertutup)
         $this->actingAs($outsider)

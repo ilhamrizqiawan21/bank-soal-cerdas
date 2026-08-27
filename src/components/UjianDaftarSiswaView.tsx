@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   GraduationCap,
@@ -13,6 +13,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { Ujian } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 export const UjianDaftarSiswaView: React.FC = () => {
   const {
@@ -27,11 +28,14 @@ export const UjianDaftarSiswaView: React.FC = () => {
 
   const [tokenInput, setTokenInput] = useState('');
   const [activeTokenExam, setActiveTokenExam] = useState<Ujian | null>(null);
+  const tokenDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(tokenDialogRef, Boolean(activeTokenExam), () => setActiveTokenExam(null));
 
   // Student specific exams
   const myExams = ujianList.filter(u => u.siswa_id === currentUser.id);
 
-  const handleStartWithToken = (e: React.FormEvent) => {
+  const handleStartWithToken = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTokenExam) return;
 
@@ -40,19 +44,27 @@ export const UjianDaftarSiswaView: React.FC = () => {
       return;
     }
 
-    startUjianCBT(activeTokenExam.id);
-    setSelectedUjianId(activeTokenExam.id);
-    setCurrentView('ujian-cbt');
+    try {
+      await startUjianCBT(activeTokenExam.id);
+      setSelectedUjianId(activeTokenExam.id);
+      setCurrentView('ujian-cbt');
+    } catch {
+      // Toast is handled by the data layer.
+    }
   };
 
-  const handleDirectStart = (exam: Ujian) => {
+  const handleDirectStart = async (exam: Ujian) => {
     if (exam.token_ujian) {
       setActiveTokenExam(exam);
       setTokenInput('');
     } else {
-      startUjianCBT(exam.id);
-      setSelectedUjianId(exam.id);
-      setCurrentView('ujian-cbt');
+      try {
+        await startUjianCBT(exam.id);
+        setSelectedUjianId(exam.id);
+        setCurrentView('ujian-cbt');
+      } catch {
+        // Toast is handled by the data layer.
+      }
     }
   };
 
@@ -175,15 +187,23 @@ export const UjianDaftarSiswaView: React.FC = () => {
       {activeTokenExam && (
         <div
           id="modal-token-backdrop"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-center">
+          <div
+            ref={tokenDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-token-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-center outline-none"
+          >
             <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
               <KeyRound className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Masukkan Token Ujian</h3>
+              <h3 id="modal-token-title" className="text-base font-bold text-slate-900 dark:text-white">Masukkan Token Ujian</h3>
               <p className="text-xs text-slate-400">
                 {activeTokenExam.title} (Hint: {activeTokenExam.token_ujian})
               </p>
@@ -197,6 +217,7 @@ export const UjianDaftarSiswaView: React.FC = () => {
                 autoFocus
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                aria-label="Token ujian"
                 placeholder="CONTOH: SAS9A"
                 className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-blue-500 rounded-xl text-center font-mono font-bold tracking-widest text-lg text-slate-900 dark:text-white uppercase outline-none"
               />

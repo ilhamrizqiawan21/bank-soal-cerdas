@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { BookOpen, Plus, Edit, Trash2, X, Save, HelpCircle } from 'lucide-react';
 import { Subject } from '../types';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 export const SubjectListView: React.FC = () => {
   const { subjects, questions, addSubject, updateSubject, deleteSubject } = useApp();
+  const subjectDialogRef = useRef<HTMLDivElement>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
+
+  useFocusTrap(subjectDialogRef, isModalOpen, () => setIsModalOpen(false));
 
   const openAddModal = () => {
     setEditingSubject(null);
@@ -28,16 +32,20 @@ export const SubjectListView: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    if (editingSubject) {
-      updateSubject(editingSubject.id, { name, code, description });
-    } else {
-      addSubject({ name, code, description });
+    try {
+      if (editingSubject) {
+        await updateSubject(editingSubject.id, { name, code, description });
+      } else {
+        await addSubject({ name, code, description });
+      }
+      setIsModalOpen(false);
+    } catch {
+      // Toast is handled by the data layer.
     }
-    setIsModalOpen(false);
   };
 
   return (
@@ -66,7 +74,19 @@ export const SubjectListView: React.FC = () => {
 
       {/* Grid of Subjects */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {subjects.map((sub) => {
+        {subjects.length === 0 ? (
+          <div className="sm:col-span-2 lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+              Belum ada mata pelajaran
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Tambahkan mata pelajaran pertama agar bank soal bisa diklasifikasikan dengan rapi.
+            </p>
+          </div>
+        ) : subjects.map((sub) => {
           const count = questions.filter(q => q.subject_id === sub.id).length;
 
           return (
@@ -99,6 +119,7 @@ export const SubjectListView: React.FC = () => {
                   onClick={() => openEditModal(sub)}
                   className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
                   title="Edit"
+                  aria-label={`Edit mata pelajaran ${sub.name}`}
                 >
                   <Edit className="w-4 h-4" />
                 </button>
@@ -111,6 +132,7 @@ export const SubjectListView: React.FC = () => {
                   }}
                   className="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
                   title="Hapus"
+                  aria-label={`Hapus mata pelajaran ${sub.name}`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -125,16 +147,27 @@ export const SubjectListView: React.FC = () => {
         <div
           id="modal-subject-backdrop"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+          role="presentation"
         >
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div
+            ref={subjectDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-subject-title"
+            tabIndex={-1}
+            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 outline-none"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 id="modal-subject-title" className="text-base font-bold text-slate-900 dark:text-white">
                 {editingSubject ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran Baru'}
               </h3>
               <button
                 id="btn-close-subject-modal"
+                type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                aria-label="Tutup modal mata pelajaran"
+                title="Tutup"
               >
                 <X className="w-4 h-4" />
               </button>

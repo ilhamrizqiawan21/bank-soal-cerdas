@@ -59,15 +59,15 @@ class HtmlSanitizer
             return '';
         }
 
-        // Plain text without any markup passes through escaped-safe path.
-        if (!str_contains($html, '<')) {
+        // Plain text, including comparison operators, passes through the escaped-safe path.
+        if (! preg_match('/<\s*\/?\s*[a-z][a-z0-9:-]*(?:\s|\/?>)/i', $html)) {
             return htmlspecialchars($html, ENT_QUOTES, 'UTF-8');
         }
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         libxml_use_internal_errors(true);
         try {
-            $wrapped = '<?xml encoding="utf-8"?><body>' . $html . '</body>';
+            $wrapped = '<?xml encoding="utf-8"?><body>'.$html.'</body>';
             $ok = $dom->loadHTML(
                 $wrapped,
                 LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR
@@ -82,7 +82,7 @@ class HtmlSanitizer
             libxml_use_internal_errors(false);
         }
 
-        if (!$ok) {
+        if (! $ok) {
             return htmlspecialchars(strip_tags($html), ENT_QUOTES, 'UTF-8');
         }
 
@@ -136,7 +136,7 @@ class HtmlSanitizer
             return;
         }
 
-        if (!in_array($tag, self::ALLOWED, true)) {
+        if (! in_array($tag, self::ALLOWED, true)) {
             $parent = $element->parentNode;
 
             if ($parent === null) {
@@ -164,16 +164,16 @@ class HtmlSanitizer
             $name = strtolower($attribute->name);
 
             $keep = in_array($name, $allowed, true)
-                && !str_starts_with($name, 'on');
+                && ! str_starts_with($name, 'on');
 
-            if (!$keep) {
+            if (! $keep) {
                 $element->removeAttribute($attribute->name);
 
                 continue;
             }
 
             if (in_array($name, ['href', 'src'], true)) {
-                if (!self::isSafeUrl($attribute->value, $tag === 'img' && $name === 'src')) {
+                if (! self::isSafeUrl($attribute->value, $tag === 'img' && $name === 'src')) {
                     $element->removeAttribute($attribute->name);
                 }
             }
@@ -197,6 +197,6 @@ class HtmlSanitizer
         }
 
         // Scheme-less relative paths (e.g. "images/foo.png").
-        return !preg_match('/^[a-z][a-z0-9+.\-]*:/i', $trimmed);
+        return ! preg_match('/^[a-z][a-z0-9+.\-]*:/i', $trimmed);
     }
 }
