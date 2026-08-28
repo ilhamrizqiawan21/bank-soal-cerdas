@@ -1,4 +1,4 @@
-import { RefObject, useEffect } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 
 const focusableSelector = [
   'a[href]',
@@ -14,6 +14,12 @@ export function useFocusTrap<T extends HTMLElement>(
   active: boolean,
   onEscape?: () => void,
 ) {
+  const onEscapeRef = useRef(onEscape);
+
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
+
   useEffect(() => {
     if (!active) return;
 
@@ -30,7 +36,7 @@ export function useFocusTrap<T extends HTMLElement>(
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onEscape?.();
+        onEscapeRef.current?.();
         return;
       }
 
@@ -63,5 +69,5 @@ export function useFocusTrap<T extends HTMLElement>(
       document.removeEventListener('keydown', handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [active, onEscape, ref]);
+  }, [active, ref]);
 }

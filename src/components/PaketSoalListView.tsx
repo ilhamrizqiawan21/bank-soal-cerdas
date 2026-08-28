@@ -20,10 +20,13 @@ import {
 } from 'lucide-react';
 import { PaketSoal } from '../types';
 import { apiErrorMessage, isBootstrapped } from '../lib/api';
-import { PaginationMeta, paketSoalApi } from '../lib/domainApi';
+import { PaginationMeta, paketSoalApi } from '../lib/api/paketSoal';
+import { readWithRetry } from '../lib/dataFetching';
+import { getUrlQuery, queryPage, queryValue, updateUrlQuery } from '../lib/urlQuery';
 import { canManageOwnableResource, canUseSharedResource } from '../lib/roleAccess';
 import { useFocusTrap } from '../lib/useFocusTrap';
 import { PaketSoalExportModal } from './PaketSoalExportModal';
+import { useConfirm } from '../context/ConfirmContext';
 
 export const PaketSoalListView: React.FC = () => {
   const {
@@ -42,16 +45,18 @@ export const PaketSoalListView: React.FC = () => {
     addUjian,
     addToast
   } = useApp();
+  const confirm = useConfirm();
 
   const [sharingPaketId, setSharingPaketId] = useState<string | null>(null);
   const [selectedTeacherToShare, setSelectedTeacherToShare] = useState<string>('');
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'edit' | 'copy'>('view');
   const [shareMessage, setShareMessage] = useState<string>('');
-  const [searchFilter, setSearchFilter] = useState('');
-  const [jenjangFilter, setJenjangFilter] = useState('all');
-  const [curriculumFilter, setCurriculumFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  const initialQuery = useMemo(() => getUrlQuery(), []);
+  const [searchFilter, setSearchFilter] = useState(() => initialQuery.get('q') || '');
+  const [jenjangFilter, setJenjangFilter] = useState(() => queryValue(initialQuery, 'jenjang'));
+  const [curriculumFilter, setCurriculumFilter] = useState(() => queryValue(initialQuery, 'curriculum'));
+  const [statusFilter, setStatusFilter] = useState(() => queryValue(initialQuery, 'status'));
+  const [currentPage, setCurrentPage] = useState(() => queryPage(initialQuery));
   const itemsPerPage = 9;
   const productionMode = isBootstrapped();
   const [serverPaketSoal, setServerPaketSoal] = useState<PaketSoal[]>([]);
@@ -77,14 +82,24 @@ export const PaketSoalListView: React.FC = () => {
   const otherTeachers = users.filter(u => (u.role === 'guru' || u.role === 'admin') && u.id !== currentUser.id);
 
   React.useEffect(() => {
+    updateUrlQuery({
+      page: currentPage === 1 ? undefined : currentPage,
+      q: searchFilter.trim() || undefined,
+      jenjang: jenjangFilter,
+      curriculum: curriculumFilter,
+      status: statusFilter,
+      sort: 'latest',
+    });
+  }, [currentPage, searchFilter, jenjangFilter, curriculumFilter, statusFilter]);
+
+  React.useEffect(() => {
     if (!productionMode) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       setIsListLoading(true);
       setListError(null);
-      paketSoalApi
-        .paginate({
+      const params = {
           page: currentPage,
           per_page: itemsPerPage,
           search: searchFilter.trim() || undefined,
@@ -92,7 +107,9 @@ export const PaketSoalListView: React.FC = () => {
           curriculum: curriculumFilter === 'all' ? undefined : curriculumFilter,
           status: statusFilter === 'all' ? undefined : statusFilter,
           sort: 'latest',
-        })
+        };
+
+      readWithRetry(() => paketSoalApi.paginate(params))
         .then(result => {
           if (controller.signal.aborted) return;
           setServerPaketSoal(result.data);
@@ -159,6 +176,7 @@ export const PaketSoalListView: React.FC = () => {
       });
 
       setAssigningPaket(null);
+      if (productionMode) refreshPaketPage();
       setCurrentView('ujian');
     } catch {
       // Toast is handled by the data layer.
@@ -176,7 +194,10 @@ export const PaketSoalListView: React.FC = () => {
   const handleConfirmShare = async () => {
     if (!sharingPaketId || !selectedTeacherToShare) return;
     const ok = await sharePaketAction(sharingPaketId, selectedTeacherToShare, selectedPermission, shareMessage.trim() || undefined);
-    if (ok) setSharingPaketId(null);
+    if (ok) {
+      setSharingPaketId(null);
+      if (productionMode) refreshPaketPage();
+    }
   };
 
   const handleDuplicatePaket = async (id: string) => {
@@ -184,7 +205,14 @@ export const PaketSoalListView: React.FC = () => {
     if (productionMode) refreshPaketPage();
   };
 
-  const handleDeletePaket = async (id: string) => {
+  const handleDeletePaket = async (id: string, name?: string) => {
+    const confirmed = await confirm({
+      title: 'Hapus Paket Soal?',
+      message: `Paket soal "${name ?? 'ini'}" akan dihapus dari sistem.`,
+      confirmLabel: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     await deletePaketSoal(id);
     if (productionMode) refreshPaketPage();
   };
@@ -471,11 +499,7 @@ export const PaketSoalListView: React.FC = () => {
                       {ownershipAllowed && (
                         <button
                           id={`btn-delete-paket-${paket.id}`}
-                          onClick={() => {
-                            if (window.confirm(`Hapus paket soal "${paket.name}"?`)) {
-                              handleDeletePaket(paket.id);
-                            }
-                          }}
+                          onClick={() => handleDeletePaket(paket.id, paket.name)}
                           className="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
                           title="Hapus"
                           aria-label={`Hapus paket ${paket.name}`}

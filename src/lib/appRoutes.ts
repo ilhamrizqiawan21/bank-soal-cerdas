@@ -1,5 +1,11 @@
 const APP_BASE_PATH = '/app';
 
+type RouteParams = {
+  questionId?: string | null;
+  paketId?: string | null;
+  ujianId?: string | null;
+};
+
 const VIEW_TO_PATH: Record<string, string> = {
   dashboard: '/app/dashboard',
   questions: '/app/questions',
@@ -25,7 +31,20 @@ const VIEW_TO_PATH: Record<string, string> = {
   profile: '/app/profile',
 };
 
-export function viewToPath(view: string): string {
+export function viewToPath(view: string, params: RouteParams = {}): string {
+  if (view === 'questions-edit' && params.questionId) {
+    return `/app/questions/${encodeURIComponent(params.questionId)}/edit`;
+  }
+  if (view === 'paket-soal-edit' && params.paketId) {
+    return `/app/paket-soal/${encodeURIComponent(params.paketId)}/edit`;
+  }
+  if (view === 'ujian-cbt' && params.ujianId) {
+    return `/app/ujian/${encodeURIComponent(params.ujianId)}/kerjakan`;
+  }
+  if (view === 'ujian-hasil' && params.ujianId) {
+    return `/app/ujian/${encodeURIComponent(params.ujianId)}/hasil`;
+  }
+
   return VIEW_TO_PATH[view] ?? VIEW_TO_PATH.dashboard;
 }
 
@@ -74,9 +93,9 @@ export function routeSelectionFromPath(pathname: string): {
 } {
   const normalized = pathname.replace(/\/+$/, '') || APP_BASE_PATH;
 
-  const questionMatch = normalized.match(/^\/app\/questions\/([^/]+)(?:\/edit)?$/);
-  const paketMatch = normalized.match(/^\/app\/paket-soal\/([^/]+)(?:\/edit)?$/);
-  const ujianMatch = normalized.match(/^\/app\/ujian\/([^/]+)(?:\/(?:kerjakan|hasil))?$/);
+  const questionMatch = normalized.match(/^\/app\/questions\/(?!create$|edit$)([^/]+)(?:\/edit)?$/);
+  const paketMatch = normalized.match(/^\/app\/paket-soal\/(?!create$|edit$)([^/]+)(?:\/edit)?$/);
+  const ujianMatch = normalized.match(/^\/app\/ujian\/(?!hasil$|kerjakan$)([^/]+)(?:\/(?:kerjakan|hasil))?$/);
 
   return {
     questionId: questionMatch ? decodeURIComponent(questionMatch[1]) : null,

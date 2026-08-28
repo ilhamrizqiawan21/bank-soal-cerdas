@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { Badge, Button, DataTable, EmptyState, Field, IconButton, Input, Modal, Select } from './ui';
+import { useConfirm } from '../context/ConfirmContext';
 
 type UserFormState = {
   name: string;
@@ -38,7 +39,8 @@ const emptyForm: UserFormState = {
 };
 
 export const UserManagementView: React.FC = () => {
-  const { users, addUser, updateUser, deleteUser, toggleUserActive, setCurrentUser, currentUser, addToast } = useApp();
+  const { users, addUser, updateUser, deleteUser, toggleUserActive, currentUser, addToast } = useApp();
+  const confirm = useConfirm();
 
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -51,8 +53,6 @@ export const UserManagementView: React.FC = () => {
     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
     return true;
   });
-
-  const isBootstrapped = Boolean(window.__BOOTSTRAP__?.user);
 
   const openCreateModal = () => {
     setEditingUser(null);
@@ -115,6 +115,13 @@ export const UserManagementView: React.FC = () => {
   };
 
   const handleToggleStatus = async (user: User) => {
+    const confirmed = await confirm({
+      title: user.is_active ? 'Nonaktifkan Pengguna?' : 'Aktifkan Pengguna?',
+      message: `Akun "${user.name}" akan diubah menjadi ${user.is_active ? 'nonaktif' : 'aktif'}.`,
+      confirmLabel: user.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan',
+    });
+    if (!confirmed) return;
+
     setPendingUserId(user.id);
     try {
       await toggleUserActive(user.id);
@@ -127,7 +134,12 @@ export const UserManagementView: React.FC = () => {
 
   const handleDelete = async (user: User) => {
     if (user.id === currentUser.id) return;
-    if (!window.confirm(`Hapus pengguna ${user.name}?`)) return;
+    const confirmed = await confirm({
+      title: 'Hapus Pengguna?',
+      message: `Akun "${user.name}" akan dihapus dari sistem.`,
+      confirmLabel: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
 
     setPendingUserId(user.id);
     try {
@@ -245,19 +257,6 @@ export const UserManagementView: React.FC = () => {
                 >
                   <Trash2 className="w-4 h-4" />
                 </IconButton>
-                {!isBootstrapped && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentUser(u);
-                      addToast(`Beralih simulasi ke akun ${u.name} (${u.role.toUpperCase()})`, 'info');
-                    }}
-                    title="Masuk sebagai user ini"
-                  >
-                    Login Sebagai
-                  </Button>
-                )}
               </div>
             ),
           },

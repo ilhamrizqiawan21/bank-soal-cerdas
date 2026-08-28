@@ -529,6 +529,14 @@ export const ujianApi = {
     });
     return data.data.map(normalizeUjian);
   },
+  async paginate(params: Record<string, string | number | undefined>): Promise<PaginatedResult<Ujian>> {
+    const { data } = await api.get<ApiPaginated<ServerUjian>>('/ujian', { params });
+    return {
+      data: data.data.map(normalizeUjian),
+      meta: data.meta as PaginationMeta,
+      links: data.links,
+    };
+  },
   async mine(): Promise<Ujian[]> {
     const { data } = await api.get<ApiPaginated<ServerUjian>>('/ujian-saya', {
       params: { per_page: 100 },

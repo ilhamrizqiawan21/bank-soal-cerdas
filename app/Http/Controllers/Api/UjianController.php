@@ -34,7 +34,15 @@ class UjianController extends Controller
             $search = (string) $request->string('search');
             $query->where(fn ($q) => $q
                 ->where('title', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%"));
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhereHas('paketSoal', fn ($paket) => $paket->where('name', 'like', "%{$search}%"))
+                ->orWhereHas('siswa', fn ($siswa) => $siswa
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('nip', 'like', "%{$search}%")));
+        }
+
+        if ($request->filled('siswa_id') && $request->siswa_id !== 'semua') {
+            $query->where('siswa_id', $request->integer('siswa_id'));
         }
 
         match ((string) $request->string('sort', 'latest')) {

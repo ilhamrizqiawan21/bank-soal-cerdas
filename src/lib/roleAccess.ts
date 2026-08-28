@@ -1,25 +1,5 @@
 import { Role } from '../types';
-
-const teacherViews = new Set([
-  'questions',
-  'questions-create',
-  'questions-edit',
-  'subjects',
-  'kategori',
-  'tag',
-  'tags',
-  'paket-soal',
-  'paket-soal-create',
-  'paket-soal-edit',
-  'ujian',
-  'analisis',
-  'kko-master',
-  'share',
-  'shares',
-]);
-
-const studentViews = new Set(['dashboard', 'profile', 'ujian', 'ujian-siswa', 'ujian-cbt', 'ujian-hasil']);
-const commonViews = new Set(['dashboard', 'profile', 'ujian-hasil']);
+import { canAccessRegisteredView } from './viewAccess';
 
 export function landingViewForRole(role: Role): string {
   return role === 'siswa' ? 'ujian-siswa' : 'dashboard';
@@ -32,10 +12,7 @@ export function roleLabel(role: Role): string {
 }
 
 export function canAccessView(view: string, role: Role): boolean {
-  if (commonViews.has(view)) return true;
-  if (role === 'admin') return teacherViews.has(view) || view === 'users';
-  if (role === 'guru') return teacherViews.has(view);
-  return studentViews.has(view);
+  return canAccessRegisteredView(view, role);
 }
 
 export function canManageOwnableResource(role: Role, userId: string, ownerId?: string): boolean {

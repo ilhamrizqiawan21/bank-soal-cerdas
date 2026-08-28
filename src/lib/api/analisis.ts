@@ -1,0 +1,1 @@
+export { analisisApi } from '../domainApi';

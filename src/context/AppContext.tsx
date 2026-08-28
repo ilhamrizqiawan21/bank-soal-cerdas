@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   User,
   Subject,
@@ -34,27 +34,28 @@ import {
   INITIAL_SHARE_PAKET,
 } from '../data/initialData';
 import api, { apiErrorMessage } from '../lib/api';
-import { pathToView, routeSelectionFromPath, viewToPath } from '../lib/appRoutes';
+import { authApi } from '../lib/api/auth';
+import { routeSelectionFromPath } from '../lib/appRoutes';
 import { canAccessView, landingViewForRole } from '../lib/roleAccess';
-import {
-  analisisApi,
-  categoriesApi,
-  dashboardApi,
-  kkoApi,
-  meApi,
-  paketSoalApi,
-  ProfilePayload,
-  questionsApi,
-  shareApi,
-  subjectsApi,
-  tagsApi,
-  ujianApi,
-  usersApi,
-} from '../lib/domainApi';
+import { useRouter } from './RouterContext';
+import { analisisApi } from '../lib/api/analisis';
+import { categoriesApi } from '../lib/api/categories';
+import { dashboardApi } from '../lib/api/dashboard';
+import { kkoApi } from '../lib/api/kko';
+import { paketSoalApi } from '../lib/api/paketSoal';
+import { meApi, ProfilePayload } from '../lib/api/profile';
+import { questionsApi } from '../lib/api/questions';
+import { shareApi } from '../lib/api/share';
+import { subjectsApi } from '../lib/api/subjects';
+import { tagsApi } from '../lib/api/tags';
+import { ujianApi } from '../lib/api/ujian';
+import { usersApi } from '../lib/api/users';
 
 const bootstrapUser = window.__BOOTSTRAP__?.user ?? null;
+const hasSpaBootstrap = Boolean(document.getElementById('spa-bootstrap'));
 /** True when the SPA is served by Laravel with a real session. */
 const bootstrapped = Boolean(bootstrapUser);
+const shouldRedirectUnauthenticated = hasSpaBootstrap && !bootstrapUser;
 type UserFormPayload = Omit<User, 'id' | 'created_at'> & {
   password?: string;
   password_confirmation?: string;
@@ -62,8 +63,9 @@ type UserFormPayload = Omit<User, 'id' | 'created_at'> & {
 
 interface AppContextType {
   currentUser: User;
-  setCurrentUser: (user: User) => void;
-  switchUserRole: (role: 'admin' | 'guru' | 'siswa') => void;
+  isAuthenticated: boolean;
+  isDemoMode: boolean;
+  shouldRedirectUnauthenticated: boolean;
   updateProfile: (profile: ProfilePayload) => Promise<void>;
   updateAvatar: (file: File) => Promise<void>;
   updatePassword: (payload: {
@@ -214,6 +216,7 @@ function saveToStorage<T>(key: string, value: T): void {
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>(() => (bootstrapped ? [] : loadFromStorage('users', INITIAL_USERS)));
   const [currentUser, setCurrentUserState] = useState<User>(() => {
     if (bootstrapUser) {
@@ -226,8 +229,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         created_at: new Date().toISOString(),
       };
     }
-    const saved = loadFromStorage<User | null>('current_user', null);
-    if (saved && INITIAL_USERS.some(u => u.id === saved.id)) return saved;
     return INITIAL_USERS[1]; // default to Teacher Budi Pratama
   });
 
@@ -236,18 +237,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tags, setTags] = useState<Tag[]>(() => (bootstrapped ? [] : loadFromStorage('tags', INITIAL_TAGS)));
   const [kkoList, setKkoList] = useState<KkoMaster[]>(() => (bootstrapped ? [] : INITIAL_KKO));
 
-  const [questions, setQuestions] = useState<Question[]>(() => (bootstrapped ? [] : loadFromStorage('questions', INITIAL_QUESTIONS)));
-  const [paketSoalList, setPaketSoalList] = useState<PaketSoal[]>(() => (bootstrapped ? [] : loadFromStorage('paket_soal', INITIAL_PAKET_SOAL)));
-  const [ujianList, setUjianList] = useState<Ujian[]>(() => (bootstrapped ? [] : loadFromStorage('ujian', INITIAL_UJIAN)));
+  const [questions, setQuestions] = useState<Question[]>(() => (bootstrapped ? [] : INITIAL_QUESTIONS));
+  const [paketSoalList, setPaketSoalList] = useState<PaketSoal[]>(() => (bootstrapped ? [] : INITIAL_PAKET_SOAL));
+  const [ujianList, setUjianList] = useState<Ujian[]>(() => (bootstrapped ? [] : INITIAL_UJIAN));
 
-  const [shareSoalList, setShareSoalList] = useState<ShareSoal[]>(() => (bootstrapped ? [] : loadFromStorage('share_soal', INITIAL_SHARE_SOAL)));
-  const [sharePaketList, setSharePaketList] = useState<SharePaket[]>(() => (bootstrapped ? [] : loadFromStorage('share_paket', INITIAL_SHARE_PAKET)));
+  const [shareSoalList, setShareSoalList] = useState<ShareSoal[]>(() => (bootstrapped ? [] : INITIAL_SHARE_SOAL));
+  const [sharePaketList, setSharePaketList] = useState<SharePaket[]>(() => (bootstrapped ? [] : INITIAL_SHARE_PAKET));
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [currentView, setCurrentViewState] = useState<string>(() => pathToView(window.location.pathname));
-  const initialRouteSelection = routeSelectionFromPath(window.location.pathname);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialRouteSelection.questionId);
-  const [selectedPaketId, setSelectedPaketId] = useState<string | null>(initialRouteSelection.paketId);
+  const currentView = router.currentView;
+  const initialRouteSelection = routeSelectionFromPath(router.pathname);
+  const [selectedQuestionId, setSelectedQuestionIdState] = useState<string | null>(initialRouteSelection.questionId);
+  const selectedQuestionIdRef = useRef<string | null>(initialRouteSelection.questionId);
+  const [selectedPaketId, setSelectedPaketIdState] = useState<string | null>(initialRouteSelection.paketId);
+  const selectedPaketIdRef = useRef<string | null>(initialRouteSelection.paketId);
   const [selectedUjianId, setSelectedUjianIdState] = useState<string | null>(() => {
     if (initialRouteSelection.ujianId) return initialRouteSelection.ujianId;
     try {
@@ -256,6 +259,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return null;
     }
   });
+  const selectedUjianIdRef = useRef<string | null>(selectedUjianId);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [searchGlobalQuery, setSearchGlobalQuery] = useState<string>('');
@@ -307,7 +311,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync state to local storage
   useEffect(() => { if (!bootstrapped) saveToStorage('users', users); }, [users]);
-  useEffect(() => { if (!bootstrapped) saveToStorage('current_user', currentUser); }, [currentUser]);
   useEffect(() => { if (!bootstrapped) saveToStorage('subjects', subjects); }, [subjects]);
   useEffect(() => { if (!bootstrapped) saveToStorage('categories', categories); }, [categories]);
   useEffect(() => { if (!bootstrapped) saveToStorage('tags', tags); }, [tags]);
@@ -329,6 +332,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const settledValue = <T,>(result: PromiseSettledResult<T>): T | null => (
+    result.status === 'fulfilled' ? result.value : null
+  );
+
+  const settledErrors = (results: PromiseSettledResult<unknown>[]): string[] => (
+    results
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map(result => apiErrorMessage(result.reason))
+  );
+
   const refreshServerData = async (): Promise<void> => {
     if (!bootstrapped) {
       return;
@@ -339,15 +352,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (currentUser.role === 'siswa') {
       try {
-        const [serverDashboard, serverUjian] = await Promise.all([dashboardApi.show(), ujianApi.mine()]);
-        setDashboardData(serverDashboard);
-        setUsers([currentUser]);
-        setUjianList(serverUjian);
+        const results = await Promise.allSettled([authApi.me(), dashboardApi.show(), ujianApi.mine()]);
+        const [serverUser, serverDashboard, serverUjian] = results;
+        const loadedUser = settledValue(serverUser);
+
+        if (loadedUser) {
+          setCurrentUserState(loadedUser);
+          setUsers([loadedUser]);
+        }
+        const loadedDashboard = settledValue(serverDashboard);
+        if (loadedDashboard) setDashboardData(loadedDashboard);
+
+        const loadedUjian = settledValue(serverUjian);
+        if (loadedUjian) setUjianList(loadedUjian);
+
+        const errors = settledErrors(results);
+        if (errors.length) {
+          if (!loadedDashboard) setDataLoadError(errors[0]);
+          addToast(errors[0], 'danger');
+        }
       } catch (error) {
         const message = apiErrorMessage(error);
         setDataLoadError(message);
         addToast(message, 'danger');
-        throw error;
       } finally {
         setIsDataLoading(false);
       }
@@ -355,19 +382,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
-      const [
-        serverDashboard,
-        serverUsers,
-        serverSubjects,
-        serverCategories,
-        serverTags,
-        serverKko,
-        serverQuestions,
-        serverPaketSoal,
-        serverUjian,
-        serverShares,
-        serverAnalisis,
-      ] = await Promise.all([
+      const results = await Promise.allSettled([
+        authApi.me(),
         dashboardApi.show(),
         currentUser.role === 'admin' ? usersApi.list() : usersApi.options(),
         subjectsApi.list(),
@@ -381,23 +397,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         analisisApi.summary(),
       ]);
 
-      setDashboardData(serverDashboard);
-      setAnalisisData(serverAnalisis);
-      setUsers(serverUsers);
-      setSubjects(serverSubjects);
-      setCategories(serverCategories);
-      setTags(serverTags);
-      setKkoList(serverKko);
-      setQuestions(serverQuestions);
-      setPaketSoalList(serverPaketSoal);
-      setUjianList(serverUjian);
-      setShareSoalList(serverShares.soal);
-      setSharePaketList(serverShares.paket);
+      const [
+        serverUser,
+        serverDashboard,
+        serverUsers,
+        serverSubjects,
+        serverCategories,
+        serverTags,
+        serverKko,
+        serverQuestions,
+        serverPaketSoal,
+        serverUjian,
+        serverShares,
+        serverAnalisis,
+      ] = results;
+
+      const loadedUser = settledValue(serverUser);
+      if (loadedUser) setCurrentUserState(loadedUser);
+
+      const loadedDashboard = settledValue(serverDashboard);
+      if (loadedDashboard) setDashboardData(loadedDashboard);
+
+      const loadedAnalisis = settledValue(serverAnalisis);
+      if (loadedAnalisis) setAnalisisData(loadedAnalisis);
+
+      const loadedUsers = settledValue(serverUsers);
+      if (loadedUsers) setUsers(loadedUsers);
+
+      const loadedSubjects = settledValue(serverSubjects);
+      if (loadedSubjects) setSubjects(loadedSubjects);
+
+      const loadedCategories = settledValue(serverCategories);
+      if (loadedCategories) setCategories(loadedCategories);
+
+      const loadedTags = settledValue(serverTags);
+      if (loadedTags) setTags(loadedTags);
+
+      const loadedKko = settledValue(serverKko);
+      if (loadedKko) setKkoList(loadedKko);
+
+      const loadedQuestions = settledValue(serverQuestions);
+      if (loadedQuestions) setQuestions(loadedQuestions);
+
+      const loadedPaketSoal = settledValue(serverPaketSoal);
+      if (loadedPaketSoal) setPaketSoalList(loadedPaketSoal);
+
+      const loadedUjian = settledValue(serverUjian);
+      if (loadedUjian) setUjianList(loadedUjian);
+
+      const loadedShares = settledValue(serverShares);
+      if (loadedShares) {
+        setShareSoalList(loadedShares.soal);
+        setSharePaketList(loadedShares.paket);
+      }
+
+      const errors = settledErrors(results);
+      if (errors.length) {
+        if (!loadedDashboard) setDataLoadError(errors[0]);
+        addToast(errors[0], 'danger');
+      }
     } catch (error) {
       const message = apiErrorMessage(error);
       setDataLoadError(message);
       addToast(message, 'danger');
-      throw error;
     } finally {
       setIsDataLoading(false);
     }
@@ -410,41 +472,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setCurrentView = (view: string) => {
-    const nextView = canAccessView(view, currentUser.role) ? view : landingViewForRole(currentUser.role);
-    if (nextView !== view) {
-      addToast('Menu tersebut tidak tersedia untuk role akun Anda.', 'warning');
-    }
-
-    setCurrentViewState(nextView);
-
-    const nextPath = viewToPath(nextView);
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath);
-    }
+  const setSelectedQuestionId = (id: string | null) => {
+    selectedQuestionIdRef.current = id;
+    setSelectedQuestionIdState(id);
   };
 
-  useEffect(() => {
-    const syncViewFromUrl = () => {
-      setCurrentViewState(pathToView(window.location.pathname));
-      const selection = routeSelectionFromPath(window.location.pathname);
-      setSelectedQuestionId(selection.questionId);
-      setSelectedPaketId(selection.paketId);
-      if (selection.ujianId) {
-        setSelectedUjianIdState(selection.ujianId);
-      }
-    };
-    window.addEventListener('popstate', syncViewFromUrl);
-
-    return () => window.removeEventListener('popstate', syncViewFromUrl);
-  }, []);
-
-  const setCurrentUser = (user: User) => {
-    setCurrentUserState(user);
-    addToast(`Beralih akun ke: ${user.name} (${user.role.toUpperCase()})`, 'info');
+  const setSelectedPaketId = (id: string | null) => {
+    selectedPaketIdRef.current = id;
+    setSelectedPaketIdState(id);
   };
 
   const setSelectedUjianId = (id: string | null) => {
+    selectedUjianIdRef.current = id;
     setSelectedUjianIdState(id);
     try {
       if (id) {
@@ -457,12 +496,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const switchUserRole = (role: 'admin' | 'guru' | 'siswa') => {
-    const target = users.find(u => u.role === role && u.is_active);
-    if (target) {
-      setCurrentUser(target);
+  const setCurrentView = (view: string) => {
+    const nextView = canAccessView(view, currentUser.role) ? view : landingViewForRole(currentUser.role);
+    if (nextView !== view) {
+      addToast('Menu tersebut tidak tersedia untuk role akun Anda.', 'warning');
     }
+
+    router.navigateToView(nextView, {
+      questionId: selectedQuestionIdRef.current,
+      paketId: selectedPaketIdRef.current,
+      ujianId: selectedUjianIdRef.current,
+    });
   };
+
+  useEffect(() => {
+    const selection = routeSelectionFromPath(router.pathname);
+    setSelectedQuestionId(selection.questionId);
+    setSelectedPaketId(selection.paketId);
+    if (selection.ujianId) {
+      setSelectedUjianId(selection.ujianId);
+    }
+  }, [router.pathname]);
 
   const updateProfile = async (profile: ProfilePayload): Promise<void> => {
     if (!bootstrapped) {
@@ -1734,8 +1788,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         currentUser,
-        setCurrentUser,
-        switchUserRole,
+        isAuthenticated: Boolean(bootstrapUser),
+        isDemoMode: !hasSpaBootstrap,
+        shouldRedirectUnauthenticated,
         updateProfile,
         updateAvatar,
         updatePassword,

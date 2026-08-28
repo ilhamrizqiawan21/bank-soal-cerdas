@@ -8,8 +8,17 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if (Auth::check()) {
+            return redirect()->intended('/app/dashboard');
+        }
+
+        $intended = $request->query('intended');
+        if (is_string($intended) && str_starts_with($intended, '/') && ! str_starts_with($intended, '//')) {
+            $request->session()->put('url.intended', $intended);
+        }
+
         return view('auth.login');
     }
 

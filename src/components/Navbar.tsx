@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { isBootstrapped } from '../lib/api';
 import {
   Search,
   Bell,
@@ -18,6 +17,7 @@ import {
   Moon
 } from 'lucide-react';
 import { Badge, Button, IconButton, Input } from './ui';
+import { useConfirm } from '../context/ConfirmContext';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -27,8 +27,6 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileMenu }) => {
   const {
     currentUser,
-    users,
-    setCurrentUser,
     pendingNotifications,
     acceptShareSoal,
     rejectShareSoal,
@@ -40,10 +38,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
     theme,
     toggleTheme,
   } = useApp();
+  const confirm = useConfirm();
 
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const showDemoUserSwitcher = !isBootstrapped();
 
   useEffect(() => {
     if (!showNotifMenu && !showUserMenu) return;
@@ -64,6 +62,53 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
     if (searchGlobalQuery.trim()) {
       setCurrentView('questions');
     }
+  };
+
+  const handleLogout = async () => {
+    const confirmed = await confirm({
+      title: 'Logout dari Akun?',
+      message: 'Sesi akun saat ini akan ditutup dan Anda akan kembali ke halaman login.',
+      confirmLabel: 'Ya, Logout',
+    });
+    if (!confirmed) return;
+
+    const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/logout';
+    form.style.display = 'none';
+
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_token';
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  const handleNotificationAction = async (type: 'accept' | 'reject', notificationType: string, shareId: string) => {
+    const isAccept = type === 'accept';
+    const confirmed = await confirm({
+      title: isAccept ? 'Terima Undangan?' : 'Tolak Undangan?',
+      message: isAccept
+        ? 'Undangan kolaborasi ini akan diterima dan masuk ke daftar kolaborasi Anda.'
+        : 'Undangan kolaborasi ini akan ditolak.',
+      confirmLabel: isAccept ? 'Ya, Terima' : 'Ya, Tolak',
+    });
+    if (!confirmed) return;
+
+    if (notificationType === 'share_soal') {
+      if (isAccept) await acceptShareSoal(shareId);
+      else await rejectShareSoal(shareId);
+      return;
+    }
+
+    if (isAccept) await acceptSharePaket(shareId);
+    else await rejectSharePaket(shareId);
   };
 
   const getRoleBadge = (role: string) => {
@@ -188,10 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
                           <button
                             id={`accept-notif-${notif.id}`}
                             role="menuitem"
-                            onClick={() => {
-                              if (notif.type === 'share_soal') acceptShareSoal(notif.share_id);
-                              else acceptSharePaket(notif.share_id);
-                            }}
+                            onClick={() => handleNotificationAction('accept', notif.type, notif.share_id)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors"
                           >
                             <Check className="w-3.5 h-3.5" /> Terima
@@ -199,10 +241,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
                           <button
                             id={`reject-notif-${notif.id}`}
                             role="menuitem"
-                            onClick={() => {
-                              if (notif.type === 'share_soal') rejectShareSoal(notif.share_id);
-                              else rejectSharePaket(notif.share_id);
-                            }}
+                            onClick={() => handleNotificationAction('reject', notif.type, notif.share_id)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 rounded-md transition-colors"
                           >
                             <X className="w-3.5 h-3.5" /> Tolak
@@ -217,7 +256,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
           </div>
         )}
 
-        {/* User Account Switcher Dropdown */}
+        {/* User Account Dropdown */}
         <div className="relative">
           <button
             id="btn-user-menu"
@@ -257,40 +296,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{currentUser.email}</p>
               </div>
 
-              {showDemoUserSwitcher && (
-                <div className="py-2 border-b border-slate-100 dark:border-slate-800">
-                  <p className="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-2 px-1">
-                    Beralih Pengguna Cepat
-                  </p>
-                  <div className="space-y-1">
-                    {users.map((u) => (
-                      <button
-                        key={u.id}
-                        id={`switch-user-${u.id}`}
-                        role="menuitem"
-                        onClick={() => {
-                          setCurrentUser(u);
-                          setShowUserMenu(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left ${
-                          u.id === currentUser.id
-                            ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="w-5 h-5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-bold flex items-center justify-center">
-                            {u.name.charAt(0)}
-                          </span>
-                          <span className="truncate">{u.name}</span>
-                        </div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400">{u.role}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="pt-2">
                 <button
                   id="btn-nav-profile"
@@ -303,6 +308,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onToggleMobileM
                 >
                   <UserCheck className="w-4 h-4 text-slate-400" />
                   Pengaturan & Profil
+                </button>
+                <button
+                  id="btn-logout"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  className="mt-1 w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
                 </button>
               </div>
             </div>

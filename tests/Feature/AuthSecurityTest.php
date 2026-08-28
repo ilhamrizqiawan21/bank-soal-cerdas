@@ -48,6 +48,49 @@ class AuthSecurityTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_authenticated_user_is_redirected_away_from_login_page(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+
+        $this->actingAs($user)
+            ->get('/login')
+            ->assertRedirect('/app/dashboard');
+    }
+
+    public function test_login_uses_safe_intended_path_from_query_string(): void
+    {
+        $this->withoutMiddleware(VerifyCsrfToken::class);
+
+        User::factory()->create([
+            'email' => 'guru-intended@test.com',
+            'password' => bcrypt('password123'),
+            'is_active' => true,
+        ]);
+
+        $this->get('/login?intended=/app/questions');
+
+        $this->post('/login', [
+            'email' => 'guru-intended@test.com',
+            'password' => 'password123',
+        ])->assertRedirect('/app/questions');
+    }
+
+    public function test_spa_shell_exposes_authenticated_user_bootstrap(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Admin Bootstrap',
+            'email' => 'bootstrap@test.com',
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/app/dashboard')
+            ->assertOk()
+            ->assertSee('window.__BOOTSTRAP__', false)
+            ->assertSee('bootstrap@test.com', false);
+    }
+
     public function test_share_detail_is_restricted_to_participants(): void
     {
         $guruA = User::factory()->create();

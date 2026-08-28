@@ -13,7 +13,6 @@ import {
   Users,
   User,
   GraduationCap,
-  Sparkles,
   ChevronRight
 } from 'lucide-react';
 
@@ -86,9 +85,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Brand Header */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-            <Sparkles className="w-5 h-5" />
-          </div>
+          <img
+            src="/images/android-chrome-512x512.png"
+            alt=""
+            className="w-11 h-11 object-contain flex-shrink-0"
+          />
           <div>
             <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
               Bank Soal Cerdas

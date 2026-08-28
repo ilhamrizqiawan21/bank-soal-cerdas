@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Kategori, KategoriType } from '../types';
 import { useFocusTrap } from '../lib/useFocusTrap';
+import { useConfirm } from '../context/ConfirmContext';
 
 export const KategoriListView: React.FC = () => {
   const {
@@ -33,6 +34,7 @@ export const KategoriListView: React.FC = () => {
     setCurrentView,
     addToast
   } = useApp();
+  const confirm = useConfirm();
   const categoryDialogRef = useRef<HTMLDivElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,21 +130,20 @@ export const KategoriListView: React.FC = () => {
     }
   };
 
-  const handleDelete = (cat: Kategori) => {
+  const handleDelete = async (cat: Kategori) => {
     const questionCount = questions.filter(q => q.kategori_ids?.includes(cat.id)).length;
     const paketCount = paketSoalList.filter(p => p.kategori_id === cat.id).length;
+    const message = questionCount > 0 || paketCount > 0
+      ? `Kategori "${cat.name}" terhubung dengan ${questionCount} butir soal dan ${paketCount} paket soal. Tetap hapus kategori ini?`
+      : `Kategori "${cat.name}" akan dihapus dari sistem.`;
 
-    if (questionCount > 0 || paketCount > 0) {
-      if (!window.confirm(`Kategori "${cat.name}" terhubung dengan ${questionCount} butir soal dan ${paketCount} paket soal. Tetap hapus kategori ini?`)) {
-        return;
-      }
-    } else {
-      if (!window.confirm(`Hapus kategori "${cat.name}"?`)) {
-        return;
-      }
-    }
+    const confirmed = await confirm({
+      title: 'Hapus Kategori?',
+      message,
+      confirmLabel: 'Ya, Hapus',
+    });
 
-    deleteCategory(cat.id);
+    if (confirmed) await deleteCategory(cat.id);
   };
 
   // Color mapper helper

@@ -23,11 +23,14 @@ import {
 import { BloomLevel, Curriculum, Jenjang, LevelKognitif, Question, QuestionType } from '../types';
 import { writeSpreadsheet } from '../lib/spreadsheet';
 import { apiErrorMessage, isBootstrapped } from '../lib/api';
-import { PaginationMeta, questionsApi } from '../lib/domainApi';
+import { PaginationMeta, questionsApi } from '../lib/api/questions';
+import { readWithRetry } from '../lib/dataFetching';
+import { getUrlQuery, queryPage, queryValue, updateUrlQuery } from '../lib/urlQuery';
 import { canManageOwnableResource, canUseSharedResource } from '../lib/roleAccess';
 import { useFocusTrap } from '../lib/useFocusTrap';
 import { QuestionDetailModal } from './QuestionDetailModal';
 import { QuestionImportModal } from './QuestionImportModal';
+import { useConfirm } from '../context/ConfirmContext';
 
 export const QuestionListView: React.FC = () => {
   const {
@@ -51,17 +54,19 @@ export const QuestionListView: React.FC = () => {
     searchGlobalQuery,
     setSearchGlobalQuery,
   } = useApp();
+  const confirm = useConfirm();
 
-  const [searchFilter, setSearchFilter] = useState(searchGlobalQuery || '');
-  const [subjectFilter, setSubjectFilter] = useState<string>('all');
-  const [curriculumFilter, setCurriculumFilter] = useState<string>('all');
-  const [bloomFilter, setBloomFilter] = useState<string>('all');
-  const [levelKognitifFilter, setLevelKognitifFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [jenjangFilter, setJenjangFilter] = useState<string>('all');
-  const [tagFilter, setTagFilter] = useState<string>(selectedTagFilter || 'all');
+  const initialQuery = useMemo(() => getUrlQuery(), []);
+  const [searchFilter, setSearchFilter] = useState(searchGlobalQuery || initialQuery.get('q') || '');
+  const [subjectFilter, setSubjectFilter] = useState<string>(() => queryValue(initialQuery, 'subject_id'));
+  const [curriculumFilter, setCurriculumFilter] = useState<string>(() => queryValue(initialQuery, 'curriculum'));
+  const [bloomFilter, setBloomFilter] = useState<string>(() => queryValue(initialQuery, 'bloom_level'));
+  const [levelKognitifFilter, setLevelKognitifFilter] = useState<string>(() => queryValue(initialQuery, 'level_c'));
+  const [typeFilter, setTypeFilter] = useState<string>(() => queryValue(initialQuery, 'type'));
+  const [jenjangFilter, setJenjangFilter] = useState<string>(() => queryValue(initialQuery, 'jenjang'));
+  const [tagFilter, setTagFilter] = useState<string>(selectedTagFilter || queryValue(initialQuery, 'tag_id'));
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => queryPage(initialQuery));
   const itemsPerPage = 8;
   const productionMode = isBootstrapped();
   const [serverQuestions, setServerQuestions] = useState<Question[]>([]);
@@ -95,14 +100,38 @@ export const QuestionListView: React.FC = () => {
   }, [searchGlobalQuery]);
 
   React.useEffect(() => {
+    updateUrlQuery({
+      page: currentPage === 1 ? undefined : currentPage,
+      q: searchFilter.trim() || undefined,
+      subject_id: subjectFilter,
+      curriculum: curriculumFilter,
+      bloom_level: bloomFilter,
+      level_c: levelKognitifFilter,
+      type: typeFilter,
+      jenjang: jenjangFilter,
+      tag_id: tagFilter,
+      sort: 'latest',
+    });
+  }, [
+    currentPage,
+    searchFilter,
+    subjectFilter,
+    curriculumFilter,
+    bloomFilter,
+    levelKognitifFilter,
+    typeFilter,
+    jenjangFilter,
+    tagFilter,
+  ]);
+
+  React.useEffect(() => {
     if (!productionMode) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       setIsListLoading(true);
       setListError(null);
-      questionsApi
-        .paginate({
+      const params = {
           page: currentPage,
           per_page: itemsPerPage,
           search: searchFilter.trim() || undefined,
@@ -114,7 +143,9 @@ export const QuestionListView: React.FC = () => {
           jenjang: jenjangFilter === 'all' ? undefined : jenjangFilter,
           tag_id: tagFilter === 'all' ? undefined : tagFilter,
           sort: 'latest',
-        })
+        };
+
+      readWithRetry(() => questionsApi.paginate(params))
         .then(result => {
           if (controller.signal.aborted) return;
           setServerQuestions(result.data);
@@ -259,7 +290,10 @@ export const QuestionListView: React.FC = () => {
   const handleConfirmShare = async () => {
     if (!sharingQuestionId || !selectedTeacherToShare) return;
     const ok = await shareSoalAction(sharingQuestionId, selectedTeacherToShare, selectedPermission, shareMessage.trim() || undefined);
-    if (ok) setSharingQuestionId(null);
+    if (ok) {
+      setSharingQuestionId(null);
+      if (productionMode) refreshQuestionPage();
+    }
   };
 
   const otherTeachers = users.filter(u => (u.role === 'guru' || u.role === 'admin') && u.id !== currentUser.id);
@@ -272,6 +306,13 @@ export const QuestionListView: React.FC = () => {
   };
 
   const handleDeleteQuestion = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Hapus Soal?',
+      message: 'Butir soal ini akan dihapus dari Bank Soal.',
+      confirmLabel: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     await deleteQuestion(id);
     if (productionMode) refreshQuestionPage();
   };
@@ -666,11 +707,7 @@ export const QuestionListView: React.FC = () => {
                     {ownershipAllowed && (
                       <button
                         id={`btn-delete-q-${q.id}`}
-                        onClick={() => {
-                          if (window.confirm('Apakah Anda yakin ingin menghapus butir soal ini dari Bank Soal?')) {
-                            handleDeleteQuestion(q.id);
-                          }
-                        }}
+                        onClick={() => handleDeleteQuestion(q.id)}
                         className="p-2 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
                         title="Hapus Soal"
                         aria-label={`Hapus soal ${q.id}`}

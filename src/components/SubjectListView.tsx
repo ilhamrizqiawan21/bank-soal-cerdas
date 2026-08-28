@@ -3,9 +3,11 @@ import { useApp } from '../context/AppContext';
 import { BookOpen, Plus, Edit, Trash2, X, Save, HelpCircle } from 'lucide-react';
 import { Subject } from '../types';
 import { useFocusTrap } from '../lib/useFocusTrap';
+import { useConfirm } from '../context/ConfirmContext';
 
 export const SubjectListView: React.FC = () => {
   const { subjects, questions, addSubject, updateSubject, deleteSubject } = useApp();
+  const confirm = useConfirm();
   const subjectDialogRef = useRef<HTMLDivElement>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -125,10 +127,13 @@ export const SubjectListView: React.FC = () => {
                 </button>
                 <button
                   id={`btn-delete-subject-${sub.id}`}
-                  onClick={() => {
-                    if (window.confirm(`Hapus mata pelajaran ${sub.name}?`)) {
-                      deleteSubject(sub.id);
-                    }
+                  onClick={async () => {
+                    const confirmed = await confirm({
+                      title: 'Hapus Mata Pelajaran?',
+                      message: `Mata pelajaran "${sub.name}" akan dihapus dari sistem.`,
+                      confirmLabel: 'Ya, Hapus',
+                    });
+                    if (confirmed) await deleteSubject(sub.id);
                   }}
                   className="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-rose-950/40 transition-colors"
                   title="Hapus"

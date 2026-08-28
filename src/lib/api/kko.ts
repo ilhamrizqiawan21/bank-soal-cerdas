@@ -1,0 +1,1 @@
+export { kkoApi } from '../domainApi';

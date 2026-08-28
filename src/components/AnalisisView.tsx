@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { AnalisisSiswaDetail, AnalisisUjianDetail, BloomLevel, Question } from '../types';
 import { apiErrorMessage, isBootstrapped } from '../lib/api';
-import { analisisApi } from '../lib/domainApi';
+import { analisisApi } from '../lib/api/analisis';
 
 export const AnalisisView: React.FC = () => {
   const {
