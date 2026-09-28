@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { canAccessView } from '../lib/roleAccess';
 import { isFullScreenView, renderView } from '../lib/viewRegistry';
@@ -37,7 +37,9 @@ export const AppShell: React.FC = () => {
   if (isFullScreenView(currentView) && currentViewAllowed) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        {renderView(currentView, { role: currentUser.role })}
+        <Suspense fallback={<DataLoadingState />}>
+          {renderView(currentView, { role: currentUser.role })}
+        </Suspense>
         <ToastContainer />
       </div>
     );
@@ -68,7 +70,9 @@ export const AppShell: React.FC = () => {
           ) : dataLoadError ? (
             <DataErrorState message={dataLoadError} onRetry={() => refreshServerData()} />
           ) : (
-            renderMainContent()
+            <Suspense fallback={<DataLoadingState />}>
+              {renderMainContent()}
+            </Suspense>
           )}
         </main>
       </div>

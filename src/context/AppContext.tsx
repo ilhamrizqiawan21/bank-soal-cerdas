@@ -20,6 +20,7 @@ import {
   LevelKognitif,
   DashboardData,
   CollaborationNote,
+  UjianPelanggaranType,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -136,6 +137,7 @@ interface AppContextType {
     jawaban?: string | Record<string, string>;
   }) => void | Promise<void>;
   submitUjianCBT: (ujianId: string) => { totalScore: number; maxScore: number } | Promise<{ totalScore: number; maxScore: number }>;
+  logUjianPelanggaran: (ujianId: string, type: UjianPelanggaranType) => void | Promise<void>;
 
   shareSoalList: ShareSoal[];
   sharePaketList: SharePaket[];
@@ -1463,6 +1465,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Demo mode: no backend to persist to, so a violation only bumps the
+  // in-memory count for this session (matches how the rest of demo mode
+  // works — nothing here is meant to survive a refresh).
+  const logUjianPelanggaran = (ujianId: string, _type: UjianPelanggaranType): void => {
+    setUjianList(prev => prev.map(u => (
+      u.id === ujianId ? { ...u, violation_count: (u.violation_count ?? 0) + 1, is_flagged: true } : u
+    )));
+  };
+
+  // Best-effort: a violation report failing to reach the server must never
+  // interrupt or surface an error to the student mid-exam — it just means
+  // this one event goes unrecorded, which is far better than the exam
+  // flow breaking over a monitoring side-channel.
+  const logUjianPelanggaranApi = async (ujianId: string, type: UjianPelanggaranType): Promise<void> => {
+    try {
+      const violationCount = await ujianApi.logPelanggaran(ujianId, type);
+      setUjianList(prev => prev.map(u => (
+        u.id === ujianId ? { ...u, violation_count: violationCount, is_flagged: violationCount > 0 } : u
+      )));
+    } catch (error) {
+      console.warn('Gagal mengirim laporan pelanggaran anti-cheat ke server', error);
+    }
+  };
+
   // Collaboration / Share Actions
   const shareSoalAction = (questionId: string, sharedToId: string, permission: 'view' | 'edit' | 'copy', message?: string): boolean => {
     const existing = shareSoalList.find(s => s.question_id === questionId && s.shared_to === sharedToId);
@@ -1838,6 +1864,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         startUjianCBT: bootstrapped ? startUjianCBTApi : startUjianCBT,
         saveUjianJawaban: bootstrapped ? saveUjianJawabanApi : saveUjianJawaban,
         submitUjianCBT: bootstrapped ? submitUjianCBTApi : submitUjianCBT,
+        logUjianPelanggaran: bootstrapped ? logUjianPelanggaranApi : logUjianPelanggaran,
         shareSoalList,
         sharePaketList,
         shares,

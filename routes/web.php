@@ -111,6 +111,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/ujian-saya', [ApiUjianController::class, 'mine']);
             Route::post('/ujian/{ujian}/jawaban', [ApiUjianController::class, 'answer']);
             Route::post('/ujian/{ujian}/submit', [ApiUjianController::class, 'submit']);
+            Route::post('/ujian/{ujian}/pelanggaran', [ApiUjianController::class, 'pelanggaran']);
         });
     });
 

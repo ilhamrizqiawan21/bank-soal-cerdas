@@ -193,7 +193,11 @@ export interface Ujian {
   created_at: string;
   token_ujian?: string;
   jawaban: UjianJawabanItem[];
+  violation_count?: number;
+  is_flagged?: boolean;
 }
+
+export type UjianPelanggaranType = 'blur' | 'visibility_hidden' | 'fullscreen_exit';
 
 export interface CollaborationNote {
   id: string;

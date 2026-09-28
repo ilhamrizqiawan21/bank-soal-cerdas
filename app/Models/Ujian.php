@@ -19,10 +19,14 @@ class Ujian extends Model
         'status',
     ];
 
+    // violation_count is intentionally NOT fillable: it must only ever
+    // change through pelanggaran()->create() + increment() in the
+    // controller, never via a plain update() from the client.
     protected $casts = [
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'violation_count' => 'integer',
     ];
 
     // Relations
@@ -44,6 +48,11 @@ class Ujian extends Model
     public function jawaban()
     {
         return $this->hasMany(UjianJawaban::class);
+    }
+
+    public function pelanggaran()
+    {
+        return $this->hasMany(UjianPelanggaran::class);
     }
 
     // Accessors
@@ -76,6 +85,11 @@ class Ujian extends Model
         }
 
         return $this->duration_minutes.' menit';
+    }
+
+    public function getIsFlaggedAttribute(): bool
+    {
+        return $this->violation_count > 0;
     }
 
     public function getProgressAttribute()
