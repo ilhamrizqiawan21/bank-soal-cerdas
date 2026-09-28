@@ -1,23 +1,64 @@
 import React from 'react';
-import { DashboardView } from '../components/DashboardView';
-import { QuestionListView } from '../components/QuestionListView';
-import { QuestionFormView } from '../components/QuestionFormView';
-import { SubjectListView } from '../components/SubjectListView';
-import { PaketSoalListView } from '../components/PaketSoalListView';
-import { PaketSoalFormView } from '../components/PaketSoalFormView';
-import { UjianManagementView } from '../components/UjianManagementView';
-import { UjianDaftarSiswaView } from '../components/UjianDaftarSiswaView';
-import { UjianKerjakanCBTView } from '../components/UjianKerjakanCBTView';
-import { UjianHasilView } from '../components/UjianHasilView';
-import { AnalisisView } from '../components/AnalisisView';
-import { KkoMasterView } from '../components/KkoMasterView';
-import { CollaborationView } from '../components/CollaborationView';
-import { UserManagementView } from '../components/UserManagementView';
-import { ProfileView } from '../components/ProfileView';
-import { KategoriListView } from '../components/KategoriListView';
-import { TagListView } from '../components/TagListView';
 import type { Role } from '../types';
 import { VIEW_ACCESS } from './viewAccess';
+
+// Each view is its own chunk, fetched only when that route is actually visited.
+// Before this, every view (and everything it imports — chart.js, the xlsx
+// import/export libraries, every admin form) shipped in the one bundle every
+// user downloaded on first load, including a student who only ever opens the
+// CBT exam screen. AppShell wraps the render output in <Suspense>, so a
+// lightweight loading skeleton shows while a chunk is fetched.
+const DashboardView = React.lazy(() =>
+  import('../components/DashboardView').then((m) => ({ default: m.DashboardView }))
+);
+const QuestionListView = React.lazy(() =>
+  import('../components/QuestionListView').then((m) => ({ default: m.QuestionListView }))
+);
+const QuestionFormView = React.lazy(() =>
+  import('../components/QuestionFormView').then((m) => ({ default: m.QuestionFormView }))
+);
+const SubjectListView = React.lazy(() =>
+  import('../components/SubjectListView').then((m) => ({ default: m.SubjectListView }))
+);
+const PaketSoalListView = React.lazy(() =>
+  import('../components/PaketSoalListView').then((m) => ({ default: m.PaketSoalListView }))
+);
+const PaketSoalFormView = React.lazy(() =>
+  import('../components/PaketSoalFormView').then((m) => ({ default: m.PaketSoalFormView }))
+);
+const UjianManagementView = React.lazy(() =>
+  import('../components/UjianManagementView').then((m) => ({ default: m.UjianManagementView }))
+);
+const UjianDaftarSiswaView = React.lazy(() =>
+  import('../components/UjianDaftarSiswaView').then((m) => ({ default: m.UjianDaftarSiswaView }))
+);
+const UjianKerjakanCBTView = React.lazy(() =>
+  import('../components/UjianKerjakanCBTView').then((m) => ({ default: m.UjianKerjakanCBTView }))
+);
+const UjianHasilView = React.lazy(() =>
+  import('../components/UjianHasilView').then((m) => ({ default: m.UjianHasilView }))
+);
+const AnalisisView = React.lazy(() =>
+  import('../components/AnalisisView').then((m) => ({ default: m.AnalisisView }))
+);
+const KkoMasterView = React.lazy(() =>
+  import('../components/KkoMasterView').then((m) => ({ default: m.KkoMasterView }))
+);
+const CollaborationView = React.lazy(() =>
+  import('../components/CollaborationView').then((m) => ({ default: m.CollaborationView }))
+);
+const UserManagementView = React.lazy(() =>
+  import('../components/UserManagementView').then((m) => ({ default: m.UserManagementView }))
+);
+const ProfileView = React.lazy(() =>
+  import('../components/ProfileView').then((m) => ({ default: m.ProfileView }))
+);
+const KategoriListView = React.lazy(() =>
+  import('../components/KategoriListView').then((m) => ({ default: m.KategoriListView }))
+);
+const TagListView = React.lazy(() =>
+  import('../components/TagListView').then((m) => ({ default: m.TagListView }))
+);
 
 type ViewContext = {
   role: Role;
