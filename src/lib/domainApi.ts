@@ -20,6 +20,7 @@ import {
   Tag,
   Ujian,
   UjianJawabanItem,
+  UjianPelanggaranType,
   User,
 } from '../types';
 
@@ -595,6 +596,10 @@ export const ujianApi = {
   async submit(id: string): Promise<Ujian> {
     const { data } = await api.post<ApiResource<ServerUjian>>(`/ujian/${id}/submit`);
     return normalizeUjian(data.data);
+  },
+  async logPelanggaran(id: string, type: UjianPelanggaranType): Promise<number> {
+    const { data } = await api.post<{ data: { violation_count: number } }>(`/ujian/${id}/pelanggaran`, { type });
+    return data.data.violation_count;
   },
 };
 

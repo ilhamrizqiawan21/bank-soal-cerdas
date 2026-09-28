@@ -9,6 +9,7 @@ import {
   Play,
   Plus,
   Search,
+  ShieldAlert,
   Trash2,
   X,
 } from 'lucide-react';
@@ -427,19 +428,31 @@ export const UjianManagementView: React.FC = () => {
                       </td>
 
                       <td className="p-4">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                            exam.status === 'active'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : exam.status === 'finished'
-                              ? 'bg-blue-100 text-blue-800'
-                              : exam.status === 'expired'
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {statusLabels[exam.status]}
-                        </span>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                              exam.status === 'active'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : exam.status === 'finished'
+                                ? 'bg-blue-100 text-blue-800'
+                                : exam.status === 'expired'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {statusLabels[exam.status]}
+                          </span>
+                          {!!exam.violation_count && (
+                            <span
+                              id={`badge-pelanggaran-${exam.id}`}
+                              className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                              title="Jumlah aktivitas mencurigakan (keluar layar penuh / berpindah tab) yang terdeteksi selama ujian"
+                            >
+                              <ShieldAlert className="h-3 w-3" />
+                              {exam.violation_count} pelanggaran
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="p-4">

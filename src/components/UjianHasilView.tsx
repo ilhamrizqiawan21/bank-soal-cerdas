@@ -7,6 +7,8 @@ import {
   Award,
   Clock,
   Printer,
+  ShieldAlert,
+  ShieldCheck,
   Sparkles,
   BookOpen,
   Check,
@@ -131,6 +133,28 @@ export const UjianHasilView: React.FC = () => {
               Kriteria Kelulusan
             </span>
           </div>
+
+          {currentUser.role !== 'siswa' && (
+            <>
+              <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+
+              <div id="integritas-ujian">
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase ${
+                    exam.violation_count
+                      ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  }`}
+                >
+                  {exam.violation_count ? <ShieldAlert className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                  {exam.violation_count ? `${exam.violation_count} PELANGGARAN` : 'BERSIH'}
+                </div>
+                <span className="block text-[11px] font-bold text-slate-400 uppercase mt-1">
+                  Integritas Ujian
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="text-xs text-slate-400 flex items-center justify-center gap-2">

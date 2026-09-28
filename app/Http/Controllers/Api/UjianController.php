@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\PaketSoal;
 use App\Models\Ujian;
 use App\Models\UjianJawaban;
-use App\Models\User;
 use App\Policies\PaketSoalPolicy;
 use App\Policies\UjianPolicy;
 use Illuminate\Http\JsonResponse;
@@ -259,6 +258,35 @@ class UjianController extends Controller
         });
 
         return response()->json(['data' => $ujian->fresh(['paketSoal', 'jawaban.question'])]);
+    }
+
+    public function pelanggaran(Request $request, Ujian $ujian): JsonResponse
+    {
+        $this->authorizeStudentExam($request, $ujian);
+
+        // Deliberately more permissive than answer()/submit(): a violation
+        // can legitimately fire in the instant the exam is expiring or
+        // right up to submit, and dropping it on the floor there is worse
+        // than recording one extra event on an exam that's about to close.
+        abort_if($ujian->submitted_at, 400, 'Ujian sudah disubmit.');
+        abort_unless(in_array($ujian->status, ['active', 'expired'], true), 403, 'Ujian tidak aktif.');
+
+        $validated = $request->validate([
+            'type' => 'required|in:blur,visibility_hidden,fullscreen_exit',
+        ]);
+
+        DB::transaction(function () use ($ujian, $validated) {
+            $ujian->pelanggaran()->create([
+                'type' => $validated['type'],
+                'occurred_at' => now(),
+            ]);
+
+            $ujian->increment('violation_count');
+        });
+
+        return response()->json([
+            'data' => ['violation_count' => $ujian->fresh()->violation_count],
+        ]);
     }
 
     private function authorizeStudentExam(Request $request, Ujian $ujian): void

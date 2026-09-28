@@ -152,6 +152,60 @@ class UjianKerjakanTest extends TestCase
         ]);
     }
 
+    public function test_pelanggaran_tercatat_dan_menaikkan_violation_count(): void
+    {
+        [$ujian, $siswa] = $this->createActiveUjian();
+
+        $this->actingAs($siswa)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post("/api/ujian/{$ujian->id}/pelanggaran", ['type' => 'visibility_hidden'])
+            ->assertOk()
+            ->assertJson(['data' => ['violation_count' => 1]]);
+
+        $this->actingAs($siswa)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post("/api/ujian/{$ujian->id}/pelanggaran", ['type' => 'fullscreen_exit'])
+            ->assertOk()
+            ->assertJson(['data' => ['violation_count' => 2]]);
+
+        $this->assertDatabaseHas('ujian', ['id' => $ujian->id, 'violation_count' => 2]);
+        $this->assertDatabaseHas('ujian_pelanggaran', ['ujian_id' => $ujian->id, 'type' => 'visibility_hidden']);
+        $this->assertDatabaseHas('ujian_pelanggaran', ['ujian_id' => $ujian->id, 'type' => 'fullscreen_exit']);
+        $this->assertTrue($ujian->fresh()->is_flagged);
+    }
+
+    public function test_pelanggaran_menolak_tipe_yang_tidak_dikenal(): void
+    {
+        [$ujian, $siswa] = $this->createActiveUjian();
+
+        $this->actingAs($siswa)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post("/api/ujian/{$ujian->id}/pelanggaran", ['type' => 'copy_paste'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('type');
+    }
+
+    public function test_siswa_lain_tidak_bisa_lapor_pelanggaran_ujian_orang_lain(): void
+    {
+        [$ujian, , $siswaLain] = $this->createActiveUjian();
+
+        $this->actingAs($siswaLain)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post("/api/ujian/{$ujian->id}/pelanggaran", ['type' => 'blur'])
+            ->assertNotFound();
+    }
+
+    public function test_pelanggaran_ditolak_setelah_ujian_disubmit(): void
+    {
+        [$ujian, $siswa] = $this->createActiveUjian();
+        $ujian->update(['status' => 'finished', 'submitted_at' => now()]);
+
+        $this->actingAs($siswa)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post("/api/ujian/{$ujian->id}/pelanggaran", ['type' => 'blur'])
+            ->assertStatus(400);
+    }
+
     public function test_publish_hanya_bisa_dari_status_draft(): void
     {
         [$ujian, , , , , $guru] = $this->createActiveUjian();

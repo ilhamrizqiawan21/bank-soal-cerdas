@@ -44,6 +44,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
     startUjianCBT,
     saveUjianJawaban,
     submitUjianCBT,
+    logUjianPelanggaran,
     setSelectedUjianId,
     setCurrentView,
     addToast
@@ -164,6 +165,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && exam && exam.status !== 'finished') {
+        logUjianPelanggaran(exam.id, 'visibility_hidden');
         setCheatCount(prev => {
           const next = prev + 1;
           setShowCheatWarning(true);
@@ -177,6 +179,7 @@ export const UjianKerjakanCBTView: React.FC = () => {
 
     const handleBlur = () => {
       if (exam && exam.status !== 'finished') {
+        logUjianPelanggaran(exam.id, 'blur');
         setCheatCount(prev => {
           const next = prev + 1;
           setShowCheatWarning(true);
